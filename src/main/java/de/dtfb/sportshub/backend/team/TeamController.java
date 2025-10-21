@@ -1,14 +1,10 @@
 package de.dtfb.sportshub.backend.team;
 
-import de.dtfb.sportshub.backend.player.Player;
+import de.dtfb.sportshub.backend.player.PlayerDto;
 import de.dtfb.sportshub.backend.player.PlayerService;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -27,29 +23,18 @@ public class TeamController {
     // ==========================================================
 
     @GetMapping
-    @PreAuthorize("hasAuthority('team_captain')")
-    public List<Team> allTeams(Authentication authentication) {
-        var jwt = (Jwt) authentication.getPrincipal();
-        var userTeamId = jwt.getClaimAsString("captainOfTeam");
-
-        if (StringUtils.isNotBlank(userTeamId) && Integer.parseInt(userTeamId) == 1) {
-//            return teamService.getAllTeams();
-            Team team = new Team();
-            team.setId(1L);
-            team.setName("some test");
-            return List.of(team);
-        } else {
-            return new ArrayList<>();
-        }
+    @PreAuthorize("hasAuthority('admin')")
+    public List<TeamDto> allTeams() {
+        return teamService.getAllTeams();
     }
 
     @GetMapping("/{id}")
-    public Team teamById(@PathVariable Long id) {
+    public TeamDto teamById(@PathVariable Long id) {
         return teamService.getTeamById(id);
     }
 
     @GetMapping("/{id}/players")
-    public List<Player> playersByTeam(@PathVariable Long id) {
+    public List<PlayerDto> playersByTeam(@PathVariable Long id) {
         return playerService.getPlayersByTeam(id);
     }
 
@@ -58,8 +43,14 @@ public class TeamController {
     // ==========================================================
 
     @PostMapping
-    @PreAuthorize("authentication.token.claims['captainOfTeam'] == #team.id")
-    public Team createTeam(@RequestBody Team team) {
-        return teamService.createTeam(team);
+    @PreAuthorize("hasAuthority('admin')")
+    public TeamDto createTeam(@RequestBody TeamDto teamDto) {
+        return teamService.createTeam(teamDto);
+    }
+
+    @PutMapping
+    @PreAuthorize("hasAuthority('admin') || @teamSecurity.canManage(authentication, #teamDto.id)")
+    public TeamDto updateTeam(@RequestBody TeamDto teamDto) {
+        return teamService.updateTeam(teamDto);
     }
 }

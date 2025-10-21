@@ -1,50 +1,52 @@
 package de.dtfb.sportshub.backend.player;
 
-import de.dtfb.sportshub.backend.team.Team;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @Slf4j
 public class PlayerService {
-    private final PlayerRepository playerRepository;
+    public static final String PLAYERS = "/players";
+    private final RestTemplate restTemplate;
 
-    public PlayerService(PlayerRepository playerRepository) {
-        this.playerRepository = playerRepository;
+    @Value("${dtfb.player.api}")
+    private String baseUrl;
+
+    public PlayerService() {
+        this.restTemplate = new RestTemplate();
     }
 
-    public List<Player> getAllPlayers() {
-        return playerRepository.findAll();
+    public List<PlayerDto> getAllPlayers() {
+        ResponseEntity<List<PlayerDto>> response = restTemplate.exchange(
+            baseUrl + PLAYERS,
+            HttpMethod.GET,
+            null, // no request body needed for GET
+            new ParameterizedTypeReference<>() {
+            }
+        );
+        return response.getBody();
     }
 
-    public List<Player> getPlayersByTeam(Long teamId) {
-        return playerRepository.findByTeamId(teamId);
+    public List<PlayerDto> getPlayersByTeam(Long teamId) { // TODO check if needed later
+        ResponseEntity<List<PlayerDto>> response = restTemplate.exchange(
+            baseUrl + "/players/" + teamId,
+            HttpMethod.GET,
+            null, // no request body needed for GET
+            new ParameterizedTypeReference<>() {
+            }
+        );
+        return response.getBody();
     }
 
-    public Player getPlayerById(Long id) {
-        return playerRepository.findById(id).orElse(null);
-    }
-
-    public Player createPlayer(String firstName) {
-        log.info("Creating player {}", firstName);
-        Player player = new Player();
-        Team team = new Team();
-        List<Team> teams = new ArrayList<>();
-        teams.add(team);
-        player.setFirstName(firstName);
-        player.setTeam(teams);
-        log.info("saving player {}", player);
-        return playerRepository.save(player);
-    }
-
-    public Player createPlayer(Player player) {
-        // TODO technically, the event should be an EventDTO
-        //  and instead of id it should have a uuid.
-        //  this is a security critical pattern.
-        //  for example purpose, this step is omitted
-        return playerRepository.save(player);
+    public PlayerDto getPlayerById(Long id) {
+        ResponseEntity<PlayerDto> response = restTemplate.getForEntity(baseUrl + PLAYERS + "/" + id, PlayerDto.class);
+        return response.getBody();
     }
 }

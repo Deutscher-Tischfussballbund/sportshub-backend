@@ -1,11 +1,10 @@
 package de.dtfb.sportshub.backend.team;
 
-import de.dtfb.sportshub.backend.player.Player;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -14,8 +13,9 @@ public class Team {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String name;
 
-    @ManyToMany(cascade = CascadeType.PERSIST)
-    private List<Player> players;
+    @Column(unique = true, nullable = false)
+    private UUID uuid = UUID.randomUUID();
+
+    private String name;
 }

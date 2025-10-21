@@ -46,9 +46,7 @@ public class SecurityConfiguration {
                 requests.requestMatchers(OPENAPI_PATHS).permitAll();
             }
 
-            requests
-                .requestMatchers("/players").hasAuthority("team_captain")
-                .anyRequest().authenticated(); // TODO: fine tuning here
+            requests.anyRequest().authenticated(); // TODO: fine tuning here
         });
 
         http.csrf(AbstractHttpConfigurer::disable);

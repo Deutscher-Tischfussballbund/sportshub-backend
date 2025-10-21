@@ -18,21 +18,16 @@ public class PlayerController {
     // ==========================================================
 
     @GetMapping
-    public List<Player> allPlayers() {
+    public List<PlayerDto> allPlayers() {
         return playerService.getAllPlayers();
     }
 
     @GetMapping("/{id}")
-    public Player playerById(@PathVariable Long id) {
+    public PlayerDto playerById(@PathVariable Long id) {
         return playerService.getPlayerById(id);
     }
 
     // ==========================================================
     // ============== WRITE ENDPOINTS ============================
     // ==========================================================
-
-    @PostMapping
-    public Player createPlayer(@RequestBody Player player) {
-        return playerService.createPlayer(player);
-    }
 }
