@@ -1,0 +1,59 @@
+Table Match {
+  id bigint [pk]
+  gameday bigint [ref: > Gameday.id]
+  start_time datetime
+  end_time datetime
+  type varchar
+}
+
+Table MatchPlayer {
+  id bigint [pk]
+  match_id bigint [ref: > Match.id]
+  player_id bigint [ref: > Player.id]
+  side varchar
+}
+
+Table Team {
+  id bigint [pk]
+  name varchar
+}
+
+Table TeamPlayer {
+  id bigint [pk]
+  team_id bigint [ref: > Team.id]
+  player_id bigint [ref: > Player.id]
+}
+
+Table Set {
+  id bigint [pk]
+  match_id bigint [ref: > Match.id]
+  set_number int
+  score_home int
+  score_away int
+}
+
+Table Gameday {
+  id bigint [pk]
+  name varchar
+  event bigint [ref: > Event.id]
+  start_date datetime
+  end_date datetime
+  team_id_home bigint [ref: > Team.id]
+  team_id_away bigint [ref: > Team.id]
+}
+
+Table Player {
+  id bigint [pk]
+  name varchar
+}
+
+Table Event {
+  id bigint [pk]
+  season bigint [ref: > Season.id]
+  name varchar
+}
+
+Table Season {
+  id bigint [pk]
+  name varchar
+}

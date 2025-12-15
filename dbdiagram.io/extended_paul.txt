@@ -1,0 +1,285 @@
+Table follows {
+  following_user_id integer
+  followed_user_id integer
+  created_at timestamp
+}
+
+Table users {
+  id integer [primary key]
+  username varchar
+  role varchar
+  created_at timestamp
+}
+
+Table posts {
+  id integer [primary key]
+  title varchar
+  body text [note: 'Content of the post']
+  user_id integer [not null]
+  status varchar
+  created_at timestamp
+}
+
+Ref user_posts: posts.user_id > users.id // many-to-one
+
+Ref: users.id < follows.following_user_id
+
+Ref: users.id < follows.followed_user_id
+
+Enum "competition_type_enum" {
+  "LEAGUE"
+  "TOURNAMENT"
+  "CUP"
+}
+
+Enum "stage_type_enum" {
+  "LEAGUE"
+  "GROUP"
+  "KNOCKOUT"
+  "PLAYOFF"
+}
+
+Enum "game_status_enum" {
+  "PLANNED"
+  "ONGOING"
+  "FINISHED"
+  "CANCELLED"
+}
+
+Enum "game_part_type_enum" {
+  "SET"
+  "HALF"
+  "LEG"
+}
+
+Enum "game_event_event_type_enum" {
+  "GOAL"
+  "OWN_GOAL"
+  "TIMEOUT"
+  "START"
+  "END"
+  "CARD"
+  "OTHER"
+}
+
+Table "sport" {
+  "id" INT [pk, not null, increment]
+  "name" VARCHAR(50) [not null]
+  "code" VARCHAR(20) [not null]
+
+  Indexes {
+    code [unique, name: "ux_sport_code"]
+  }
+}
+
+Table "team" {
+  "id" INT [pk, not null, increment]
+  "sport_id" INT [not null]
+  "name" VARCHAR(100) [not null]
+
+  Indexes {
+    sport_id [name: "idx_team_sport"]
+  }
+}
+
+Table "player" {
+  "id" INT [pk, not null, increment]
+  "name" VARCHAR(100) [not null]
+}
+
+Table "team_player" {
+  "team_id" INT [not null]
+  "player_id" INT [not null]
+
+  Indexes {
+    (team_id, player_id) [pk]
+    player_id [name: "idx_team_player_player"]
+  }
+}
+
+Table "competition" {
+  "id" INT [pk, not null, increment]
+  "sport_id" INT [not null]
+  "name" VARCHAR(100) [not null]
+  "type" competition_type_enum [not null]
+  "season_label" VARCHAR(50) [default: NULL]
+  "settings_json" JSON [default: NULL]
+
+  Indexes {
+    sport_id [name: "idx_competition_sport"]
+  }
+}
+
+Table "stage" {
+  "id" INT [pk, not null, increment]
+  "competition_id" INT [not null]
+  "name" VARCHAR(100) [not null]
+  "type" stage_type_enum [not null]
+  "sort_order" INT [not null, default: 0]
+  "settings_json" JSON [default: NULL]
+
+  Indexes {
+    competition_id [name: "idx_stage_competition"]
+  }
+}
+
+Table "group_pool" {
+  "id" INT [pk, not null, increment]
+  "stage_id" INT [not null]
+  "name" VARCHAR(50) [not null]
+
+  Indexes {
+    stage_id [name: "idx_group_pool_stage"]
+  }
+}
+
+Table "matchday" {
+  "id" INT [pk, not null, increment]
+  "stage_id" INT [not null]
+  "group_id" INT [default: NULL]
+  "matchday_no" INT [not null]
+  "date" DATE [default: NULL]
+
+  Indexes {
+    stage_id [name: "idx_matchday_stage"]
+    group_id [name: "idx_matchday_group"]
+  }
+}
+
+Table "game" {
+  "id" INT [pk, not null, increment]
+  "competition_id" INT [not null]
+  "stage_id" INT [not null]
+  "group_id" INT [default: NULL]
+  "matchday_id" INT [default: NULL]
+  "home_team_id" INT [not null]
+  "away_team_id" INT [not null]
+  "scheduled_at" DATETIME [default: NULL]
+  "started_at" DATETIME [default: NULL]
+  "finished_at" DATETIME [default: NULL]
+  "status" game_status_enum [not null, default: 'PLANNED']
+  "home_score" INT [not null, default: 0]
+  "away_score" INT [not null, default: 0]
+  "best_of_sets" INT [default: NULL]
+  "meta_json" JSON [default: NULL]
+
+  Indexes {
+    competition_id [name: "idx_game_competition"]
+    stage_id [name: "idx_game_stage"]
+    group_id [name: "idx_game_group"]
+    matchday_id [name: "idx_game_matchday"]
+    home_team_id [name: "idx_game_home_team"]
+    away_team_id [name: "idx_game_away_team"]
+  }
+}
+
+Table "game_part" {
+  "id" INT [pk, not null, increment]
+  "game_id" INT [not null]
+  "part_index" INT [not null]
+  "type" game_part_type_enum [not null]
+  "home_score" INT [not null, default: 0]
+  "away_score" INT [not null, default: 0]
+  "started_at" DATETIME [default: NULL]
+  "finished_at" DATETIME [default: NULL]
+  "meta_json" JSON [default: NULL]
+
+  Indexes {
+    game_id [name: "idx_game_part_game"]
+  }
+}
+
+Table "game_event" {
+  "id" INT [pk, not null, increment]
+  "game_id" INT [not null]
+  "game_part_id" INT [default: NULL]
+  "team_id" INT [default: NULL]
+  "player_id" INT [default: NULL]
+  "event_time_sec" INT [default: NULL]
+  "event_type" game_event_event_type_enum [not null]
+  "home_score" INT [default: NULL]
+  "away_score" INT [default: NULL]
+  "data_json" JSON [default: NULL]
+  "created_at" DATETIME [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    game_id [name: "idx_game_event_game"]
+    game_part_id [name: "idx_game_event_part"]
+    team_id [name: "idx_game_event_team"]
+    player_id [name: "idx_game_event_player"]
+  }
+}
+
+Table "game_team" {
+  "id" INT [pk, not null, increment]
+  "game_id" INT [not null]
+  "team_id" INT [not null]
+  "is_home" TINYINT(1) [not null, default: 0]
+
+  Indexes {
+    game_id [name: "idx_game_team_game"]
+    team_id [name: "idx_game_team_team"]
+  }
+}
+
+Table "game_player" {
+  "id" INT [pk, not null, increment]
+  "game_team_id" INT [not null]
+  "player_id" INT [not null]
+  "part_id" INT [default: NULL]
+  "role" VARCHAR(50) [default: NULL]
+
+  Indexes {
+    game_team_id [name: "idx_game_player_game_team"]
+    player_id [name: "idx_game_player_player"]
+    part_id [name: "idx_game_player_part"]
+  }
+}
+
+Ref "fk_team_sport":"sport"."id" < "team"."sport_id" [update: cascade, delete: restrict]
+
+Ref "fk_team_player_team":"team"."id" < "team_player"."team_id" [update: cascade, delete: cascade]
+
+Ref "fk_team_player_player":"player"."id" < "team_player"."player_id" [update: cascade, delete: cascade]
+
+Ref "fk_competition_sport":"sport"."id" < "competition"."sport_id" [update: cascade, delete: restrict]
+
+Ref "fk_stage_competition":"competition"."id" < "stage"."competition_id" [update: cascade, delete: cascade]
+
+Ref "fk_group_pool_stage":"stage"."id" < "group_pool"."stage_id" [update: cascade, delete: cascade]
+
+Ref "fk_matchday_stage":"stage"."id" < "matchday"."stage_id" [update: cascade, delete: cascade]
+
+Ref "fk_matchday_group":"group_pool"."id" < "matchday"."group_id" [update: cascade, delete: set null]
+
+Ref "fk_game_competition":"competition"."id" < "game"."competition_id" [update: cascade, delete: cascade]
+
+Ref "fk_game_stage":"stage"."id" < "game"."stage_id" [update: cascade, delete: cascade]
+
+Ref "fk_game_group":"group_pool"."id" < "game"."group_id" [update: cascade, delete: set null]
+
+Ref "fk_game_matchday":"matchday"."id" < "game"."matchday_id" [update: cascade, delete: set null]
+
+Ref "fk_game_home_team":"team"."id" < "game"."home_team_id" [update: cascade, delete: restrict]
+
+Ref "fk_game_away_team":"team"."id" < "game"."away_team_id" [update: cascade, delete: restrict]
+
+Ref "fk_game_part_game":"game"."id" < "game_part"."game_id" [update: cascade, delete: cascade]
+
+Ref "fk_game_event_game":"game"."id" < "game_event"."game_id" [update: cascade, delete: cascade]
+
+Ref "fk_game_event_part":"game_part"."id" < "game_event"."game_part_id" [update: cascade, delete: set null]
+
+Ref "fk_game_event_team":"team"."id" < "game_event"."team_id" [update: cascade, delete: set null]
+
+Ref "fk_game_event_player":"player"."id" < "game_event"."player_id" [update: cascade, delete: set null]
+
+Ref "fk_game_team_game":"game"."id" < "game_team"."game_id" [update: cascade, delete: cascade]
+
+Ref "fk_game_team_team":"team"."id" < "game_team"."team_id" [update: cascade, delete: restrict]
+
+Ref "fk_game_player_game_team":"game_team"."id" < "game_player"."game_team_id" [update: cascade, delete: cascade]
+
+Ref "fk_game_player_player":"player"."id" < "game_player"."player_id" [update: cascade, delete: restrict]
+
+Ref "fk_game_player_part":"game_part"."id" < "game_player"."part_id" [update: cascade, delete: set null]
