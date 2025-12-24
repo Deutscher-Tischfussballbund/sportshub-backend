@@ -8,7 +8,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -29,34 +28,17 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    SecurityFilterChain resourceServerSecurityFilterChain(
-        HttpSecurity http) throws Exception {
-        http.oauth2ResourceServer(resourceServer ->
-            resourceServer.jwt(jwtDecoder ->
-                jwtDecoder.jwtAuthenticationConverter(jwtAuthenticationConverter())
-            )
-        );
-
+    SecurityFilterChain resourceServerSecurityFilterChain(HttpSecurity http) throws Exception {
         http.sessionManagement(sessions ->
-            sessions.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-        ).csrf(AbstractHttpConfigurer::disable);
+            sessions.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).csrf(AbstractHttpConfigurer::disable);
 
         http.authorizeHttpRequests(requests -> {
             if (environment.acceptsProfiles(Profiles.of("dev", "stage"))) {
                 requests.requestMatchers(OPENAPI_PATHS).permitAll();
             }
-
             requests.anyRequest().authenticated(); // TODO: fine tuning here
         });
-
         http.csrf(AbstractHttpConfigurer::disable);
-
         return http.build();
-    }
-
-    private JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(new KeyCloakRoleConverter());
-        return converter;
     }
 }
