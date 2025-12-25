@@ -19,6 +19,4 @@ public interface SeasonMapper {
     void updateEntityFromDto(SeasonDto dto, @MappingTarget Season entity);
 
     List<SeasonDto> toDtoList(List<Season> teams);
-
-    List<Season> toEntityList(List<SeasonDto> dtos);
 }
