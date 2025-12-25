@@ -1,1 +1,91 @@
 # Sportshub Backend Project
+
+---
+
+## Setup
+
+### Prerequisite
+
+To run the application you need to have a Java 25 installed.
+Either bundled with your IDE or download it via [OpenJDK](https://jdk.java.net/25/)
+
+### Option 1: Run with IDE
+
+Create a run configuration if not yet existing and execute.  
+You can use the configuration provided in ``.run`` folder.  
+It should automatically be added to intellij.
+
+### Option 2: Run with gradle
+
+Use Gradle to run the application
+
+```shell
+./gradlew bootRun
+```
+
+### Option 3: Build with gradle, run with java
+
+Use gradle to build the application
+
+```shell
+./gradlew clean build
+```
+
+```shell
+java -jar build/libs/sportshub-backend-0.0.1-SNAPSHOT.jar
+```
+
+In any case:
+if not defined otherwise, the application.properties file is providing the environment variables
+
+### Keycloak
+
+To set up keycloak run
+
+```shell
+./docker/keycloak/docker compose up -d
+```
+
+### json-server
+
+Use json-server to simulate an external api (e.g. for a player source)  
+There is a testfile located in ``./testdata``
+
+```shell
+npm install -g json-server
+```
+
+```shell
+json-server --watch testdata\db.json --port 3000
+```
+
+## Components
+
+The following is a list of components running when everything is booted up
+
+| Component   | Default Port | Usage                   |
+|-------------|--------------|-------------------------|
+| Spring Boot | 8082         | Backend + Database      |
+| Keycloak    | 8081 + 5432  | Auth + DB for Users     |
+| Json Server | 3000         | External Api Simulation |
+
+As a database there is a h2 (in-memory) database used for development.  
+Since you want eventually to view the data stored in the database, the h2 is being run in
+file mode, creating the database in folder ``./data``  
+Connecting to the database can be done via the properties in ``./src/resources/application.properties``
+named ``spring.datasource.*``
+
+## Keycloak setup
+
+TODO
+
+## OpenApi Endpoints
+
+If there were no changes to the ``application.properties`` the url for the openApi is  
+https://localhost:8082/swagger-ui.html
+
+## Bruno
+
+If the OpenApi documentation is not sufficient, please use [Bruno](https://www.usebruno.com/) for requests and
+collection handling  
+To import the collection, use the swagger url above

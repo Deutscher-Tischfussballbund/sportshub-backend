@@ -1,0 +1,171 @@
+Enum TournamentMode {
+    DOUBLE_ELIMINATION
+    ELIMINATION
+    LAST_ONE_STANDING
+    LORD_HAVE_MERCY
+    MONSTER_DYP
+    ROUND_ROBIN
+    ROUNDS
+    SNAKE_DRAW
+    SWISS
+    DUTCH_SYSTEM
+    WHIST
+}
+
+Enum MatchState {
+    OPEN [note: 'Match is waiting to be announced']
+    PAUSED [note: 'Match is disabled (on pause)']
+    SKIPPED [note: 'Match is skipped (e.g. Entry left tournament)']
+    RUNNING [note: 'Match is running']
+    PLAYED [note: 'Match is finished / played']
+    PLANNED [note: 'Match is planned / awaiting announcement']
+    INCOMPLETE [note: 'Match is waiting for entries to be assigned']
+    BYE [note: 'Match is a bye (e.g. in elimination stage)']
+}
+
+Enum MatchEventType {
+  GOAL
+  OWN_GOAL
+  TIMEOUT
+  START
+  END
+  CARD
+  OTHER
+}
+
+Enum SideEnum {
+  HOME
+  AWAY
+}
+
+Enum MatchType {
+  SINGLE
+  DOUBLE
+  TRIPLE
+  GOALIE
+}
+
+
+Table Match {
+  id bigint [pk]
+  gameday bigint [ref: > MatchDay.id]
+  start_time datetime
+  end_time datetime
+  type MatchType
+  state MatchState
+  home_score int
+  away_score int
+}
+
+Table MatchEvent {
+    id bigint [pk]
+    match_id bigint [ref: > Match.id]
+    player_id bigint [ref: > Player.id]
+    team_id bigint [ref: > Team.id]
+    timestamp bigint
+    event_type MatchEventType
+    home_score int
+    away_score int
+    data_json json
+}
+
+
+Table MatchCourt {
+  court_id bigint [ref: > Court.id]
+  match_id bigint [ref: > Match.id]
+}
+
+Table Court {
+    id bigint [pk]
+    number int
+    name varchar
+}
+
+Table MatchPlayer {
+  id bigint [pk]
+  match_id bigint [ref: > Match.id]
+  player_id bigint [ref: > Player.id]
+  side SideEnum
+}
+
+Table Team {
+  id bigint [pk]
+  name varchar
+}
+
+Table TeamPlayer {
+  id bigint [pk]
+  player_id bigint [ref: > Player.id]
+  team_id bigint [ref: > Team.id]
+}
+
+Table Set {
+  id bigint [pk]
+  match_id bigint [ref: > Match.id]
+  set_number int
+  score_home int
+  score_away int
+}
+
+Table MatchDay {
+  id bigint [pk]
+  name varchar
+  round_id bigint [ref: > Round.id]
+  start_date datetime
+  end_date datetime
+  team_id_home bigint [ref: > Team.id]
+  team_id_away bigint [ref: > Team.id]
+  location_id bigint [ref: > Location.id]
+}
+
+Table Location {
+  id bigint [pk]
+  name varchar
+  address varchar
+}
+
+Table Player {
+  id bigint [pk]
+  name varchar
+}
+
+Table Season {
+  id bigint [pk]
+  name varchar
+}
+
+Table Event {
+  id bigint [pk]
+  season_id bigint [ref: > Season.id]
+  name varchar
+}
+
+Table Discipline {
+    id bigint [pk]
+    event_id bigint [ref: > Event.id]
+    name varchar
+    short_name varchar
+}
+
+Table Stage {
+    id bigint [pk]
+    discipline_id bigint [ref: > Discipline.id]
+    name varchar
+}
+
+Table Group {
+    id bigint [pk]
+    name varchar
+    tournament_mode TournamentMode
+    state GroupState
+    stage_id bigint [ref: > Stage.id]
+}
+
+Table Round {
+    id bigint [pk]
+    index int
+    name varchar
+    group_id bigint [ref: > Group.id]
+}
+
+
