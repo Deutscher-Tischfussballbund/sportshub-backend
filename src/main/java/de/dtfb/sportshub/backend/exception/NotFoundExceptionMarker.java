@@ -1,4 +1,4 @@
-package de.dtfb.sportshub.backend;
+package de.dtfb.sportshub.backend.exception;
 
 public abstract class NotFoundExceptionMarker extends RuntimeException {
     public NotFoundExceptionMarker(String message) {

@@ -1,6 +1,6 @@
 package de.dtfb.sportshub.backend.season;
 
-import de.dtfb.sportshub.backend.NotFoundExceptionMarker;
+import de.dtfb.sportshub.backend.exception.NotFoundExceptionMarker;
 
 public class SeasonNotFoundException extends NotFoundExceptionMarker {
     public final String errorCode = "SEASON_NOT_FOUND";

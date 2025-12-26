@@ -1,4 +1,4 @@
-package de.dtfb.sportshub.backend;
+package de.dtfb.sportshub.backend.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
