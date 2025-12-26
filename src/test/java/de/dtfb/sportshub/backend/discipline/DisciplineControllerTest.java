@@ -26,7 +26,7 @@ class DisciplineControllerTest {
     MockMvc mockMvc;
 
     String uuid;
-    String location;
+    String url;
 
     @PostConstruct
     void setup() throws Exception {
@@ -39,28 +39,32 @@ class DisciplineControllerTest {
     @BeforeEach
     void setupEach() throws Exception {
         MvcResult discipline = createDiscipline(uuid);
-        location = discipline.getResponse().getHeader("Location");
-        assert location != null;
+        url = discipline.getResponse().getHeader("Location");
+        assert url != null;
     }
 
     @Test
     void getAllDisciplines() throws Exception {
-        mockMvc.perform(get("/api/v1/disciplines")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/disciplines"))
+            .andExpect(status().isOk());
     }
 
     @Test
     void getDiscipline_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/disciplines/" + UUID.randomUUID())).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/disciplines/" + UUID.randomUUID()))
+            .andExpect(status().isNotFound());
     }
 
     @Test
     void createAndGetDiscipline() throws Exception {
-        mockMvc.perform(get(location)).andExpect(status().isOk()).andExpect(jsonPath("$.name").value("Offenes Einzel"));
+        mockMvc.perform(get(url))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("Offenes Einzel"));
     }
 
     @Test
     void updateDiscipline() throws Exception {
-        mockMvc.perform(put(location)
+        mockMvc.perform(put(url)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Replacement",
@@ -68,7 +72,9 @@ class DisciplineControllerTest {
                     """, uuid)))
             .andExpect(status().isOk());
 
-        mockMvc.perform(get(location)).andExpect(status().isOk()).andExpect(jsonPath("$.name").value("Replacement"));
+        mockMvc.perform(get(url))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("Replacement"));
     }
 
     @Test
@@ -83,10 +89,10 @@ class DisciplineControllerTest {
 
     @Test
     void deleteDiscipline() throws Exception {
-        mockMvc.perform(delete(location))
+        mockMvc.perform(delete(url))
             .andExpect(status().isOk());
 
-        mockMvc.perform(get(location))
+        mockMvc.perform(get(url))
             .andExpect(status().isNotFound());
     }
 
@@ -105,18 +111,20 @@ class DisciplineControllerTest {
     //region helpers
     private MvcResult createSeason() throws Exception {
         return mockMvc.perform(post("/api/v1/seasons")
-            .contentType(MediaType.APPLICATION_JSON).content("""
-                        {"name": "2025"}
-                """)).andReturn();
+                .contentType(MediaType.APPLICATION_JSON).content("""
+                            {"name": "2025"}
+                    """))
+            .andReturn();
     }
 
     private MvcResult createEvent(String uuid) throws Exception {
         return mockMvc.perform(post("/api/v1/events")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(String.format("""
-                        {"name": "Turnier",
-                        "seasonUuid": "%s"}
-                """, uuid))).andReturn();
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "Turnier",
+                            "seasonUuid": "%s"}
+                    """, uuid)))
+            .andReturn();
     }
 
     private MvcResult createDiscipline(String uuid) throws Exception {

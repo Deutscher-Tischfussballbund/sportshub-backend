@@ -23,40 +23,46 @@ class SeasonControllerTest {
     @Autowired
     MockMvc mockMvc;
 
-    String location;
+    String url;
 
     @BeforeEach
     void setupEach() throws Exception {
         MvcResult season = createSeason();
-        location = season.getResponse().getHeader("Location");
-        assert location != null;
+        url = season.getResponse().getHeader("Location");
+        assert url != null;
     }
 
     @Test
     void getAllSeasons() throws Exception {
-        mockMvc.perform(get("/api/v1/seasons")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/seasons"))
+            .andExpect(status().isOk());
     }
 
     @Test
     void getSeason_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/seasons/" + UUID.randomUUID())).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/seasons/" + UUID.randomUUID()))
+            .andExpect(status().isNotFound());
     }
 
     @Test
     void createAndGetSeason() throws Exception {
-        mockMvc.perform(get(location)).andExpect(status().isOk()).andExpect(jsonPath("$.name").value("2000"));
+        mockMvc.perform(get(url))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("2000"));
     }
 
     @Test
     void updateSeason() throws Exception {
-        mockMvc.perform(put(location)
+        mockMvc.perform(put(url)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "2024"}
                     """))
             .andExpect(status().isOk());
 
-        mockMvc.perform(get(location)).andExpect(status().isOk()).andExpect(jsonPath("$.name").value("2024"));
+        mockMvc.perform(get(url))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("2024"));
     }
 
     @Test
@@ -71,10 +77,10 @@ class SeasonControllerTest {
 
     @Test
     void deleteSeason() throws Exception {
-        mockMvc.perform(delete(location))
+        mockMvc.perform(delete(url))
             .andExpect(status().isOk());
 
-        mockMvc.perform(get(location))
+        mockMvc.perform(get(url))
             .andExpect(status().isNotFound());
     }
 

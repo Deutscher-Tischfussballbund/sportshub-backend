@@ -26,7 +26,7 @@ class EventControllerTest {
     MockMvc mockMvc;
 
     String uuid;
-    String location;
+    String url;
 
     @PostConstruct
     void setup() throws Exception {
@@ -37,28 +37,32 @@ class EventControllerTest {
     @BeforeEach
     void setupEach() throws Exception {
         MvcResult event = createEvent(uuid);
-        location = event.getResponse().getHeader("Location");
-        assert location != null;
+        url = event.getResponse().getHeader("Location");
+        assert url != null;
     }
 
     @Test
     void getAllEvents() throws Exception {
-        mockMvc.perform(get("/api/v1/events")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/events"))
+            .andExpect(status().isOk());
     }
 
     @Test
     void getEvent_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/events/" + UUID.randomUUID())).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/events/" + UUID.randomUUID()))
+            .andExpect(status().isNotFound());
     }
 
     @Test
     void createAndGetEvent() throws Exception {
-        mockMvc.perform(get(location)).andExpect(status().isOk()).andExpect(jsonPath("$.name").value("Turnier"));
+        mockMvc.perform(get(url))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("Turnier"));
     }
 
     @Test
     void updateEvent() throws Exception {
-        mockMvc.perform(put(location)
+        mockMvc.perform(put(url)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Replacement",
@@ -66,7 +70,9 @@ class EventControllerTest {
                     """, uuid)))
             .andExpect(status().isOk());
 
-        mockMvc.perform(get(location)).andExpect(status().isOk()).andExpect(jsonPath("$.name").value("Replacement"));
+        mockMvc.perform(get(url))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("Replacement"));
     }
 
     @Test
@@ -81,9 +87,10 @@ class EventControllerTest {
 
     @Test
     void deleteEvent() throws Exception {
-        mockMvc.perform(delete(location)).andExpect(status().isOk());
+        mockMvc.perform(delete(url))
+            .andExpect(status().isOk());
 
-        mockMvc.perform(get(location))
+        mockMvc.perform(get(url))
             .andExpect(status().isNotFound());
     }
 
