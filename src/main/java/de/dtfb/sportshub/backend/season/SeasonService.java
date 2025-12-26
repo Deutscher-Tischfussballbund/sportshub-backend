@@ -8,42 +8,45 @@ import java.util.UUID;
 
 @Service
 public class SeasonService {
-    private final SeasonRepository seasonRepository;
-    private final SeasonMapper seasonMapper;
+    private final SeasonRepository repository;
+    private final SeasonMapper mapper;
 
-    public SeasonService(SeasonRepository seasonRepository, SeasonMapper seasonMapper) {
-        this.seasonRepository = seasonRepository;
-        this.seasonMapper = seasonMapper;
+    public SeasonService(SeasonRepository repository, SeasonMapper mapper) {
+        this.repository = repository;
+        this.mapper = mapper;
     }
 
-    List<SeasonDto> getAllSeasons() {
-        return seasonMapper.toDtoList(seasonRepository.findAll());
+    List<SeasonDto> getAll() {
+        return mapper.toDtoList(repository.findAll());
     }
 
-    SeasonDto createSeason(SeasonDto seasonDto) {
-        Season newSeason = seasonMapper.toEntity(seasonDto);
+    SeasonDto get(String uuid) {
+        Season season = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+            () -> new SeasonNotFoundException(uuid));
+        return mapper.toDto(season);
+    }
+
+    SeasonDto create(SeasonDto seasonDto) {
+        Season newSeason = mapper.toEntity(seasonDto);
         newSeason.setUuid(UUID.randomUUID());
-        Season savedSeason = seasonRepository.save(newSeason);
-        return seasonMapper.toDto(savedSeason);
+        Season savedSeason = repository.save(newSeason);
+        return mapper.toDto(savedSeason);
     }
 
-    SeasonDto updateSeason(String uuid, SeasonDto seasonDto) {
-        Season season = seasonRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
-            () -> new SeasonNotFoundException(UUID.fromString(uuid)));
+    SeasonDto update(String uuid, SeasonDto seasonDto) {
+        Season season = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+            () -> new SeasonNotFoundException(uuid));
 
-        seasonMapper.updateEntityFromDto(seasonDto, season);
-        Season savedSeason = seasonRepository.save(season);
-        return seasonMapper.toDto(savedSeason);
+        mapper.updateEntityFromDto(seasonDto, season);
+
+        Season savedSeason = repository.save(season);
+        return mapper.toDto(savedSeason);
     }
 
     @Transactional
-    public void deleteSeason(String uuid) {
-        seasonRepository.deleteByUuid(UUID.fromString(uuid));
-    }
-
-    public SeasonDto getSeason(String uuid) {
-        Season season = seasonRepository.findByUuid(UUID.fromString(uuid)).orElseThrow(
-            () -> new SeasonNotFoundException(UUID.fromString(uuid)));
-        return seasonMapper.toDto(season);
+    void delete(String uuid) {
+        Season season = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+            () -> new SeasonNotFoundException(uuid));
+        repository.delete(season);
     }
 }

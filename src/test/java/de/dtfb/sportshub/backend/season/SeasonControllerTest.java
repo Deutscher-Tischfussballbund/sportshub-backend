@@ -1,7 +1,6 @@
 package de.dtfb.sportshub.backend.season;
 
 import com.jayway.jsonpath.JsonPath;
-import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,7 +9,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.util.List;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -37,13 +35,19 @@ class SeasonControllerTest {
 
     @Test
     void createAndGetSeason() throws Exception {
-        String location = createSeasonAndReturnLocation();
+        MvcResult result = createSeason();
+        String location = result.getResponse().getHeader("Location");
+        assert location != null;
+
         mockMvc.perform(get(location)).andExpect(status().isOk()).andExpect(jsonPath("$.name").value("2000"));
     }
 
     @Test
     void updateSeason() throws Exception {
-        String location = createSeasonAndReturnLocation();
+        MvcResult result = createSeason();
+        String location = result.getResponse().getHeader("Location");
+        assert location != null;
+
         mockMvc.perform(put(location)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
@@ -66,32 +70,30 @@ class SeasonControllerTest {
 
     @Test
     void deleteSeason() throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/v1/seasons")).andReturn();
+        MvcResult result = createSeason();
         String json = result.getResponse().getContentAsString();
 
-        List<String> uuids = JsonPath.read(json, "$[*].uuid");
-        for (String uuid : uuids) {
-            mockMvc.perform(delete("/api/v1/seasons/{uuid}", uuid))
-                .andExpect(status().isOk());
-        }
+        String uuid = JsonPath.read(json, "$.uuid");
+        mockMvc.perform(delete("/api/v1/seasons/{uuid}", uuid))
+            .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/v1/seasons"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$").isArray())
-            .andExpect(jsonPath("$.length()").value(0));
+        mockMvc.perform(get("/api/v1/seasons/{uuid}", uuid))
+            .andExpect(status().isNotFound());
     }
 
-    private @NonNull String createSeasonAndReturnLocation() throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/v1/seasons")
+    @Test
+    void deleteSeason_expectException() throws Exception {
+        mockMvc.perform(delete("/api/v1/seasons/" + UUID.randomUUID()))
+            .andExpect(status().isNotFound());
+    }
+
+    private MvcResult createSeason() throws Exception {
+        return mockMvc.perform(post("/api/v1/seasons")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "2000"}
                     """))
             .andExpect(status().isCreated())
             .andReturn();
-
-        String location = result.getResponse().getHeader("Location");
-        assert location != null;
-        return location;
     }
 }

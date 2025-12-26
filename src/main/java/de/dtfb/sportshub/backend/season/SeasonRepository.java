@@ -7,6 +7,4 @@ import java.util.UUID;
 
 public interface SeasonRepository extends JpaRepository<Season, Long> {
     Optional<Season> findByUuid(UUID uuid);
-
-    void deleteByUuid(UUID uuid);
 }

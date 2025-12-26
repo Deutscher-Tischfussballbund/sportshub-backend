@@ -11,20 +11,20 @@ import java.util.List;
 @RequestMapping("/api/v1/seasons")
 public class SeasonController {
 
-    private final SeasonService seasonService;
+    private final SeasonService service;
 
-    public SeasonController(SeasonService seasonService) {
-        this.seasonService = seasonService;
+    public SeasonController(SeasonService service) {
+        this.service = service;
     }
 
     @GetMapping
-    public List<SeasonDto> getAllSeasons() {
-        return seasonService.getAllSeasons();
+    public List<SeasonDto> getAll() {
+        return service.getAll();
     }
 
     @PostMapping
-    public ResponseEntity<SeasonDto> createSeason(@RequestBody SeasonDto seasonDto) {
-        SeasonDto sDto = seasonService.createSeason(seasonDto);
+    public ResponseEntity<SeasonDto> create(@RequestBody SeasonDto seasonDto) {
+        SeasonDto sDto = service.create(seasonDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + sDto.getUuid().toString()).build().toUri();
 
@@ -32,17 +32,17 @@ public class SeasonController {
     }
 
     @GetMapping("/{uuid}")
-    public SeasonDto getSeason(@PathVariable String uuid) {
-        return seasonService.getSeason(uuid);
+    public SeasonDto get(@PathVariable String uuid) {
+        return service.get(uuid);
     }
 
     @PutMapping("/{uuid}")
-    public SeasonDto updateSeason(@PathVariable String uuid, @RequestBody SeasonDto seasonDto) {
-        return seasonService.updateSeason(uuid, seasonDto);
+    public SeasonDto update(@PathVariable String uuid, @RequestBody SeasonDto seasonDto) {
+        return service.update(uuid, seasonDto);
     }
 
     @DeleteMapping("/{uuid}")
-    public void deleteSeason(@PathVariable String uuid) {
-        seasonService.deleteSeason(uuid);
+    public void delete(@PathVariable String uuid) {
+        service.delete(uuid);
     }
 }
