@@ -24,11 +24,11 @@ public class EventController {
 
     @PostMapping
     public ResponseEntity<EventDto> create(@RequestBody EventDto eventDto) {
-        EventDto eDto = service.create(eventDto);
+        EventDto returnedDto = service.create(eventDto);
 
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + eDto.getUuid().toString()).build().toUri();
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getUuid().toString()).build().toUri();
 
-        return ResponseEntity.created(location).body(eDto);
+        return ResponseEntity.created(location).body(returnedDto);
     }
 
     @GetMapping("/{uuid}")

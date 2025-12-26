@@ -24,11 +24,11 @@ public class SeasonController {
 
     @PostMapping
     public ResponseEntity<SeasonDto> create(@RequestBody SeasonDto seasonDto) {
-        SeasonDto sDto = service.create(seasonDto);
+        SeasonDto returnedDto = service.create(seasonDto);
 
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + sDto.getUuid().toString()).build().toUri();
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getUuid().toString()).build().toUri();
 
-        return ResponseEntity.created(location).body(sDto);
+        return ResponseEntity.created(location).body(returnedDto);
     }
 
     @GetMapping("/{uuid}")
