@@ -10,16 +10,16 @@ import java.util.List;
 public interface EventMapper {
 
     @Mapping(source = "season.uuid", target = "seasonUuid")
-    EventDto toDto(Event team);
+    EventDto toDto(Event event);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(source = "seasonUuid", target = "season.uuid")
-    Event toEntity(EventDto teamDto);
+    Event toEntity(EventDto eventDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "season", ignore = true)
     void updateEntityFromDto(EventDto dto, @MappingTarget Event entity);
 
-    List<EventDto> toDtoList(List<Event> teams);
+    List<EventDto> toDtoList(List<Event> events);
 }

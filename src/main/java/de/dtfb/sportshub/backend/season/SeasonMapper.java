@@ -9,14 +9,14 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface SeasonMapper {
 
-    SeasonDto toDto(Season team);
+    SeasonDto toDto(Season season);
 
     @Mapping(target = "id", ignore = true)
-    Season toEntity(SeasonDto teamDto);
+    Season toEntity(SeasonDto seasonDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     void updateEntityFromDto(SeasonDto dto, @MappingTarget Season entity);
 
-    List<SeasonDto> toDtoList(List<Season> teams);
+    List<SeasonDto> toDtoList(List<Season> seasons);
 }
