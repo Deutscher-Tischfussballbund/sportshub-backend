@@ -20,4 +20,5 @@
   returning an eventDto, should the season be included?
 - Validation of Dtos (is there a need to validate that the path uuid is the same as the uuid within the dto? see:
   updateMappings) uuid within dto will be ignored anyway on update
+- does the toEntity mapper need to map the uuid back to the entity? could be ignored, right?
 
