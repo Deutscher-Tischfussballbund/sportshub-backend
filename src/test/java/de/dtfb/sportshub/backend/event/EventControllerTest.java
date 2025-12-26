@@ -1,7 +1,8 @@
 package de.dtfb.sportshub.backend.event;
 
 import com.jayway.jsonpath.JsonPath;
-import org.jspecify.annotations.NonNull;
+import jakarta.annotation.PostConstruct;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,7 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.util.List;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -25,6 +25,22 @@ class EventControllerTest {
     @Autowired
     MockMvc mockMvc;
 
+    String uuid;
+    String location;
+
+    @PostConstruct
+    void setup() throws Exception {
+        MvcResult season = createSeason();
+        uuid = JsonPath.read(season.getResponse().getContentAsString(), "$.uuid");
+    }
+
+    @BeforeEach
+    void setupEach() throws Exception {
+        MvcResult event = createEvent(uuid);
+        location = event.getResponse().getHeader("Location");
+        assert location != null;
+    }
+
     @Test
     void getAllEvents() throws Exception {
         mockMvc.perform(get("/api/v1/events")).andExpect(status().isOk());
@@ -37,17 +53,11 @@ class EventControllerTest {
 
     @Test
     void createAndGetEvent() throws Exception {
-        MvcResult season = createSeason();
-        String uuid = JsonPath.read(season.getResponse().getContentAsString(), "$.uuid");
-        String location = createEventAndReturnLocation(uuid);
         mockMvc.perform(get(location)).andExpect(status().isOk()).andExpect(jsonPath("$.name").value("Turnier"));
     }
 
     @Test
     void updateEvent() throws Exception {
-        MvcResult season = createSeason();
-        String uuid = JsonPath.read(season.getResponse().getContentAsString(), "$.uuid");
-        String location = createEventAndReturnLocation(uuid);
         mockMvc.perform(put(location)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
@@ -71,19 +81,10 @@ class EventControllerTest {
 
     @Test
     void deleteEvent() throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/v1/events")).andReturn();
-        String json = result.getResponse().getContentAsString();
+        mockMvc.perform(delete(location)).andExpect(status().isOk());
 
-        List<String> uuids = JsonPath.read(json, "$[*].uuid");
-        for (String uuid : uuids) {
-            mockMvc.perform(delete("/api/v1/events/{uuid}", uuid))
-                .andExpect(status().isOk());
-        }
-
-        mockMvc.perform(get("/api/v1/events"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$").isArray())
-            .andExpect(jsonPath("$.length()").value(0));
+        mockMvc.perform(get(location))
+            .andExpect(status().isNotFound());
     }
 
     @Test
@@ -92,6 +93,13 @@ class EventControllerTest {
             .andExpect(status().isNotFound());
     }
 
+    /**
+     * =========================================================
+     * helper operations
+     * =========================================================
+     */
+
+    //region helpers
     private MvcResult createSeason() throws Exception {
         return mockMvc.perform(post("/api/v1/seasons")
             .contentType(MediaType.APPLICATION_JSON).content("""
@@ -99,18 +107,15 @@ class EventControllerTest {
                 """)).andReturn();
     }
 
-    private @NonNull String createEventAndReturnLocation(String seasonUuid) throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/v1/events")
+    private MvcResult createEvent(String uuid) throws Exception {
+        return mockMvc.perform(post("/api/v1/events")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Turnier",
                             "seasonUuid": "%s"}
-                    """, seasonUuid)))
+                    """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();
-
-        String location = result.getResponse().getHeader("Location");
-        assert location != null;
-        return location;
     }
+    //endregion
 }

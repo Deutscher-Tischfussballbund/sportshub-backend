@@ -1,6 +1,7 @@
 package de.dtfb.sportshub.backend.season;
 
 import com.jayway.jsonpath.JsonPath;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,6 +24,15 @@ class SeasonControllerTest {
     @Autowired
     MockMvc mockMvc;
 
+    String location;
+
+    @BeforeEach
+    void setupEach() throws Exception {
+        MvcResult season = createSeason();
+        location = season.getResponse().getHeader("Location");
+        assert location != null;
+    }
+
     @Test
     void getAllSeasons() throws Exception {
         mockMvc.perform(get("/api/v1/seasons")).andExpect(status().isOk());
@@ -35,19 +45,11 @@ class SeasonControllerTest {
 
     @Test
     void createAndGetSeason() throws Exception {
-        MvcResult result = createSeason();
-        String location = result.getResponse().getHeader("Location");
-        assert location != null;
-
         mockMvc.perform(get(location)).andExpect(status().isOk()).andExpect(jsonPath("$.name").value("2000"));
     }
 
     @Test
     void updateSeason() throws Exception {
-        MvcResult result = createSeason();
-        String location = result.getResponse().getHeader("Location");
-        assert location != null;
-
         mockMvc.perform(put(location)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
@@ -70,14 +72,10 @@ class SeasonControllerTest {
 
     @Test
     void deleteSeason() throws Exception {
-        MvcResult result = createSeason();
-        String json = result.getResponse().getContentAsString();
-
-        String uuid = JsonPath.read(json, "$.uuid");
-        mockMvc.perform(delete("/api/v1/seasons/{uuid}", uuid))
+        mockMvc.perform(delete(location))
             .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/v1/seasons/{uuid}", uuid))
+        mockMvc.perform(get(location))
             .andExpect(status().isNotFound());
     }
 
@@ -87,6 +85,13 @@ class SeasonControllerTest {
             .andExpect(status().isNotFound());
     }
 
+    /**
+     * =========================================================
+     * helper operations
+     * =========================================================
+     */
+
+    //region helpers
     private MvcResult createSeason() throws Exception {
         return mockMvc.perform(post("/api/v1/seasons")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -96,4 +101,5 @@ class SeasonControllerTest {
             .andExpect(status().isCreated())
             .andReturn();
     }
+    //endregion
 }
