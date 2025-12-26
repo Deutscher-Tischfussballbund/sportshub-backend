@@ -2,6 +2,7 @@
 
 ## Rest
 
+- api versioning (pathbased?)
 - Pagination for getAllxxx methods
 - PUT will only update resources, it will not create any new
 - Should get create a new resource when it is not existing? like createOrGet?
