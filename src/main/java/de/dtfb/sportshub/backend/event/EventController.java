@@ -1,6 +1,5 @@
 package de.dtfb.sportshub.backend.event;
 
-import de.dtfb.sportshub.backend.season.SeasonDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
