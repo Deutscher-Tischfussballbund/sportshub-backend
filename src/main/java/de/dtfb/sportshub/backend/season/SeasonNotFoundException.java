@@ -1,9 +1,16 @@
 package de.dtfb.sportshub.backend.season;
 
-import java.util.UUID;
+import de.dtfb.sportshub.backend.NotFoundExceptionMarker;
 
-public class SeasonNotFoundException extends RuntimeException {
-    public SeasonNotFoundException(UUID uuid) {
+public class SeasonNotFoundException extends NotFoundExceptionMarker {
+    public final String errorCode = "SEASON_NOT_FOUND";
+
+    public SeasonNotFoundException(String uuid) {
         super("Could not find season with uuid " + uuid);
+    }
+
+    @Override
+    public String getErrorCode() {
+        return errorCode;
     }
 }
