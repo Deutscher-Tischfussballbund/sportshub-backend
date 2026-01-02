@@ -34,3 +34,8 @@ INSERT INTO LOCATION (UUID, NAME, ADDRESS)
 VALUES ('46611dbc-79f4-4fe8-aaa9-abf49896f9b4', 'Tante Käthe', 'Bernauer Str. 63-64, 13355 Berlin-Prenzlauer Berg'),
        ('e1c8113d-a0a6-4ab8-8612-054e5e91462b', 'Kaffeehaus', 'Angelburger Str. 20, 24937 Flensburg'),
        ('7a5e1bfa-d4da-4c75-a189-a88816af6bb5', 'FC St. Pauli', 'Harald-Stender-Platz 1, 20359 Hamburg');
+
+INSERT INTO TEAM (UUID, NAME)
+VALUES ('150de2b8-2e2b-42f8-ad6b-7a0bb690d124', 'Monsterblock'),
+       ('fc95d590-b476-435b-a3d2-426c5aa51d0f', 'Foos and Furious'),
+       ('e7385cff-3d4b-4bfa-8013-eaf62eb7b088', 'Pin Diesel');
