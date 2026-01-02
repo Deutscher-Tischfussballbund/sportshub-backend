@@ -4,10 +4,13 @@
 
 - GroupState is not defined
 - Should the round index start at 0 or 1?
+- Does every team have a matchday in a league? So there are 4 matchdays on the same day with a league of 8 teams? And
+  for one season there would be 28 matchdays? what if a matchday would be the sum of all encounters (4), so there would
+  be 7 matchdays with 4 encounters?
 
 ## Rest
 
-- api versioning (pathbased?)
+- api versioning (path based?)
 - Pagination for getAllxxx methods
 - PUT will only update resources, it will not create any new
 - Should get create a new resource when it is not existing? like createOrGet?
