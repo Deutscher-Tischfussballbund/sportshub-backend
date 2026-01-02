@@ -26,6 +26,10 @@ INSERT INTO PHASE (STAGE_ID, UUID, NAME, TOURNAMENT_MODE, PHASE_STATE)
 VALUES (1, '8ddf3628-2ba2-42d0-83cd-0977aaa0ed4d', 'Phase Irgendwas?', 'SWISS', 'PLACEHOLDER'),
        (2, 'd809d2b7-7e29-4b67-940d-0d1c9bca57e6', 'Zweite Phase', 'DOUBLE_ELIMINATION', 'PLACEHOLDER');
 
+INSERT INTO ROUND (PHASE_ID, UUID, NAME, INDEX)
+VALUES (1, '086ce72b-496f-4941-b9a3-4fedacc77f32', 'Runde1', 1),
+       (1, 'd8554ce1-c315-4c31-b466-5bb700c1c88d', 'Runde2', 2);
+
 INSERT INTO LOCATION (UUID, NAME, ADDRESS)
 VALUES ('46611dbc-79f4-4fe8-aaa9-abf49896f9b4', 'Tante Käthe', 'Bernauer Str. 63-64, 13355 Berlin-Prenzlauer Berg'),
        ('e1c8113d-a0a6-4ab8-8612-054e5e91462b', 'Kaffeehaus', 'Angelburger Str. 20, 24937 Flensburg'),
