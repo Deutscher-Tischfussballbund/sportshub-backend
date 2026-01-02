@@ -13,12 +13,10 @@ public interface DisciplineMapper {
     DisciplineDto toDto(Discipline discipline);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(source = "eventUuid", target = "event.uuid")
     Discipline toEntity(DisciplineDto disciplineDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
-    @Mapping(target = "event", ignore = true)
     void updateEntityFromDto(DisciplineDto dto, @MappingTarget Discipline entity);
 
     List<DisciplineDto> toDtoList(List<Discipline> disciplines);

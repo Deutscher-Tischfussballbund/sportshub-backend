@@ -13,12 +13,10 @@ public interface PoolMapper {
     PoolDto toDto(Pool pool);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(source = "stageUuid", target = "stage.uuid")
     Pool toEntity(PoolDto poolDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
-    @Mapping(target = "stage", ignore = true)
     void updateEntityFromDto(PoolDto dto, @MappingTarget Pool entity);
 
     List<PoolDto> toDtoList(List<Pool> pools);
