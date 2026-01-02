@@ -38,7 +38,7 @@ public class PhaseController {
     }
 
     @PutMapping("/{uuid}")
-    public PhaseDto update(@PathVariable String uuid, @Valid @RequestBody PhaseDto phaseDto) {
+    public PhaseDto update(@PathVariable String uuid, @RequestBody PhaseDto phaseDto) {
         return service.update(uuid, phaseDto);
     }
 
