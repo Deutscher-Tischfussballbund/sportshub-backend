@@ -248,7 +248,6 @@ class MatchControllerTest {
                             "endDate": "%s"
                             }
                     """, roundUuid, locationUuid, teamAwayUuid, teamHomeUuid, sampleDate, sampleDate)))
-            .andDo(print())
             .andExpect(status().isCreated())
             .andReturn();
     }
@@ -266,7 +265,6 @@ class MatchControllerTest {
                             "endTime": "%s"
                             }
                     """, uuid, sampleDate, sampleDate)))
-            .andDo(print())
             .andExpect(status().isCreated())
             .andReturn();
     }

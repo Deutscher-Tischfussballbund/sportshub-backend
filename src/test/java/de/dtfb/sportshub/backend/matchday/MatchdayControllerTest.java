@@ -247,7 +247,6 @@ class MatchdayControllerTest {
                             "endDate": "%s"
                             }
                     """, roundUuid, locationUuid, teamAwayUuid, teamHomeUuid, sampleDate, sampleDate)))
-            .andDo(print())
             .andExpect(status().isCreated())
             .andReturn();
     }
