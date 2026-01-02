@@ -1,6 +1,5 @@
 package de.dtfb.sportshub.backend.round;
 
-import de.dtfb.sportshub.backend.discipline.Discipline;
 import de.dtfb.sportshub.backend.phase.Phase;
 import jakarta.persistence.*;
 import lombok.Getter;
