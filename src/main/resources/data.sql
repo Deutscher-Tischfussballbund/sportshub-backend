@@ -16,6 +16,12 @@ VALUES (1, 'cae720a0-5b7c-4330-a207-839a8fb04d68', 'Offenes Doppel', 'OD'),
        (1, 'b22e6eab-7022-41d3-9f40-66cf5bd05682', 'Damen Doppel', 'DD'),
        (2, '8b49b235-0467-42f1-beb9-f6d7e885e15d', 'Offenes Doppel', 'OD');
 
+INSERT INTO STAGE (DISCIPLINE_ID, UUID, NAME)
+VALUES (1, '24c50a86-443c-4c73-b286-3f3cd7839a3f', 'Vorrunde'),
+       (1, '59dacaf3-5eda-4165-a563-a27483c3dd58', 'Hauptrunde'),
+       (2, 'd6c828b5-5956-4fc9-a119-486ce4a50ae1', 'Vorrunde'),
+       (2, '9157b9f4-e9bb-4637-a7a9-bca25e54f41d', 'Hauptrunde');
+
 INSERT INTO LOCATION (UUID, NAME, ADDRESS)
 VALUES ('46611dbc-79f4-4fe8-aaa9-abf49896f9b4', 'Tante Käthe', 'Bernauer Str. 63-64, 13355 Berlin-Prenzlauer Berg'),
        ('e1c8113d-a0a6-4ab8-8612-054e5e91462b', 'Kaffeehaus', 'Angelburger Str. 20, 24937 Flensburg'),
