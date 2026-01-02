@@ -20,7 +20,8 @@
     - delete all events connected
     - throw an error when events are connected
 - GROUP is a reserved keyword and should not be used for Tables, Hibernate will create the table automatically as Group_
-  maybe replace it with Segment or something similar?
+  → replaced with Pool
+- In a later state, team will come from dtfb api / coral, for now it will be stored here
 
 ## DTOs
 
