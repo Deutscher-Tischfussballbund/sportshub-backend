@@ -1,0 +1,274 @@
+package de.dtfb.sportshub.backend.match;
+
+import com.jayway.jsonpath.JsonPath;
+import jakarta.annotation.PostConstruct;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+
+@SpringBootTest
+@AutoConfigureMockMvc
+class MatchControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    private String url;
+    private String uuid;
+    private final Instant sampleDate = Instant.now().truncatedTo(ChronoUnit.MICROS); // Database will lose precision
+
+    @PostConstruct
+    void setup() throws Exception {
+        MvcResult season = createSeason();
+        String seasonUuid = JsonPath.read(season.getResponse().getContentAsString(), "$.uuid");
+        MvcResult event = createEvent(seasonUuid);
+        String eventUuid = JsonPath.read(event.getResponse().getContentAsString(), "$.uuid");
+        MvcResult discipline = createDiscipline(eventUuid);
+        String disciplineUuid = JsonPath.read(discipline.getResponse().getContentAsString(), "$.uuid");
+        MvcResult stage = createStage(disciplineUuid);
+        String stageUuid = JsonPath.read(stage.getResponse().getContentAsString(), "$.uuid");
+        MvcResult pool = createPool(stageUuid);
+        String poolUuid = JsonPath.read(pool.getResponse().getContentAsString(), "$.uuid");
+        MvcResult round = createRound(poolUuid);
+        String roundUuid = JsonPath.read(round.getResponse().getContentAsString(), "$.uuid");
+
+        MvcResult location = createLocation();
+        String locationUuid = JsonPath.read(location.getResponse().getContentAsString(), "$.uuid");
+        MvcResult teamHome = createTeam("Hand und Foos");
+        String teamHomeUuid = JsonPath.read(teamHome.getResponse().getContentAsString(), "$.uuid");
+        MvcResult teamAway = createTeam("Foos Fighters");
+        String teamAwayUuid = JsonPath.read(teamAway.getResponse().getContentAsString(), "$.uuid");
+        Instant sampleDate = Instant.now().truncatedTo(ChronoUnit.MICROS); // Database will lose precision
+        MvcResult matchday = createMatchday(roundUuid, locationUuid, teamHomeUuid, teamAwayUuid, sampleDate);
+        uuid = JsonPath.read(matchday.getResponse().getContentAsString(), "$.uuid");
+    }
+
+    @BeforeEach
+    void setupEach() throws Exception {
+        MvcResult match = createMatch();
+        url = match.getResponse().getHeader("Location");
+        assert url != null;
+    }
+
+    @Test
+    void getAllMatches() throws Exception {
+        mockMvc.perform(get("/api/v1/matches"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void getMatch_expectException() throws Exception {
+        mockMvc.perform(get("/api/v1/matches/" + UUID.randomUUID()))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void createAndGetMatch() throws Exception {
+        mockMvc.perform(get(url))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.type").value("DOUBLE"))
+            .andExpect(jsonPath("$.state").value("PLAYED"))
+            .andExpect(jsonPath("$.matchdayUuid").value(uuid))
+            .andExpect(jsonPath("$.homeScore").value(10))
+            .andExpect(jsonPath("$.awayScore").value(6));
+    }
+
+    @Test
+    void updateMatch() throws Exception {
+        mockMvc.perform(put(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"type": "SINGLE",
+                            "matchdayUuid": "%s"
+                            }
+                    """, uuid)))
+            .andExpect(status().isOk());
+
+        String json = mockMvc.perform(get(url))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.type").value("SINGLE"))
+            .andExpect(jsonPath("$.state").value("PLAYED"))
+            .andExpect(jsonPath("$.matchdayUuid").value(uuid))
+            .andExpect(jsonPath("$.homeScore").value(10))
+            .andExpect(jsonPath("$.awayScore").value(6))
+            .andReturn().getResponse().getContentAsString();
+
+        // Workaround due to hamcrest only doing string matches
+        Instant start = Instant.parse(JsonPath.read(json, "$.startTime"));
+        Instant end = Instant.parse(JsonPath.read(json, "$.endTime"));
+        Assertions.assertThat(start).isEqualTo(sampleDate);
+        Assertions.assertThat(end).isEqualTo(sampleDate);
+    }
+
+    @Test
+    void updateMatch_expectException() throws Exception {
+        mockMvc.perform(put("/api/v1/matches/" + UUID.randomUUID())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                            {"state": "PLANNED"}
+                    """))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteMatch() throws Exception {
+        mockMvc.perform(delete(url))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(get(url))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteMatch_expectException() throws Exception {
+        mockMvc.perform(delete("/api/v1/matches/" + UUID.randomUUID()))
+            .andExpect(status().isNotFound());
+    }
+
+    /**
+     * =========================================================
+     * helper operations
+     * =========================================================
+     */
+
+    //region helpers
+    private MvcResult createSeason() throws Exception {
+        return mockMvc.perform(post("/api/v1/seasons")
+            .contentType(MediaType.APPLICATION_JSON).content("""
+                {"name": "2025"}
+                """)).andReturn();
+    }
+
+    private MvcResult createEvent(String uuid) throws Exception {
+        return mockMvc.perform(post("/api/v1/events")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "Turnier",
+                            "seasonUuid": "%s"}
+                    """, uuid)))
+            .andExpect(status().isCreated())
+            .andReturn();
+    }
+
+    private MvcResult createDiscipline(String uuid) throws Exception {
+        return mockMvc.perform(post("/api/v1/disciplines")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "Offenes Einzel",
+                            "eventUuid": "%s"}
+                    """, uuid)))
+            .andExpect(status().isCreated())
+            .andReturn();
+    }
+
+    private MvcResult createStage(String uuid) throws Exception {
+        return mockMvc.perform(post("/api/v1/stages")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "Vorrunde",
+                            "disciplineUuid": "%s"}
+                    """, uuid)))
+            .andExpect(status().isCreated())
+            .andReturn();
+    }
+
+    private MvcResult createPool(String uuid) throws Exception {
+        return mockMvc.perform(post("/api/v1/pools")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "Pool1",
+                            "tournamentMode": "SWISS",
+                            "stageUuid": "%s",
+                            "poolState": "READY"
+                            }
+                    """, uuid)))
+            .andExpect(status().isCreated())
+            .andReturn();
+    }
+
+    private MvcResult createRound(String uuid) throws Exception {
+        return mockMvc.perform(post("/api/v1/rounds")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "Runde1",
+                            "index": 1,
+                            "poolUuid": "%s"}
+                    """, uuid)))
+            .andExpect(status().isCreated())
+            .andReturn();
+    }
+
+    private MvcResult createLocation() throws Exception {
+        return mockMvc.perform(post("/api/v1/locations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                            {"name": "MKK",
+                            "address": "Flensburg, Musterstraße 1"}
+                    """))
+            .andExpect(status().isCreated())
+            .andReturn();
+    }
+
+    private MvcResult createTeam(String name) throws Exception {
+        return mockMvc.perform(post("/api/v1/teams")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "%s"}
+                    """, name)))
+            .andExpect(status().isCreated())
+            .andReturn();
+    }
+
+    private MvcResult createMatchday(String roundUuid, String locationUuid, String teamHomeUuid, String teamAwayUuid, Instant sampleDate) throws Exception {
+        return mockMvc.perform(post("/api/v1/matchdays")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "Matchday1",
+                            "roundUuid": "%s",
+                            "locationUuid": "%s",
+                            "teamAwayUuid": "%s",
+                            "teamHomeUuid": "%s",
+                            "startDate": "%s",
+                            "endDate": "%s"
+                            }
+                    """, roundUuid, locationUuid, teamAwayUuid, teamHomeUuid, sampleDate, sampleDate)))
+            .andDo(print())
+            .andExpect(status().isCreated())
+            .andReturn();
+    }
+
+    private MvcResult createMatch() throws Exception {
+        return mockMvc.perform(post("/api/v1/matches")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"type": "DOUBLE",
+                            "state": "PLAYED",
+                            "matchdayUuid": "%s",
+                            "homeScore": "10",
+                            "awayScore": "6",
+                            "startTime": "%s",
+                            "endTime": "%s"
+                            }
+                    """, uuid, sampleDate, sampleDate)))
+            .andDo(print())
+            .andExpect(status().isCreated())
+            .andReturn();
+    }
+    //endregion
+}

@@ -4,31 +4,31 @@ INSERT INTO SEASON (UUID, NAME)
 VALUES ('11111111-1111-1111-1111-111111111111', '2026'),
        ('22222222-2222-2222-2222-222222222222', '2025');
 
-INSERT INTO EVENT (SEASON_ID, UUID, NAME)
-VALUES (1, '65a345f5-255a-43dc-8f46-f6e33c4834e5', 'Turnier1'),
-       (1, '2447275a-b705-43f2-acf1-6cda078f9ba7', 'Turnier2'),
-       (1, '62165f8a-4e73-4520-ac36-02c27e3a497e', 'Turnier3'),
-       (2, '889f3e6c-17d5-4fd4-9bdb-b0d6b4cee7bc', 'TurnierAlt');
+INSERT INTO EVENT (UUID, SEASON_ID, NAME)
+VALUES ('65a345f5-255a-43dc-8f46-f6e33c4834e5', 1, 'Turnier1'),
+       ('2447275a-b705-43f2-acf1-6cda078f9ba7', 1, 'Turnier2'),
+       ('62165f8a-4e73-4520-ac36-02c27e3a497e', 1, 'Turnier3'),
+       ('889f3e6c-17d5-4fd4-9bdb-b0d6b4cee7bc', 2, 'TurnierAlt');
 
-INSERT INTO DISCIPLINE (EVENT_ID, UUID, NAME, SHORT_NAME)
-VALUES (1, 'cae720a0-5b7c-4330-a207-839a8fb04d68', 'Offenes Doppel', 'OD'),
-       (1, '309d28bf-40e3-4505-b1b8-7700985d927a', 'Offenes Einzel', 'OE'),
-       (1, 'b22e6eab-7022-41d3-9f40-66cf5bd05682', 'Damen Doppel', 'DD'),
-       (2, '8b49b235-0467-42f1-beb9-f6d7e885e15d', 'Offenes Doppel', 'OD');
+INSERT INTO DISCIPLINE (UUID, EVENT_ID, NAME, SHORT_NAME)
+VALUES ('cae720a0-5b7c-4330-a207-839a8fb04d68', 1, 'Offenes Doppel', 'OD'),
+       ('309d28bf-40e3-4505-b1b8-7700985d927a', 1, 'Offenes Einzel', 'OE'),
+       ('b22e6eab-7022-41d3-9f40-66cf5bd05682', 1, 'Damen Doppel', 'DD'),
+       ('8b49b235-0467-42f1-beb9-f6d7e885e15d', 2, 'Offenes Doppel', 'OD');
 
-INSERT INTO STAGE (DISCIPLINE_ID, UUID, NAME)
-VALUES (1, '24c50a86-443c-4c73-b286-3f3cd7839a3f', 'Vorrunde'),
-       (1, '59dacaf3-5eda-4165-a563-a27483c3dd58', 'Hauptrunde'),
-       (2, 'd6c828b5-5956-4fc9-a119-486ce4a50ae1', 'Vorrunde'),
-       (2, '9157b9f4-e9bb-4637-a7a9-bca25e54f41d', 'Hauptrunde');
+INSERT INTO STAGE (UUID, DISCIPLINE_ID, NAME)
+VALUES ('24c50a86-443c-4c73-b286-3f3cd7839a3f', 1, 'Vorrunde'),
+       ('59dacaf3-5eda-4165-a563-a27483c3dd58', 1, 'Hauptrunde'),
+       ('d6c828b5-5956-4fc9-a119-486ce4a50ae1', 2, 'Vorrunde'),
+       ('9157b9f4-e9bb-4637-a7a9-bca25e54f41d', 2, 'Hauptrunde');
 
-INSERT INTO POOL (STAGE_ID, UUID, NAME, TOURNAMENT_MODE, POOL_STATE)
-VALUES (1, '8ddf3628-2ba2-42d0-83cd-0977aaa0ed4d', 'Profi', 'SWISS', 'READY'),
-       (2, 'd809d2b7-7e29-4b67-940d-0d1c9bca57e6', 'Amateur', 'DOUBLE_ELIMINATION', 'RUNNING');
+INSERT INTO POOL (UUID, STAGE_ID, NAME, TOURNAMENT_MODE, POOL_STATE)
+VALUES ('8ddf3628-2ba2-42d0-83cd-0977aaa0ed4d', 1, 'Profi', 'SWISS', 'READY'),
+       ('d809d2b7-7e29-4b67-940d-0d1c9bca57e6', 2, 'Amateur', 'DOUBLE_ELIMINATION', 'RUNNING');
 
-INSERT INTO ROUND (POOL_ID, UUID, NAME, INDEX)
-VALUES (1, '086ce72b-496f-4941-b9a3-4fedacc77f32', 'Runde1', 1),
-       (1, 'd8554ce1-c315-4c31-b466-5bb700c1c88d', 'Runde2', 2);
+INSERT INTO ROUND (UUID, POOL_ID, NAME, INDEX)
+VALUES ('086ce72b-496f-4941-b9a3-4fedacc77f32', 1, 'Runde1', 1),
+       ('d8554ce1-c315-4c31-b466-5bb700c1c88d', 1, 'Runde2', 2);
 
 INSERT INTO LOCATION (UUID, NAME, ADDRESS)
 VALUES ('46611dbc-79f4-4fe8-aaa9-abf49896f9b4', 'Tante Käthe', 'Bernauer Str. 63-64, 13355 Berlin-Prenzlauer Berg'),
@@ -45,5 +45,13 @@ VALUES ('edcdd1a7-7194-4481-a7f5-edd03d7f53d8', 'Matchday 1', '1', '1', '1', '2'
         '2026-01-02T20:11:29.371065800Z'),
        ('b91b214f-812d-488a-b868-6ab10b7a49f8', 'Matchday 2', '1', '1', '2', '3', '2026-01-02T20:11:29.371065800Z',
         '2026-01-02T20:11:29.371065800Z'),
-       ('e7385cff-3d4b-4bfa-8013-eaf62eb7b088', 'Matchday 3', '2', '3', '3', '1', '2026-01-02T20:11:29.371065800Z',
+       ('b8b6eaa0-700f-4540-bec9-fc2d628f2bfc', 'Matchday 3', '2', '3', '3', '1', '2026-01-02T20:11:29.371065800Z',
+        NULL);
+
+INSERT INTO MATCH (UUID, MATCHDAY_ID, HOME_SCORE, AWAY_SCORE, STATE, TYPE, START_TIME, END_TIME)
+VALUES ('33866ba1-9611-479c-9915-da475c6c905a', 1, 9, 7, 'PLAYED', 'DOUBLE', '2026-01-02T22:02:20.200061800Z',
+        '2026-01-02T22:02:20.200061800Z'),
+       ('b7d321a2-b09d-40b7-93fa-c9b3f173e999', 2, 14, 2, 'PLAYED', 'DOUBLE', '2026-01-02T22:29:28.550246Z',
+        '2026-01-02T22:29:28.550246Z'),
+       ('b2df1422-da18-491c-b960-cdf679fd345e', 3, 16, 0, 'RUNNING', 'DOUBLE', '2026-01-02T22:29:28.550246Z',
         NULL);
