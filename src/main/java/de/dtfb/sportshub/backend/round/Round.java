@@ -1,6 +1,6 @@
 package de.dtfb.sportshub.backend.round;
 
-import de.dtfb.sportshub.backend.phase.Phase;
+import de.dtfb.sportshub.backend.pool.Pool;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,8 +19,8 @@ public class Round {
     private UUID uuid;
 
     @ManyToOne
-    @JoinColumn(name = "phase_id")
-    private Phase phase;
+    @JoinColumn(name = "pool_id")
+    private Pool pool;
 
     private String name;
     private Integer index;

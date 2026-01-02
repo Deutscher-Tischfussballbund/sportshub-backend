@@ -1,8 +1,8 @@
 package de.dtfb.sportshub.backend.round;
 
-import de.dtfb.sportshub.backend.phase.Phase;
-import de.dtfb.sportshub.backend.phase.PhaseNotFoundException;
-import de.dtfb.sportshub.backend.phase.PhaseRepository;
+import de.dtfb.sportshub.backend.pool.Pool;
+import de.dtfb.sportshub.backend.pool.PoolNotFoundException;
+import de.dtfb.sportshub.backend.pool.PoolRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,12 +13,12 @@ import java.util.UUID;
 public class RoundService {
     private final RoundRepository repository;
     private final RoundMapper mapper;
-    private final PhaseRepository phaseRepository;
+    private final PoolRepository poolRepository;
 
-    public RoundService(RoundRepository repository, RoundMapper mapper, PhaseRepository phaseRepository) {
+    public RoundService(RoundRepository repository, RoundMapper mapper, PoolRepository poolRepository) {
         this.repository = repository;
         this.mapper = mapper;
-        this.phaseRepository = phaseRepository;
+        this.poolRepository = poolRepository;
     }
 
     List<RoundDto> getAll() {
@@ -35,9 +35,9 @@ public class RoundService {
         Round round = mapper.toEntity(roundDto);
         round.setUuid(UUID.randomUUID());
 
-        Phase phase = phaseRepository.findByUuid(roundDto.getPhaseUuid())
-            .orElseThrow(() -> new PhaseNotFoundException(roundDto.getPhaseUuid().toString()));
-        round.setPhase(phase);
+        Pool pool = poolRepository.findByUuid(roundDto.getPoolUuid())
+            .orElseThrow(() -> new PoolNotFoundException(roundDto.getPoolUuid().toString()));
+        round.setPool(pool);
 
         Round savedRound = repository.save(round);
         return mapper.toDto(savedRound);
@@ -49,9 +49,9 @@ public class RoundService {
 
         mapper.updateEntityFromDto(roundDto, round);
 
-        Phase phase = phaseRepository.findByUuid(roundDto.getPhaseUuid())
-            .orElseThrow(() -> new PhaseNotFoundException(roundDto.getPhaseUuid().toString()));
-        round.setPhase(phase);
+        Pool pool = poolRepository.findByUuid(roundDto.getPoolUuid())
+            .orElseThrow(() -> new PoolNotFoundException(roundDto.getPoolUuid().toString()));
+        round.setPool(pool);
 
         Round savedRound = repository.save(round);
         return mapper.toDto(savedRound);

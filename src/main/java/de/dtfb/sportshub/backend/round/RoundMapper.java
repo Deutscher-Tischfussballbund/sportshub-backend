@@ -10,16 +10,16 @@ import java.util.List;
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface RoundMapper {
 
-    @Mapping(source = "phase.uuid", target = "phaseUuid")
+    @Mapping(source = "pool.uuid", target = "poolUuid")
     RoundDto toDto(Round round);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(source = "phaseUuid", target = "phase.uuid")
+    @Mapping(source = "poolUuid", target = "pool.uuid")
     Round toEntity(RoundDto roundDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
-    @Mapping(target = "phase", ignore = true)
+    @Mapping(target = "pool", ignore = true)
     void updateEntityFromDto(RoundDto dto, @MappingTarget Round entity);
 
     List<RoundDto> toDtoList(List<Round> rounds);

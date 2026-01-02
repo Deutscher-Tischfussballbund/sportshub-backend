@@ -1,4 +1,4 @@
-package de.dtfb.sportshub.backend.phase;
+package de.dtfb.sportshub.backend.pool;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Getter
 @Setter
-public class PhaseDto {
+public class PoolDto {
     private UUID uuid;
     private String name;
     private UUID stageUuid;
@@ -16,5 +16,5 @@ public class PhaseDto {
     @NotNull
     private TournamentMode tournamentMode;
     @NotNull
-    private PhaseState phaseState;
+    private PoolState poolState;
 }

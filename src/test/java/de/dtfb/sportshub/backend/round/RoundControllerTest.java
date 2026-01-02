@@ -37,9 +37,9 @@ class RoundControllerTest {
         MvcResult discipline = createDiscipline(eventUuid);
         String disciplineUuid = JsonPath.read(discipline.getResponse().getContentAsString(), "$.uuid");
         MvcResult stage = createStage(disciplineUuid);
-        String phaseUuid = JsonPath.read(stage.getResponse().getContentAsString(), "$.uuid");
-        MvcResult phase = createPhase(phaseUuid);
-        uuid = JsonPath.read(phase.getResponse().getContentAsString(), "$.uuid");
+        String stageUuid = JsonPath.read(stage.getResponse().getContentAsString(), "$.uuid");
+        MvcResult pool = createPool(stageUuid);
+        uuid = JsonPath.read(pool.getResponse().getContentAsString(), "$.uuid");
     }
 
     @BeforeEach
@@ -75,7 +75,7 @@ class RoundControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Round1",
-                            "phaseUuid": "%s"}
+                            "poolUuid": "%s"}
                     """, uuid)))
             .andExpect(status().isOk());
 
@@ -157,14 +157,14 @@ class RoundControllerTest {
             .andReturn();
     }
 
-    private MvcResult createPhase(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/phases")
+    private MvcResult createPool(String uuid) throws Exception {
+        return mockMvc.perform(post("/api/v1/pools")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "Phase1",
+                            {"name": "Pool1",
                             "tournamentMode": "SWISS",
                             "stageUuid": "%s",
-                            "phaseState": "PLACEHOLDER"
+                            "poolState": "READY"
                             }
                     """, uuid)))
             .andExpect(status().isCreated())
@@ -177,7 +177,7 @@ class RoundControllerTest {
                 .content(String.format("""
                             {"name": "Runde1",
                             "index": 1,
-                            "phaseUuid": "%s"}
+                            "poolUuid": "%s"}
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();

@@ -1,4 +1,4 @@
-package de.dtfb.sportshub.backend.phase;
+package de.dtfb.sportshub.backend.pool;
 
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -9,23 +9,23 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/phases")
-public class PhaseController {
+@RequestMapping("/api/v1/pools")
+public class PoolController {
 
-    private final PhaseService service;
+    private final PoolService service;
 
-    public PhaseController(PhaseService service) {
+    public PoolController(PoolService service) {
         this.service = service;
     }
 
     @GetMapping
-    public List<PhaseDto> getAll() {
+    public List<PoolDto> getAll() {
         return service.getAll();
     }
 
     @PostMapping
-    public ResponseEntity<PhaseDto> create(@Valid @RequestBody PhaseDto phaseDto) {
-        PhaseDto returnedDto = service.create(phaseDto);
+    public ResponseEntity<PoolDto> create(@Valid @RequestBody PoolDto poolDto) {
+        PoolDto returnedDto = service.create(poolDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getUuid().toString()).build().toUri();
 
@@ -33,13 +33,13 @@ public class PhaseController {
     }
 
     @GetMapping("/{uuid}")
-    public PhaseDto get(@PathVariable String uuid) {
+    public PoolDto get(@PathVariable String uuid) {
         return service.get(uuid);
     }
 
     @PutMapping("/{uuid}")
-    public PhaseDto update(@PathVariable String uuid, @RequestBody PhaseDto phaseDto) {
-        return service.update(uuid, phaseDto);
+    public PoolDto update(@PathVariable String uuid, @RequestBody PoolDto poolDto) {
+        return service.update(uuid, poolDto);
     }
 
     @DeleteMapping("/{uuid}")

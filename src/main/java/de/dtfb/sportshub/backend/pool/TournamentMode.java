@@ -1,4 +1,4 @@
-package de.dtfb.sportshub.backend.phase;
+package de.dtfb.sportshub.backend.pool;
 
 public enum TournamentMode {
     DOUBLE_ELIMINATION,

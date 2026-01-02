@@ -1,4 +1,4 @@
-package de.dtfb.sportshub.backend.phase;
+package de.dtfb.sportshub.backend.pool;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -7,19 +7,19 @@ import org.mapstruct.MappingTarget;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
-public interface PhaseMapper {
+public interface PoolMapper {
 
     @Mapping(source = "stage.uuid", target = "stageUuid")
-    PhaseDto toDto(Phase phase);
+    PoolDto toDto(Pool pool);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(source = "stageUuid", target = "stage.uuid")
-    Phase toEntity(PhaseDto phaseDto);
+    Pool toEntity(PoolDto poolDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "stage", ignore = true)
-    void updateEntityFromDto(PhaseDto dto, @MappingTarget Phase entity);
+    void updateEntityFromDto(PoolDto dto, @MappingTarget Pool entity);
 
-    List<PhaseDto> toDtoList(List<Phase> phases);
+    List<PoolDto> toDtoList(List<Pool> pools);
 }
