@@ -14,14 +14,14 @@ public interface MatchdayMapper {
     @Mapping(source = "teamAway.uuid", target = "teamAwayUuid")
     @Mapping(source = "teamHome.uuid", target = "teamHomeUuid")
     @Mapping(source = "location.uuid", target = "locationUuid")
-    MatchdayDto toDto(Matchday round);
+    MatchdayDto toDto(Matchday matchday);
 
     @Mapping(target = "id", ignore = true)
-    Matchday toEntity(MatchdayDto roundDto);
+    Matchday toEntity(MatchdayDto matchdayDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     void updateEntityFromDto(MatchdayDto dto, @MappingTarget Matchday entity);
 
-    List<MatchdayDto> toDtoList(List<Matchday> rounds);
+    List<MatchdayDto> toDtoList(List<Matchday> matchdays);
 }
