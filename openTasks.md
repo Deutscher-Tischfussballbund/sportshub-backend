@@ -1,5 +1,10 @@
 # Open Topics
 
+## Domain
+
+- GroupState is not defined
+- Should the round index start at 0 or 1?
+
 ## Rest
 
 - api versioning (pathbased?)
