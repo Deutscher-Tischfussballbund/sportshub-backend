@@ -22,6 +22,10 @@ VALUES (1, '24c50a86-443c-4c73-b286-3f3cd7839a3f', 'Vorrunde'),
        (2, 'd6c828b5-5956-4fc9-a119-486ce4a50ae1', 'Vorrunde'),
        (2, '9157b9f4-e9bb-4637-a7a9-bca25e54f41d', 'Hauptrunde');
 
+INSERT INTO PHASE (STAGE_ID, UUID, NAME, TOURNAMENT_MODE, PHASE_STATE)
+VALUES (1, '8ddf3628-2ba2-42d0-83cd-0977aaa0ed4d', 'Phase Irgendwas?', 'SWISS', 'PLACEHOLDER'),
+       (2, 'd809d2b7-7e29-4b67-940d-0d1c9bca57e6', 'Zweite Phase', 'DOUBLE_ELIMINATION', 'PLACEHOLDER');
+
 INSERT INTO LOCATION (UUID, NAME, ADDRESS)
 VALUES ('46611dbc-79f4-4fe8-aaa9-abf49896f9b4', 'Tante Käthe', 'Bernauer Str. 63-64, 13355 Berlin-Prenzlauer Berg'),
        ('e1c8113d-a0a6-4ab8-8612-054e5e91462b', 'Kaffeehaus', 'Angelburger Str. 20, 24937 Flensburg'),

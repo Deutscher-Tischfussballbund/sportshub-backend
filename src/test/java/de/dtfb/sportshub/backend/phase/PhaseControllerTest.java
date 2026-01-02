@@ -1,4 +1,4 @@
-package de.dtfb.sportshub.backend.stage;
+package de.dtfb.sportshub.backend.phase;
 
 import com.jayway.jsonpath.JsonPath;
 import jakarta.annotation.PostConstruct;
@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class StageControllerTest {
+class PhaseControllerTest {
 
     @Autowired
     MockMvc mockMvc;
@@ -35,62 +35,72 @@ class StageControllerTest {
         MvcResult event = createEvent(seasonUuid);
         String eventUuid = JsonPath.read(event.getResponse().getContentAsString(), "$.uuid");
         MvcResult discipline = createDiscipline(eventUuid);
-        uuid = JsonPath.read(discipline.getResponse().getContentAsString(), "$.uuid");
+        String disciplineUuid = JsonPath.read(discipline.getResponse().getContentAsString(), "$.uuid");
+        MvcResult stage = createStage(disciplineUuid);
+        uuid = JsonPath.read(stage.getResponse().getContentAsString(), "$.uuid");
     }
 
     @BeforeEach
     void setupEach() throws Exception {
-        MvcResult stage = createStage(uuid);
-        url = stage.getResponse().getHeader("Location");
+        MvcResult phase = createPhase(uuid);
+        url = phase.getResponse().getHeader("Location");
         assert url != null;
     }
 
     @Test
-    void getAllStages() throws Exception {
-        mockMvc.perform(get("/api/v1/stages"))
+    void getAllPhases() throws Exception {
+        mockMvc.perform(get("/api/v1/phases"))
             .andExpect(status().isOk());
     }
 
     @Test
-    void getStage_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/stages/" + UUID.randomUUID()))
+    void getPhase_expectException() throws Exception {
+        mockMvc.perform(get("/api/v1/phases/" + UUID.randomUUID()))
             .andExpect(status().isNotFound());
     }
 
     @Test
-    void createAndGetStage() throws Exception {
+    void createAndGetPhase() throws Exception {
         mockMvc.perform(get(url))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.name").value("Vorrunde"));
+            .andExpect(jsonPath("$.name").value("Phase1"))
+            .andExpect(jsonPath("$.tournamentMode").value("SWISS"))
+            .andExpect(jsonPath("$.phaseState").value("PLACEHOLDER"));
     }
 
     @Test
-    void updateStage() throws Exception {
+    void updatePhase() throws Exception {
         mockMvc.perform(put(url)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "Hauptrunde",
-                            "disciplineUuid": "%s"}
+                            {"name": "Phase1",
+                            "tournamentMode": "LORD_HAVE_MERCY",
+                            "phaseState": "PLACEHOLDER",
+                            "stageUuid": "%s"}
                     """, uuid)))
             .andExpect(status().isOk());
 
         mockMvc.perform(get(url))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.name").value("Hauptrunde"));
+            .andExpect(jsonPath("$.name").value("Phase1"))
+            .andExpect(jsonPath("$.tournamentMode").value("LORD_HAVE_MERCY"))
+            .andExpect(jsonPath("$.phaseState").value("PLACEHOLDER"));
     }
 
     @Test
-    void updateStage_expectException() throws Exception {
-        mockMvc.perform(put("/api/v1/stages/" + UUID.randomUUID())
+    void updatePhase_expectException() throws Exception {
+        mockMvc.perform(put("/api/v1/phases/" + UUID.randomUUID())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                            {"name": "Hauptrunde"}
+                            {"name": "Phase1",
+                            "tournamentMode": "LORD_HAVE_MERCY",
+                            "phaseState": "PLACEHOLDER"}
                     """))
             .andExpect(status().isNotFound());
     }
 
     @Test
-    void deleteStage() throws Exception {
+    void deletePhase() throws Exception {
         mockMvc.perform(delete(url))
             .andExpect(status().isOk());
 
@@ -99,8 +109,8 @@ class StageControllerTest {
     }
 
     @Test
-    void deleteStage_expectException() throws Exception {
-        mockMvc.perform(delete("/api/v1/stages/" + UUID.randomUUID()))
+    void deletePhase_expectException() throws Exception {
+        mockMvc.perform(delete("/api/v1/phases/" + UUID.randomUUID()))
             .andExpect(status().isNotFound());
     }
 
@@ -146,6 +156,20 @@ class StageControllerTest {
                 .content(String.format("""
                             {"name": "Vorrunde",
                             "disciplineUuid": "%s"}
+                    """, uuid)))
+            .andExpect(status().isCreated())
+            .andReturn();
+    }
+
+    private MvcResult createPhase(String uuid) throws Exception {
+        return mockMvc.perform(post("/api/v1/phases")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "Phase1",
+                            "tournamentMode": "SWISS",
+                            "stageUuid": "%s",
+                            "phaseState": "PLACEHOLDER"
+                            }
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();
