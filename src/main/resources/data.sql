@@ -39,3 +39,11 @@ INSERT INTO TEAM (UUID, NAME)
 VALUES ('150de2b8-2e2b-42f8-ad6b-7a0bb690d124', 'Monsterblock'),
        ('fc95d590-b476-435b-a3d2-426c5aa51d0f', 'Foos and Furious'),
        ('e7385cff-3d4b-4bfa-8013-eaf62eb7b088', 'Pin Diesel');
+
+INSERT INTO MATCHDAY (UUID, NAME, ROUND_ID, LOCATION_ID, TEAM_HOME_ID, TEAM_AWAY_ID, START_DATE, END_DATE)
+VALUES ('edcdd1a7-7194-4481-a7f5-edd03d7f53d8', 'Matchday 1', '1', '1', '1', '2', '2026-01-02T20:10:44.793855800Z',
+        '2026-01-02T20:11:29.371065800Z'),
+       ('b91b214f-812d-488a-b868-6ab10b7a49f8', 'Matchday 2', '1', '1', '2', '3', '2026-01-02T20:11:29.371065800Z',
+        '2026-01-02T20:11:29.371065800Z'),
+       ('e7385cff-3d4b-4bfa-8013-eaf62eb7b088', 'Matchday 3', '2', '3', '3', '1', '2026-01-02T20:11:29.371065800Z',
+        NULL);
