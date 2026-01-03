@@ -14,10 +14,12 @@ public interface RoundMapper {
     RoundDto toDto(Round round);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "pool", ignore = true)
     Round toEntity(RoundDto roundDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "pool", ignore = true)
     void updateEntityFromDto(RoundDto dto, @MappingTarget Round entity);
 
     List<RoundDto> toDtoList(List<Round> rounds);

@@ -13,10 +13,12 @@ public interface StageMapper {
     StageDto toDto(Stage stage);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "discipline", ignore = true)
     Stage toEntity(StageDto stageDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "discipline", ignore = true)
     void updateEntityFromDto(StageDto dto, @MappingTarget Stage entity);
 
     List<StageDto> toDtoList(List<Stage> stages);

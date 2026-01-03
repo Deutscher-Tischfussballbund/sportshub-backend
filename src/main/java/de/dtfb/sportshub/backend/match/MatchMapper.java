@@ -14,10 +14,12 @@ public interface MatchMapper {
     MatchDto toDto(Match match);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "matchday", ignore = true)
     Match toEntity(MatchDto matchDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "matchday", ignore = true)
     void updateEntityFromDto(MatchDto dto, @MappingTarget Match entity);
 
     List<MatchDto> toDtoList(List<Match> matches);

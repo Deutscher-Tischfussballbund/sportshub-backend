@@ -14,10 +14,12 @@ public interface MatchsetMapper {
     MatchsetDto toDto(Matchset matchset);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "match", ignore = true)
     Matchset toEntity(MatchsetDto matchsetDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "match", ignore = true)
     void updateEntityFromDto(MatchsetDto dto, @MappingTarget Matchset entity);
 
     List<MatchsetDto> toDtoList(List<Matchset> matchsets);
