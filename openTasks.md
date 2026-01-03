@@ -34,3 +34,7 @@
   updateMappings) uuid within dto will be ignored anyway on update
 - does the toEntity mapper need to map the uuid back to the entity? could be ignored, right?
 
+## RestClient (External Api)
+
+- Connection Timeout and Read timeout, how to set with spring boot 4? Officially it is
+  ``spring.http.clients.connect-timeout``, but variable can not be resolved
