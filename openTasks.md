@@ -8,6 +8,7 @@
   for one season there would be 28 matchDays? what if a matchday would be the sum of all encounters (4), so there would
   be 7 matchDays with 4 encounters?
 - MatchEventType ``Goal`` vs ``Own_goal``?
+- MatchEvent vs SetEvent?
 
 ## Rest
 
