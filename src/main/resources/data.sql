@@ -62,3 +62,11 @@ VALUES ('0cc33cf5-49a5-47f7-b222-ee35a0aa7d52', 1, 1, 5, 2),
        ('8f666e6d-d1d7-4c3c-b833-901464e9c49d', 2, 1, 5, 4),
        ('76501db6-015f-4723-90c1-9b73df2bb921', 2, 2, 1, 5),
        ('9bde9ec9-6b2a-4f58-88f8-59ca8e32f7d1', 3, 1, 0, 3);
+
+INSERT INTO MATCH_EVENT (UUID, MATCH_ID, TEAM_ID, HOME_SCORE, AWAY_SCORE, PLAYER_UUID, TIMESTAMP, TYPE, JSON)
+VALUES ('0c64d5d2-e66b-442a-8ff2-b8986a67aa08', 1, 1, 5, 2, 'eab5db11-831c-488b-9eaa-87684ad0ed28',
+        '2026-01-04T17:53:17.963088100Z', 'GOAL', '{"name": "test"}'),
+       ('e8140c21-1099-442e-a4c2-f5df4d8e8f6c', 1, 2, 5, 0, '36d8195b-f9f8-4fa0-84ee-056d14fdc14e',
+        '2026-01-04T17:53:17.963088100Z', 'OWN_GOAL', '{"name": "test"}'),
+       ('6bdbd954-8532-445f-b386-313794d37853', 3, 1, 0, 3, '93eceefe-6fd8-4472-a652-8e2944bb3ad3',
+        '2026-01-04T17:53:17.963088100Z', 'START', '{"name": "test"}');
