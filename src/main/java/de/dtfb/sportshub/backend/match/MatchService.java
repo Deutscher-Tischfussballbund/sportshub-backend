@@ -1,8 +1,8 @@
 package de.dtfb.sportshub.backend.match;
 
-import de.dtfb.sportshub.backend.matchday.Matchday;
-import de.dtfb.sportshub.backend.matchday.MatchdayNotFoundException;
-import de.dtfb.sportshub.backend.matchday.MatchdayRepository;
+import de.dtfb.sportshub.backend.matchday.MatchDay;
+import de.dtfb.sportshub.backend.matchday.MatchDayNotFoundException;
+import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,12 +13,12 @@ import java.util.UUID;
 public class MatchService {
     private final MatchRepository repository;
     private final MatchMapper mapper;
-    private final MatchdayRepository matchdayRepository;
+    private final MatchDayRepository matchDayRepository;
 
-    public MatchService(MatchRepository repository, MatchMapper mapper, MatchdayRepository matchdayRepository) {
+    public MatchService(MatchRepository repository, MatchMapper mapper, MatchDayRepository matchDayRepository) {
         this.repository = repository;
         this.mapper = mapper;
-        this.matchdayRepository = matchdayRepository;
+        this.matchDayRepository = matchDayRepository;
     }
 
     List<MatchDto> getAll() {
@@ -35,9 +35,9 @@ public class MatchService {
         Match match = mapper.toEntity(matchDto);
         match.setUuid(UUID.randomUUID());
 
-        Matchday matchday = matchdayRepository.findByUuid(matchDto.getMatchdayUuid())
-            .orElseThrow(() -> new MatchdayNotFoundException(matchDto.getMatchdayUuid().toString()));
-        match.setMatchday(matchday);
+        MatchDay matchDay = matchDayRepository.findByUuid(matchDto.getMatchDayUuid())
+            .orElseThrow(() -> new MatchDayNotFoundException(matchDto.getMatchDayUuid().toString()));
+        match.setMatchDay(matchDay);
 
         Match savedMatch = repository.save(match);
         return mapper.toDto(savedMatch);
@@ -49,9 +49,9 @@ public class MatchService {
 
         mapper.updateEntityFromDto(matchDto, match);
 
-        Matchday matchday = matchdayRepository.findByUuid(matchDto.getMatchdayUuid())
-            .orElseThrow(() -> new MatchdayNotFoundException(matchDto.getMatchdayUuid().toString()));
-        match.setMatchday(matchday);
+        MatchDay matchDay = matchDayRepository.findByUuid(matchDto.getMatchDayUuid())
+            .orElseThrow(() -> new MatchDayNotFoundException(matchDto.getMatchDayUuid().toString()));
+        match.setMatchDay(matchDay);
 
         Match savedMatch = repository.save(match);
         return mapper.toDto(savedMatch);

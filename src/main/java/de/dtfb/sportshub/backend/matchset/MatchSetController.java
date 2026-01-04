@@ -9,22 +9,22 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/matchsets")
-public class MatchsetController {
+public class MatchSetController {
 
-    private final MatchsetService service;
+    private final MatchSetService service;
 
-    public MatchsetController(MatchsetService service) {
+    public MatchSetController(MatchSetService service) {
         this.service = service;
     }
 
     @GetMapping
-    public List<MatchsetDto> getAll() {
+    public List<MatchSetDto> getAll() {
         return service.getAll();
     }
 
     @PostMapping
-    public ResponseEntity<MatchsetDto> create(@RequestBody MatchsetDto matchsetDto) {
-        MatchsetDto returnedDto = service.create(matchsetDto);
+    public ResponseEntity<MatchSetDto> create(@RequestBody MatchSetDto matchSetDto) {
+        MatchSetDto returnedDto = service.create(matchSetDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getUuid().toString()).build().toUri();
 
@@ -32,13 +32,13 @@ public class MatchsetController {
     }
 
     @GetMapping("/{uuid}")
-    public MatchsetDto get(@PathVariable String uuid) {
+    public MatchSetDto get(@PathVariable String uuid) {
         return service.get(uuid);
     }
 
     @PutMapping("/{uuid}")
-    public MatchsetDto update(@PathVariable String uuid, @RequestBody MatchsetDto matchsetDto) {
-        return service.update(uuid, matchsetDto);
+    public MatchSetDto update(@PathVariable String uuid, @RequestBody MatchSetDto matchSetDto) {
+        return service.update(uuid, matchSetDto);
     }
 
     @DeleteMapping("/{uuid}")

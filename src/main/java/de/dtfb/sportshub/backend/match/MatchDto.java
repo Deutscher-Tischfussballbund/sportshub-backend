@@ -10,7 +10,7 @@ import java.util.UUID;
 @Setter
 public class MatchDto {
     private UUID uuid;
-    private UUID matchdayUuid;
+    private UUID matchDayUuid;
     private Instant startTime;
     private Instant endTime;
     private MatchState state;

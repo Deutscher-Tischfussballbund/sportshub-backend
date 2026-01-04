@@ -9,22 +9,22 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/matchdays")
-public class MatchdayController {
+public class MatchDayController {
 
-    private final MatchdayService service;
+    private final MatchDayService service;
 
-    public MatchdayController(MatchdayService service) {
+    public MatchDayController(MatchDayService service) {
         this.service = service;
     }
 
     @GetMapping
-    public List<MatchdayDto> getAll() {
+    public List<MatchDayDto> getAll() {
         return service.getAll();
     }
 
     @PostMapping
-    public ResponseEntity<MatchdayDto> create(@RequestBody MatchdayDto matchdayDto) {
-        MatchdayDto returnedDto = service.create(matchdayDto);
+    public ResponseEntity<MatchDayDto> create(@RequestBody MatchDayDto matchDayDto) {
+        MatchDayDto returnedDto = service.create(matchDayDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getUuid().toString()).build().toUri();
 
@@ -32,13 +32,13 @@ public class MatchdayController {
     }
 
     @GetMapping("/{uuid}")
-    public MatchdayDto get(@PathVariable String uuid) {
+    public MatchDayDto get(@PathVariable String uuid) {
         return service.get(uuid);
     }
 
     @PutMapping("/{uuid}")
-    public MatchdayDto update(@PathVariable String uuid, @RequestBody MatchdayDto matchdayDto) {
-        return service.update(uuid, matchdayDto);
+    public MatchDayDto update(@PathVariable String uuid, @RequestBody MatchDayDto matchDayDto) {
+        return service.update(uuid, matchDayDto);
     }
 
     @DeleteMapping("/{uuid}")

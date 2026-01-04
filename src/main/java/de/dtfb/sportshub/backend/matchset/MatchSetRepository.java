@@ -5,6 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface MatchsetRepository extends JpaRepository<Matchset, Long> {
-    Optional<Matchset> findByUuid(UUID uuid);
+public interface MatchSetRepository extends JpaRepository<MatchSet, Long> {
+    Optional<MatchSet> findByUuid(UUID uuid);
 }

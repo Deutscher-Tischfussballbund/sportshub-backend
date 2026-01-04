@@ -8,20 +8,20 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 import java.util.List;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-public interface MatchdayMapper {
+public interface MatchDayMapper {
 
     @Mapping(source = "round.uuid", target = "roundUuid")
     @Mapping(source = "teamAway.uuid", target = "teamAwayUuid")
     @Mapping(source = "teamHome.uuid", target = "teamHomeUuid")
     @Mapping(source = "location.uuid", target = "locationUuid")
-    MatchdayDto toDto(Matchday matchday);
+    MatchDayDto toDto(MatchDay matchDay);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "round", ignore = true)
     @Mapping(target = "location", ignore = true)
     @Mapping(target = "teamHome", ignore = true)
     @Mapping(target = "teamAway", ignore = true)
-    Matchday toEntity(MatchdayDto matchdayDto);
+    MatchDay toEntity(MatchDayDto matchDayDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
@@ -29,7 +29,7 @@ public interface MatchdayMapper {
     @Mapping(target = "location", ignore = true)
     @Mapping(target = "teamHome", ignore = true)
     @Mapping(target = "teamAway", ignore = true)
-    void updateEntityFromDto(MatchdayDto dto, @MappingTarget Matchday entity);
+    void updateEntityFromDto(MatchDayDto dto, @MappingTarget MatchDay entity);
 
-    List<MatchdayDto> toDtoList(List<Matchday> matchdays);
+    List<MatchDayDto> toDtoList(List<MatchDay> matchDays);
 }

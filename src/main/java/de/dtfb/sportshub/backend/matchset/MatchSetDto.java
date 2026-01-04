@@ -7,7 +7,7 @@ import java.util.UUID;
 
 @Getter
 @Setter
-public class MatchsetDto {
+public class MatchSetDto {
     private UUID uuid;
     private UUID matchUuid;
     private Integer setNumber;

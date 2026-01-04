@@ -54,8 +54,8 @@ class MatchControllerTest {
         MvcResult teamAway = createTeam("Foos Fighters");
         String teamAwayUuid = JsonPath.read(teamAway.getResponse().getContentAsString(), "$.uuid");
         Instant sampleDate = Instant.now().truncatedTo(ChronoUnit.MICROS); // Database will lose precision
-        MvcResult matchday = createMatchday(roundUuid, locationUuid, teamHomeUuid, teamAwayUuid, sampleDate);
-        uuid = JsonPath.read(matchday.getResponse().getContentAsString(), "$.uuid");
+        MvcResult matchDay = createMatchday(roundUuid, locationUuid, teamHomeUuid, teamAwayUuid, sampleDate);
+        uuid = JsonPath.read(matchDay.getResponse().getContentAsString(), "$.uuid");
     }
 
     @BeforeEach
@@ -83,7 +83,7 @@ class MatchControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.type").value("DOUBLE"))
             .andExpect(jsonPath("$.state").value("PLAYED"))
-            .andExpect(jsonPath("$.matchdayUuid").value(uuid))
+            .andExpect(jsonPath("$.matchDayUuid").value(uuid))
             .andExpect(jsonPath("$.homeScore").value(10))
             .andExpect(jsonPath("$.awayScore").value(6));
     }
@@ -94,7 +94,7 @@ class MatchControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"type": "SINGLE",
-                            "matchdayUuid": "%s"
+                            "matchDayUuid": "%s"
                             }
                     """, uuid)))
             .andExpect(status().isOk());
@@ -103,7 +103,7 @@ class MatchControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.type").value("SINGLE"))
             .andExpect(jsonPath("$.state").value("PLAYED"))
-            .andExpect(jsonPath("$.matchdayUuid").value(uuid))
+            .andExpect(jsonPath("$.matchDayUuid").value(uuid))
             .andExpect(jsonPath("$.homeScore").value(10))
             .andExpect(jsonPath("$.awayScore").value(6))
             .andReturn().getResponse().getContentAsString();
@@ -257,7 +257,7 @@ class MatchControllerTest {
                 .content(String.format("""
                             {"type": "DOUBLE",
                             "state": "PLAYED",
-                            "matchdayUuid": "%s",
+                            "matchDayUuid": "%s",
                             "homeScore": "10",
                             "awayScore": "6",
                             "startTime": "%s",

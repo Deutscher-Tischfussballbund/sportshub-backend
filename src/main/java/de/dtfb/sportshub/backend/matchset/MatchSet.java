@@ -10,7 +10,7 @@ import java.util.UUID;
 @Entity
 @Getter
 @Setter
-public class Matchset {
+public class MatchSet {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

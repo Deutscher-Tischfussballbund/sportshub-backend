@@ -1,6 +1,6 @@
 package de.dtfb.sportshub.backend.match;
 
-import de.dtfb.sportshub.backend.matchday.Matchday;
+import de.dtfb.sportshub.backend.matchday.MatchDay;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,8 +20,8 @@ public class Match {
     private UUID uuid;
 
     @ManyToOne
-    @JoinColumn(name = "matchday_id")
-    private Matchday matchday;
+    @JoinColumn(name = "match_day_id")
+    private MatchDay matchDay;
 
     @Column(nullable = false)
     private Instant startTime;

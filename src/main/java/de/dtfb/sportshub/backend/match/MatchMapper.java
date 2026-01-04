@@ -10,16 +10,16 @@ import java.util.List;
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface MatchMapper {
 
-    @Mapping(source = "matchday.uuid", target = "matchdayUuid")
+    @Mapping(source = "matchDay.uuid", target = "matchDayUuid")
     MatchDto toDto(Match match);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "matchday", ignore = true)
+    @Mapping(target = "matchDay", ignore = true)
     Match toEntity(MatchDto matchDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
-    @Mapping(target = "matchday", ignore = true)
+    @Mapping(target = "matchDay", ignore = true)
     void updateEntityFromDto(MatchDto dto, @MappingTarget Match entity);
 
     List<MatchDto> toDtoList(List<Match> matches);

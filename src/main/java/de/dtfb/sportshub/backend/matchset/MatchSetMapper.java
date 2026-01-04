@@ -8,19 +8,19 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 import java.util.List;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-public interface MatchsetMapper {
+public interface MatchSetMapper {
 
     @Mapping(source = "match.uuid", target = "matchUuid")
-    MatchsetDto toDto(Matchset matchset);
+    MatchSetDto toDto(MatchSet matchSet);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "match", ignore = true)
-    Matchset toEntity(MatchsetDto matchsetDto);
+    MatchSet toEntity(MatchSetDto matchSetDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "match", ignore = true)
-    void updateEntityFromDto(MatchsetDto dto, @MappingTarget Matchset entity);
+    void updateEntityFromDto(MatchSetDto dto, @MappingTarget MatchSet entity);
 
-    List<MatchsetDto> toDtoList(List<Matchset> matchsets);
+    List<MatchSetDto> toDtoList(List<MatchSet> matchSets);
 }

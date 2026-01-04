@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Getter
 @Setter
-public class MatchdayDto {
+public class MatchDayDto {
     private UUID uuid;
     private String name;
     private UUID roundUuid;

@@ -13,7 +13,7 @@ import java.util.UUID;
 @Entity
 @Getter
 @Setter
-public class Matchday {
+public class MatchDay {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
