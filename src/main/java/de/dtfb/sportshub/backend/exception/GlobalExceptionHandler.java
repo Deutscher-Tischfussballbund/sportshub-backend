@@ -6,6 +6,7 @@ import de.dtfb.sportshub.backend.externalApi.ExternalApiUnavailableException;
 import de.dtfb.sportshub.backend.externalApi.ExternalResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -49,6 +50,15 @@ public class GlobalExceptionHandler {
     public ApiError handleExternalBadRequest() {
         return new ApiError("BAD_REQUEST",
             "Request to external api is faulty");
+    }
+
+    // Failsafe
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleBadRequest() {
+        return new ApiError(
+            "BAD_REQUEST",
+            "The request is faulty");
     }
 
     // Failsafe
