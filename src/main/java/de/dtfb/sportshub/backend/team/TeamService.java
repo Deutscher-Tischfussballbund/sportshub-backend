@@ -28,7 +28,6 @@ public class TeamService {
 
     TeamDto create(TeamDto teamDto) {
         Team newTeam = mapper.toEntity(teamDto);
-        newTeam.setUuid(UUID.randomUUID());
         Team savedTeam = repository.save(newTeam);
         return mapper.toDto(savedTeam);
     }

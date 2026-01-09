@@ -5,6 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface DisciplineRepository extends JpaRepository<Discipline, Long> {
-    Optional<Discipline> findByUuid(UUID uuid);
+public interface DisciplineRepository extends JpaRepository<Discipline, UUID> {
 }

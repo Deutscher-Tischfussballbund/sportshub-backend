@@ -9,7 +9,7 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface DisciplineMapper {
 
-    @Mapping(source = "event.uuid", target = "eventUuid")
+    @Mapping(source = "event.id", target = "eventId")
     DisciplineDto toDto(Discipline discipline);
 
     @Mapping(target = "id", ignore = true)
@@ -17,7 +17,6 @@ public interface DisciplineMapper {
     Discipline toEntity(DisciplineDto disciplineDto);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "event", ignore = true)
     void updateEntityFromDto(DisciplineDto dto, @MappingTarget Discipline entity);
 

@@ -26,14 +26,13 @@ public class RoundService {
     }
 
     RoundDto get(String uuid) {
-        Round round = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Round round = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new RoundNotFoundException(uuid));
         return mapper.toDto(round);
     }
 
     RoundDto create(RoundDto roundDto) {
         Round round = mapper.toEntity(roundDto);
-        round.setUuid(UUID.randomUUID());
 
         Pool pool = poolRepository.findByUuid(roundDto.getPoolUuid())
             .orElseThrow(() -> new PoolNotFoundException(roundDto.getPoolUuid().toString()));
@@ -44,7 +43,7 @@ public class RoundService {
     }
 
     RoundDto update(String uuid, RoundDto roundDto) {
-        Round round = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Round round = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new RoundNotFoundException(uuid));
 
         mapper.updateEntityFromDto(roundDto, round);
@@ -59,7 +58,7 @@ public class RoundService {
 
     @Transactional
     void delete(String uuid) {
-        Round round = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Round round = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new RoundNotFoundException(uuid));
         repository.delete(round);
     }

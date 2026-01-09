@@ -8,7 +8,7 @@ import java.util.UUID;
 @Getter
 @Setter
 public class RoundDto {
-    private UUID uuid;
+    private UUID id;
     private String name;
     private UUID poolUuid;
     private Integer index;

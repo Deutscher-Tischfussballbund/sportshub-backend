@@ -2,11 +2,13 @@
 
 ## Domain
 
-- GroupState is not defined
-- Should the round index start at 0 or 1?
-- Does every team have a matchday in a league? So there are 4 matchDays on the same day with a league of 8 teams? And
+- ~~GroupState is not defined~~
+- ~~Should the round index start at 0 or 1?~~ -> start at 0
+- ~~Does every team have a matchday in a league? So there are 4 matchDays on the same day with a league of 8 teams? And
   for one season there would be 28 matchDays? what if a matchday would be the sum of all encounters (4), so there would
-  be 7 matchDays with 4 encounters?
+  be 7 matchDays with 4 encounters?~~ -> matchday stays, even for tournaments, later we could improve by updating the match with round
+- remove ids, use uuids in database
+- check if saving of uuid would be sufficient for entity relationships
 - MatchEventType ``Goal`` vs ``Own_goal``?
 - MatchEvent vs SetEvent?
 

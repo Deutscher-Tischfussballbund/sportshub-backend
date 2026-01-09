@@ -10,7 +10,7 @@ import java.util.List;
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface MatchDayMapper {
 
-    @Mapping(source = "round.uuid", target = "roundUuid")
+    @Mapping(source = "round.id", target = "roundId")
     @Mapping(source = "teamAway.uuid", target = "teamAwayUuid")
     @Mapping(source = "teamHome.uuid", target = "teamHomeUuid")
     @Mapping(source = "location.uuid", target = "locationUuid")

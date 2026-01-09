@@ -8,7 +8,7 @@ import java.util.UUID;
 @Getter
 @Setter
 public class EventDto {
-    private UUID uuid;
+    private UUID id;
     private String name;
-    private UUID seasonUuid;
+    private UUID seasonId;
 }

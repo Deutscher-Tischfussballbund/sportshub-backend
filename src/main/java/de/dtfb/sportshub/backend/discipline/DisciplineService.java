@@ -26,16 +26,15 @@ public class DisciplineService {
     }
 
     DisciplineDto get(String uuid) {
-        Discipline discipline = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Discipline discipline = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new DisciplineNotFoundException(uuid));
         return mapper.toDto(discipline);
     }
 
     DisciplineDto create(DisciplineDto disciplineDto) {
         Discipline discipline = mapper.toEntity(disciplineDto);
-        discipline.setUuid(UUID.randomUUID());
 
-        Event event = eventRepository.findByUuid(disciplineDto.getEventUuid())
+        Event event = eventRepository.findById(disciplineDto.getEventUuid())
             .orElseThrow(() -> new EventNotFoundException(disciplineDto.getEventUuid().toString()));
         discipline.setEvent(event);
 
@@ -44,12 +43,12 @@ public class DisciplineService {
     }
 
     DisciplineDto update(String uuid, DisciplineDto disciplineDto) {
-        Discipline discipline = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Discipline discipline = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new DisciplineNotFoundException(uuid));
 
         mapper.updateEntityFromDto(disciplineDto, discipline);
 
-        Event event = eventRepository.findByUuid(disciplineDto.getEventUuid())
+        Event event = eventRepository.findById(disciplineDto.getEventUuid())
             .orElseThrow(() -> new EventNotFoundException(disciplineDto.getEventUuid().toString()));
         discipline.setEvent(event);
 
@@ -59,7 +58,7 @@ public class DisciplineService {
 
     @Transactional
     void delete(String uuid) {
-        Discipline discipline = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Discipline discipline = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new DisciplineNotFoundException(uuid));
         repository.delete(discipline);
     }

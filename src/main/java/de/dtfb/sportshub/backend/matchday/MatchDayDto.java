@@ -11,7 +11,7 @@ import java.util.UUID;
 public class MatchDayDto {
     private UUID uuid;
     private String name;
-    private UUID roundUuid;
+    private UUID roundId;
     private UUID locationUuid;
     private UUID teamAwayUuid;
     private UUID teamHomeUuid;

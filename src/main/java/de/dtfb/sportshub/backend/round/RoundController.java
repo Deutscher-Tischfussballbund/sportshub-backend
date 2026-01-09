@@ -26,7 +26,7 @@ public class RoundController {
     public ResponseEntity<RoundDto> create(@RequestBody RoundDto roundDto) {
         RoundDto returnedDto = service.create(roundDto);
 
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getUuid().toString()).build().toUri();
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId().toString()).build().toUri();
 
         return ResponseEntity.created(location).body(returnedDto);
     }

@@ -71,8 +71,8 @@ public class MatchDayService {
     }
 
     private void setDependants(MatchDayDto matchDayDto, MatchDay matchDay) {
-        Round round = roundRepository.findByUuid(matchDayDto.getRoundUuid())
-            .orElseThrow(() -> new RoundNotFoundException(matchDayDto.getRoundUuid().toString()));
+        Round round = roundRepository.findById(matchDayDto.getRoundId())
+            .orElseThrow(() -> new RoundNotFoundException(matchDayDto.getRoundId().toString()));
         matchDay.setRound(round);
         Location location = locationRepository.findByUuid(matchDayDto.getLocationUuid())
             .orElseThrow(() -> new LocationNotFoundException(matchDayDto.getLocationUuid().toString()));

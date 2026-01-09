@@ -9,7 +9,7 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface EventMapper {
 
-    @Mapping(source = "season.uuid", target = "seasonUuid")
+    @Mapping(source = "season.id", target = "seasonId")
     EventDto toDto(Event event);
 
     @Mapping(target = "id", ignore = true)
@@ -17,7 +17,6 @@ public interface EventMapper {
     Event toEntity(EventDto eventDto);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "season", ignore = true)
     void updateEntityFromDto(EventDto dto, @MappingTarget Event entity);
 

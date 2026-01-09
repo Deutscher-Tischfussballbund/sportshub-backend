@@ -8,7 +8,7 @@ import java.util.UUID;
 @Getter
 @Setter
 public class DisciplineDto {
-    private UUID uuid;
+    private UUID id;
     private UUID eventUuid;
     private String name;
     private String shortName;

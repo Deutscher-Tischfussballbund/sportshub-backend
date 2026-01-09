@@ -26,7 +26,7 @@ INSERT INTO POOL (UUID, STAGE_ID, NAME, TOURNAMENT_MODE, POOL_STATE)
 VALUES ('8ddf3628-2ba2-42d0-83cd-0977aaa0ed4d', 1, 'Profi', 'SWISS', 'READY'),
        ('d809d2b7-7e29-4b67-940d-0d1c9bca57e6', 2, 'Amateur', 'DOUBLE_ELIMINATION', 'RUNNING');
 
-INSERT INTO ROUND (UUID, POOL_ID, NAME, INDEX)
+INSERT INTO ROUND (ID, POOL_ID, NAME, INDEX)
 VALUES ('086ce72b-496f-4941-b9a3-4fedacc77f32', 1, 'Runde1', 1),
        ('d8554ce1-c315-4c31-b466-5bb700c1c88d', 1, 'Runde2', 2);
 
@@ -41,11 +41,11 @@ VALUES ('150de2b8-2e2b-42f8-ad6b-7a0bb690d124', 'Monsterblock'),
        ('e7385cff-3d4b-4bfa-8013-eaf62eb7b088', 'Pin Diesel');
 
 INSERT INTO MATCH_DAY (UUID, NAME, ROUND_ID, LOCATION_ID, TEAM_HOME_ID, TEAM_AWAY_ID, START_DATE, END_DATE)
-VALUES ('edcdd1a7-7194-4481-a7f5-edd03d7f53d8', 'Matchday 1', '1', '1', '1', '2', '2026-01-02T20:10:44.793855800Z',
+VALUES ('edcdd1a7-7194-4481-a7f5-edd03d7f53d8', 'Matchday 1', '086ce72b-496f-4941-b9a3-4fedacc77f32', '1', '1', '2', '2026-01-02T20:10:44.793855800Z',
         '2026-01-02T20:11:29.371065800Z'),
-       ('b91b214f-812d-488a-b868-6ab10b7a49f8', 'Matchday 2', '1', '1', '2', '3', '2026-01-02T20:11:29.371065800Z',
+       ('b91b214f-812d-488a-b868-6ab10b7a49f8', 'Matchday 2', '086ce72b-496f-4941-b9a3-4fedacc77f32', '1', '2', '3', '2026-01-02T20:11:29.371065800Z',
         '2026-01-02T20:11:29.371065800Z'),
-       ('b8b6eaa0-700f-4540-bec9-fc2d628f2bfc', 'Matchday 3', '2', '3', '3', '1', '2026-01-02T20:11:29.371065800Z',
+       ('b8b6eaa0-700f-4540-bec9-fc2d628f2bfc', 'Matchday 3', 'd8554ce1-c315-4c31-b466-5bb700c1c88d', '3', '3', '1', '2026-01-02T20:11:29.371065800Z',
         NULL);
 
 INSERT INTO MATCH (UUID, MATCH_DAY_ID, HOME_SCORE, AWAY_SCORE, STATE, TYPE, START_TIME, END_TIME)
