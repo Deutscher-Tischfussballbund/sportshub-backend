@@ -29,33 +29,33 @@ class MatchDayControllerTest {
     MockMvc mockMvc;
 
     private String url;
-    private String roundUuid;
-    private String locationUuid;
-    private String teamHomeUuid;
-    private String teamAwayUuid;
+    private String roundId;
+    private String locationId;
+    private String teamHomeId;
+    private String teamAwayId;
     private final Instant sampleDate = Instant.now().truncatedTo(ChronoUnit.MICROS); // Database will lose precision
 
     @PostConstruct
     void setup() throws Exception {
         MvcResult season = createSeason();
-        String seasonUuid = JsonPath.read(season.getResponse().getContentAsString(), "$.uuid");
-        MvcResult event = createEvent(seasonUuid);
-        String eventUuid = JsonPath.read(event.getResponse().getContentAsString(), "$.uuid");
-        MvcResult discipline = createDiscipline(eventUuid);
-        String disciplineUuid = JsonPath.read(discipline.getResponse().getContentAsString(), "$.uuid");
-        MvcResult stage = createStage(disciplineUuid);
-        String stageUuid = JsonPath.read(stage.getResponse().getContentAsString(), "$.uuid");
-        MvcResult pool = createPool(stageUuid);
-        String poolUuid = JsonPath.read(pool.getResponse().getContentAsString(), "$.uuid");
-        MvcResult round = createRound(poolUuid);
-        roundUuid = JsonPath.read(round.getResponse().getContentAsString(), "$.uuid");
+        String seasonId = JsonPath.read(season.getResponse().getContentAsString(), "$.id");
+        MvcResult event = createEvent(seasonId);
+        String eventId = JsonPath.read(event.getResponse().getContentAsString(), "$.id");
+        MvcResult discipline = createDiscipline(eventId);
+        String disciplineId = JsonPath.read(discipline.getResponse().getContentAsString(), "$.id");
+        MvcResult stage = createStage(disciplineId);
+        String stageId = JsonPath.read(stage.getResponse().getContentAsString(), "$.id");
+        MvcResult pool = createPool(stageId);
+        String poolId = JsonPath.read(pool.getResponse().getContentAsString(), "$.id");
+        MvcResult round = createRound(poolId);
+        roundId = JsonPath.read(round.getResponse().getContentAsString(), "$.id");
 
         MvcResult location = createLocation();
-        locationUuid = JsonPath.read(location.getResponse().getContentAsString(), "$.uuid");
+        locationId = JsonPath.read(location.getResponse().getContentAsString(), "$.id");
         MvcResult teamHome = createTeam("Hand und Foos");
-        teamHomeUuid = JsonPath.read(teamHome.getResponse().getContentAsString(), "$.uuid");
+        teamHomeId = JsonPath.read(teamHome.getResponse().getContentAsString(), "$.id");
         MvcResult teamAway = createTeam("Foos Fighters");
-        teamAwayUuid = JsonPath.read(teamAway.getResponse().getContentAsString(), "$.uuid");
+        teamAwayId = JsonPath.read(teamAway.getResponse().getContentAsString(), "$.id");
     }
 
     @BeforeEach
@@ -82,10 +82,10 @@ class MatchDayControllerTest {
         mockMvc.perform(get(url))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.name").value("Matchday1"))
-            .andExpect(jsonPath("$.locationUuid").value(locationUuid))
-            .andExpect(jsonPath("$.roundUuid").value(roundUuid))
-            .andExpect(jsonPath("$.teamAwayUuid").value(teamAwayUuid))
-            .andExpect(jsonPath("$.teamHomeUuid").value(teamHomeUuid));
+            .andExpect(jsonPath("$.locationId").value(locationId))
+            .andExpect(jsonPath("$.roundId").value(roundId))
+            .andExpect(jsonPath("$.teamAwayId").value(teamAwayId))
+            .andExpect(jsonPath("$.teamHomeId").value(teamHomeId));
     }
 
     @Test
@@ -94,12 +94,12 @@ class MatchDayControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "AnotherMatchday",
-                            "roundUuid": "%s",
-                            "locationUuid": "%s",
-                            "teamAwayUuid": "%s",
-                            "teamHomeUuid": "%s"
+                            "roundId": "%s",
+                            "locationId": "%s",
+                            "teamAwayId": "%s",
+                            "teamHomeId": "%s"
                             }
-                    """, roundUuid, locationUuid, teamAwayUuid, teamHomeUuid)))
+                    """, roundId, locationId, teamAwayId, teamHomeId)))
             .andExpect(status().isOk());
 
         String json = mockMvc.perform(get(url))
@@ -158,7 +158,7 @@ class MatchDayControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Turnier",
-                            "seasonUuid": "%s"}
+                            "seasonId": "%s"}
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();
@@ -169,7 +169,7 @@ class MatchDayControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Offenes Einzel",
-                            "eventUuid": "%s"}
+                            "eventId": "%s"}
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();
@@ -180,7 +180,7 @@ class MatchDayControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Vorrunde",
-                            "disciplineUuid": "%s"}
+                            "disciplineId": "%s"}
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();
@@ -192,7 +192,7 @@ class MatchDayControllerTest {
                 .content(String.format("""
                             {"name": "Pool1",
                             "tournamentMode": "SWISS",
-                            "stageUuid": "%s",
+                            "stageId": "%s",
                             "poolState": "READY"
                             }
                     """, uuid)))
@@ -206,7 +206,7 @@ class MatchDayControllerTest {
                 .content(String.format("""
                             {"name": "Runde1",
                             "index": 1,
-                            "poolUuid": "%s"}
+                            "poolId": "%s"}
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();
@@ -238,14 +238,14 @@ class MatchDayControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Matchday1",
-                            "roundUuid": "%s",
-                            "locationUuid": "%s",
-                            "teamAwayUuid": "%s",
-                            "teamHomeUuid": "%s",
+                            "roundId": "%s",
+                            "locationId": "%s",
+                            "teamAwayId": "%s",
+                            "teamHomeId": "%s",
                             "startDate": "%s",
                             "endDate": "%s"
                             }
-                    """, roundUuid, locationUuid, teamAwayUuid, teamHomeUuid, sampleDate, sampleDate)))
+                    """, roundId, locationId, teamAwayId, teamHomeId, sampleDate, sampleDate)))
             .andExpect(status().isCreated())
             .andReturn();
     }

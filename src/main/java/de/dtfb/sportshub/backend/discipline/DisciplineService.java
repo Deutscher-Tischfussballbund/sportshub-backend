@@ -34,8 +34,8 @@ public class DisciplineService {
     DisciplineDto create(DisciplineDto disciplineDto) {
         Discipline discipline = mapper.toEntity(disciplineDto);
 
-        Event event = eventRepository.findById(disciplineDto.getEventUuid())
-            .orElseThrow(() -> new EventNotFoundException(disciplineDto.getEventUuid().toString()));
+        Event event = eventRepository.findById(disciplineDto.getEventId())
+            .orElseThrow(() -> new EventNotFoundException(disciplineDto.getEventId().toString()));
         discipline.setEvent(event);
 
         Discipline savedDiscipline = repository.save(discipline);
@@ -48,8 +48,8 @@ public class DisciplineService {
 
         mapper.updateEntityFromDto(disciplineDto, discipline);
 
-        Event event = eventRepository.findById(disciplineDto.getEventUuid())
-            .orElseThrow(() -> new EventNotFoundException(disciplineDto.getEventUuid().toString()));
+        Event event = eventRepository.findById(disciplineDto.getEventId())
+            .orElseThrow(() -> new EventNotFoundException(disciplineDto.getEventId().toString()));
         discipline.setEvent(event);
 
         Discipline savedDiscipline = repository.save(discipline);

@@ -31,13 +31,13 @@ class PoolControllerTest {
     @PostConstruct
     void setup() throws Exception {
         MvcResult season = createSeason();
-        String seasonUuid = JsonPath.read(season.getResponse().getContentAsString(), "$.uuid");
-        MvcResult event = createEvent(seasonUuid);
-        String eventUuid = JsonPath.read(event.getResponse().getContentAsString(), "$.uuid");
-        MvcResult discipline = createDiscipline(eventUuid);
-        String disciplineUuid = JsonPath.read(discipline.getResponse().getContentAsString(), "$.uuid");
-        MvcResult stage = createStage(disciplineUuid);
-        uuid = JsonPath.read(stage.getResponse().getContentAsString(), "$.uuid");
+        String seasonId = JsonPath.read(season.getResponse().getContentAsString(), "$.id");
+        MvcResult event = createEvent(seasonId);
+        String eventId = JsonPath.read(event.getResponse().getContentAsString(), "$.id");
+        MvcResult discipline = createDiscipline(eventId);
+        String disciplineId = JsonPath.read(discipline.getResponse().getContentAsString(), "$.id");
+        MvcResult stage = createStage(disciplineId);
+        uuid = JsonPath.read(stage.getResponse().getContentAsString(), "$.id");
     }
 
     @BeforeEach
@@ -76,7 +76,7 @@ class PoolControllerTest {
                             {"name": "Pool1",
                             "tournamentMode": "LORD_HAVE_MERCY",
                             "poolState": "READY",
-                            "stageUuid": "%s"}
+                            "stageId": "%s"}
                     """, uuid)))
             .andExpect(status().isOk());
 
@@ -133,7 +133,7 @@ class PoolControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Turnier",
-                            "seasonUuid": "%s"}
+                            "seasonId": "%s"}
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();
@@ -144,7 +144,7 @@ class PoolControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Offenes Einzel",
-                            "eventUuid": "%s"}
+                            "eventId": "%s"}
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();
@@ -155,7 +155,7 @@ class PoolControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Vorrunde",
-                            "disciplineUuid": "%s"}
+                            "disciplineId": "%s"}
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();
@@ -167,7 +167,7 @@ class PoolControllerTest {
                 .content(String.format("""
                             {"name": "Pool1",
                             "tournamentMode": "SWISS",
-                            "stageUuid": "%s",
+                            "stageId": "%s",
                             "poolState": "READY"
                             }
                     """, uuid)))

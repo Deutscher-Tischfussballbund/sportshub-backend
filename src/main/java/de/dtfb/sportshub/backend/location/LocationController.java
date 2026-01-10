@@ -26,7 +26,7 @@ public class LocationController {
     public ResponseEntity<LocationDto> create(@RequestBody LocationDto locationDto) {
         LocationDto returnedDto = service.create(locationDto);
 
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getUuid().toString()).build().toUri();
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId().toString()).build().toUri();
 
         return ResponseEntity.created(location).body(returnedDto);
     }

@@ -31,7 +31,7 @@ class EventControllerTest {
     @PostConstruct
     void setup() throws Exception {
         MvcResult season = createSeason();
-        uuid = JsonPath.read(season.getResponse().getContentAsString(), "$.uuid");
+        uuid = JsonPath.read(season.getResponse().getContentAsString(), "$.id");
     }
 
     @BeforeEach
@@ -66,7 +66,7 @@ class EventControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Replacement",
-                            "seasonUuid": "%s"}
+                            "seasonId": "%s"}
                     """, uuid)))
             .andExpect(status().isOk());
 
@@ -119,7 +119,7 @@ class EventControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Turnier",
-                            "seasonUuid": "%s"}
+                            "seasonId": "%s"}
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();

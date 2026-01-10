@@ -36,14 +36,13 @@ public class MatchDayService {
     }
 
     MatchDayDto get(String uuid) {
-        MatchDay matchDay = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        MatchDay matchDay = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new MatchDayNotFoundException(uuid));
         return mapper.toDto(matchDay);
     }
 
     MatchDayDto create(MatchDayDto matchDayDto) {
         MatchDay matchDay = mapper.toEntity(matchDayDto);
-        matchDay.setUuid(UUID.randomUUID());
 
         setDependants(matchDayDto, matchDay);
 
@@ -52,7 +51,7 @@ public class MatchDayService {
     }
 
     MatchDayDto update(String uuid, MatchDayDto matchDayDto) {
-        MatchDay matchDay = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        MatchDay matchDay = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new MatchDayNotFoundException(uuid));
 
         mapper.updateEntityFromDto(matchDayDto, matchDay);
@@ -65,7 +64,7 @@ public class MatchDayService {
 
     @Transactional
     void delete(String uuid) {
-        MatchDay matchDay = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        MatchDay matchDay = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new MatchDayNotFoundException(uuid));
         repository.delete(matchDay);
     }
@@ -74,14 +73,14 @@ public class MatchDayService {
         Round round = roundRepository.findById(matchDayDto.getRoundId())
             .orElseThrow(() -> new RoundNotFoundException(matchDayDto.getRoundId().toString()));
         matchDay.setRound(round);
-        Location location = locationRepository.findByUuid(matchDayDto.getLocationUuid())
-            .orElseThrow(() -> new LocationNotFoundException(matchDayDto.getLocationUuid().toString()));
+        Location location = locationRepository.findById(matchDayDto.getLocationId())
+            .orElseThrow(() -> new LocationNotFoundException(matchDayDto.getLocationId().toString()));
         matchDay.setLocation(location);
-        Team teamAway = teamRepository.findByUuid(matchDayDto.getTeamAwayUuid())
-            .orElseThrow(() -> new TeamNotFoundException(matchDayDto.getTeamAwayUuid().toString()));
+        Team teamAway = teamRepository.findById(matchDayDto.getTeamAwayId())
+            .orElseThrow(() -> new TeamNotFoundException(matchDayDto.getTeamAwayId().toString()));
         matchDay.setTeamAway(teamAway);
-        Team teamHome = teamRepository.findByUuid(matchDayDto.getTeamHomeUuid())
-            .orElseThrow(() -> new TeamNotFoundException(matchDayDto.getTeamHomeUuid().toString()));
+        Team teamHome = teamRepository.findById(matchDayDto.getTeamHomeId())
+            .orElseThrow(() -> new TeamNotFoundException(matchDayDto.getTeamHomeId().toString()));
         matchDay.setTeamHome(teamHome);
     }
 }

@@ -9,9 +9,9 @@ import java.util.UUID;
 @Getter
 @Setter
 public class PoolDto {
-    private UUID uuid;
+    private UUID id;
     private String name;
-    private UUID stageUuid;
+    private UUID stageId;
 
     @NotNull
     private TournamentMode tournamentMode;

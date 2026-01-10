@@ -26,7 +26,7 @@ public class EventController {
     public ResponseEntity<EventDto> create(@RequestBody EventDto eventDto) {
         EventDto returnedDto = service.create(eventDto);
 
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getUuid().toString()).build().toUri();
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId().toString()).build().toUri();
 
         return ResponseEntity.created(location).body(returnedDto);
     }

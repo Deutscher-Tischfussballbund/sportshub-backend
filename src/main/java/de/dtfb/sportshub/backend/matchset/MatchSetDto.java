@@ -8,8 +8,8 @@ import java.util.UUID;
 @Getter
 @Setter
 public class MatchSetDto {
-    private UUID uuid;
-    private UUID matchUuid;
+    private UUID id;
+    private UUID matchId;
     private Integer setNumber;
     private Integer homeScore;
     private Integer awayScore;

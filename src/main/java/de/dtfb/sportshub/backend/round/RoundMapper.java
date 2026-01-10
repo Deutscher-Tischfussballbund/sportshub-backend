@@ -10,7 +10,7 @@ import java.util.List;
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface RoundMapper {
 
-    @Mapping(source = "pool.uuid", target = "poolUuid")
+    @Mapping(source = "pool.id", target = "poolId")
     RoundDto toDto(Round round);
 
     @Mapping(target = "id", ignore = true)

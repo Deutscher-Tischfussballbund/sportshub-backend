@@ -11,9 +11,9 @@ import java.util.List;
 public interface MatchDayMapper {
 
     @Mapping(source = "round.id", target = "roundId")
-    @Mapping(source = "teamAway.uuid", target = "teamAwayUuid")
-    @Mapping(source = "teamHome.uuid", target = "teamHomeUuid")
-    @Mapping(source = "location.uuid", target = "locationUuid")
+    @Mapping(source = "teamAway.id", target = "teamAwayId")
+    @Mapping(source = "teamHome.id", target = "teamHomeId")
+    @Mapping(source = "location.id", target = "locationId")
     MatchDayDto toDto(MatchDay matchDay);
 
     @Mapping(target = "id", ignore = true)
@@ -24,7 +24,6 @@ public interface MatchDayMapper {
     MatchDay toEntity(MatchDayDto matchDayDto);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "round", ignore = true)
     @Mapping(target = "location", ignore = true)
     @Mapping(target = "teamHome", ignore = true)

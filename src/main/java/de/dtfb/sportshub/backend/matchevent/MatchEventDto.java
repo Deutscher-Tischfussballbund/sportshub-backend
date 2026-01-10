@@ -10,10 +10,10 @@ import java.util.UUID;
 @NoArgsConstructor
 @Data
 public class MatchEventDto {
-    private UUID uuid;
-    private UUID playerUuid;
-    private UUID matchUuid;
-    private UUID teamUuid;
+    private UUID id;
+    private UUID playerId;
+    private UUID matchId;
+    private UUID teamId;
     private Instant timestamp;
     private Integer homeScore;
     private Integer awayScore;

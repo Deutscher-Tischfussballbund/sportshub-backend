@@ -26,17 +26,16 @@ public class MatchService {
     }
 
     MatchDto get(String uuid) {
-        Match match = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Match match = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new MatchNotFoundException(uuid));
         return mapper.toDto(match);
     }
 
     MatchDto create(MatchDto matchDto) {
         Match match = mapper.toEntity(matchDto);
-        match.setUuid(UUID.randomUUID());
 
-        MatchDay matchDay = matchDayRepository.findByUuid(matchDto.getMatchDayUuid())
-            .orElseThrow(() -> new MatchDayNotFoundException(matchDto.getMatchDayUuid().toString()));
+        MatchDay matchDay = matchDayRepository.findById(matchDto.getMatchDayId())
+            .orElseThrow(() -> new MatchDayNotFoundException(matchDto.getMatchDayId().toString()));
         match.setMatchDay(matchDay);
 
         Match savedMatch = repository.save(match);
@@ -44,13 +43,13 @@ public class MatchService {
     }
 
     MatchDto update(String uuid, MatchDto matchDto) {
-        Match match = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Match match = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new MatchNotFoundException(uuid));
 
         mapper.updateEntityFromDto(matchDto, match);
 
-        MatchDay matchDay = matchDayRepository.findByUuid(matchDto.getMatchDayUuid())
-            .orElseThrow(() -> new MatchDayNotFoundException(matchDto.getMatchDayUuid().toString()));
+        MatchDay matchDay = matchDayRepository.findById(matchDto.getMatchDayId())
+            .orElseThrow(() -> new MatchDayNotFoundException(matchDto.getMatchDayId().toString()));
         match.setMatchDay(matchDay);
 
         Match savedMatch = repository.save(match);
@@ -59,7 +58,7 @@ public class MatchService {
 
     @Transactional
     void delete(String uuid) {
-        Match match = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Match match = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new MatchNotFoundException(uuid));
         repository.delete(match);
     }

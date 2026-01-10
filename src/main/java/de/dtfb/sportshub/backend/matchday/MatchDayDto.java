@@ -9,12 +9,12 @@ import java.util.UUID;
 @Getter
 @Setter
 public class MatchDayDto {
-    private UUID uuid;
+    private UUID id;
     private String name;
     private UUID roundId;
-    private UUID locationUuid;
-    private UUID teamAwayUuid;
-    private UUID teamHomeUuid;
+    private UUID locationId;
+    private UUID teamAwayId;
+    private UUID teamHomeId;
     private Instant startDate;
     private Instant endDate;
 }

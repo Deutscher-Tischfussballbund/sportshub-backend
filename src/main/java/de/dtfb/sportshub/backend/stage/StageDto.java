@@ -8,7 +8,7 @@ import java.util.UUID;
 @Getter
 @Setter
 public class StageDto {
-    private UUID uuid;
+    private UUID id;
     private String name;
-    private UUID disciplineUuid;
+    private UUID disciplineId;
 }

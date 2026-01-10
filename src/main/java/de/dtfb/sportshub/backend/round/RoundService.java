@@ -34,8 +34,8 @@ public class RoundService {
     RoundDto create(RoundDto roundDto) {
         Round round = mapper.toEntity(roundDto);
 
-        Pool pool = poolRepository.findByUuid(roundDto.getPoolUuid())
-            .orElseThrow(() -> new PoolNotFoundException(roundDto.getPoolUuid().toString()));
+        Pool pool = poolRepository.findById(roundDto.getPoolId())
+            .orElseThrow(() -> new PoolNotFoundException(roundDto.getPoolId().toString()));
         round.setPool(pool);
 
         Round savedRound = repository.save(round);
@@ -48,8 +48,8 @@ public class RoundService {
 
         mapper.updateEntityFromDto(roundDto, round);
 
-        Pool pool = poolRepository.findByUuid(roundDto.getPoolUuid())
-            .orElseThrow(() -> new PoolNotFoundException(roundDto.getPoolUuid().toString()));
+        Pool pool = poolRepository.findById(roundDto.getPoolId())
+            .orElseThrow(() -> new PoolNotFoundException(roundDto.getPoolId().toString()));
         round.setPool(pool);
 
         Round savedRound = repository.save(round);

@@ -26,7 +26,7 @@ public class MatchDayController {
     public ResponseEntity<MatchDayDto> create(@RequestBody MatchDayDto matchDayDto) {
         MatchDayDto returnedDto = service.create(matchDayDto);
 
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getUuid().toString()).build().toUri();
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId().toString()).build().toUri();
 
         return ResponseEntity.created(location).body(returnedDto);
     }

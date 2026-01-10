@@ -9,7 +9,7 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface PoolMapper {
 
-    @Mapping(source = "stage.uuid", target = "stageUuid")
+    @Mapping(source = "stage.id", target = "stageId")
     PoolDto toDto(Pool pool);
 
     @Mapping(target = "id", ignore = true)
@@ -17,7 +17,6 @@ public interface PoolMapper {
     Pool toEntity(PoolDto poolDto);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "stage", ignore = true)
     void updateEntityFromDto(PoolDto dto, @MappingTarget Pool entity);
 

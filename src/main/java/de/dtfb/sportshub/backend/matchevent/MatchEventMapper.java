@@ -15,8 +15,8 @@ public interface MatchEventMapper {
 
     ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    @Mapping(source = "match.uuid", target = "matchUuid")
-    @Mapping(source = "team.uuid", target = "teamUuid")
+    @Mapping(source = "match.id", target = "matchId")
+    @Mapping(source = "team.id", target = "teamId")
     MatchEventDto toDto(MatchEvent matchEvent);
 
     @Mapping(target = "id", ignore = true)
@@ -25,7 +25,6 @@ public interface MatchEventMapper {
     MatchEvent toEntity(MatchEventDto matchEventDto);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "match", ignore = true)
     @Mapping(target = "team", ignore = true)
     void updateEntityFromDto(MatchEventDto dto, @MappingTarget MatchEvent entity);

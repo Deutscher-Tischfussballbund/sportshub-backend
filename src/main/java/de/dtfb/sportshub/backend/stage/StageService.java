@@ -26,17 +26,16 @@ public class StageService {
     }
 
     StageDto get(String uuid) {
-        Stage stage = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Stage stage = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new StageNotFoundException(uuid));
         return mapper.toDto(stage);
     }
 
     StageDto create(StageDto stageDto) {
         Stage stage = mapper.toEntity(stageDto);
-        stage.setUuid(UUID.randomUUID());
 
-        Discipline discipline = disciplineRepository.findByUuid(stageDto.getDisciplineUuid())
-            .orElseThrow(() -> new DisciplineNotFoundException(stageDto.getDisciplineUuid().toString()));
+        Discipline discipline = disciplineRepository.findById(stageDto.getDisciplineId())
+            .orElseThrow(() -> new DisciplineNotFoundException(stageDto.getDisciplineId().toString()));
         stage.setDiscipline(discipline);
 
         Stage savedStage = repository.save(stage);
@@ -44,13 +43,13 @@ public class StageService {
     }
 
     StageDto update(String uuid, StageDto stageDto) {
-        Stage stage = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Stage stage = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new StageNotFoundException(uuid));
 
         mapper.updateEntityFromDto(stageDto, stage);
 
-        Discipline discipline = disciplineRepository.findByUuid(stageDto.getDisciplineUuid())
-            .orElseThrow(() -> new DisciplineNotFoundException(stageDto.getDisciplineUuid().toString()));
+        Discipline discipline = disciplineRepository.findById(stageDto.getDisciplineId())
+            .orElseThrow(() -> new DisciplineNotFoundException(stageDto.getDisciplineId().toString()));
         stage.setDiscipline(discipline);
 
         Stage savedStage = repository.save(stage);
@@ -59,7 +58,7 @@ public class StageService {
 
     @Transactional
     void delete(String uuid) {
-        Stage stage = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Stage stage = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new StageNotFoundException(uuid));
         repository.delete(stage);
     }

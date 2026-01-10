@@ -15,7 +15,6 @@ public interface LocationMapper {
     Location toEntity(LocationDto seasonDto);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "uuid", ignore = true)
     void updateEntityFromDto(LocationDto dto, @MappingTarget Location entity);
 
     List<LocationDto> toDtoList(List<Location> seasons);

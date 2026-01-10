@@ -15,7 +15,6 @@ public interface TeamMapper {
     Team toEntity(TeamDto teamDto);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "uuid", ignore = true)
     void updateEntityFromDto(TeamDto dto, @MappingTarget Team entity);
 
     List<TeamDto> toDtoList(List<Team> teams);

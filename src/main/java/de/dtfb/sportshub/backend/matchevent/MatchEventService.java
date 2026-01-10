@@ -31,14 +31,13 @@ public class MatchEventService {
     }
 
     MatchEventDto get(String uuid) {
-        MatchEvent matchEvent = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        MatchEvent matchEvent = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new MatchEventNotFoundException(uuid));
         return mapper.toDto(matchEvent);
     }
 
     MatchEventDto create(MatchEventDto matchEventDto) {
         MatchEvent matchEvent = mapper.toEntity(matchEventDto);
-        matchEvent.setUuid(UUID.randomUUID());
 
         setDependants(matchEventDto, matchEvent);
 
@@ -47,7 +46,7 @@ public class MatchEventService {
     }
 
     MatchEventDto update(String uuid, MatchEventDto matchEventDto) {
-        MatchEvent matchEvent = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        MatchEvent matchEvent = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new MatchEventNotFoundException(uuid));
 
         mapper.updateEntityFromDto(matchEventDto, matchEvent);
@@ -60,20 +59,20 @@ public class MatchEventService {
 
     @Transactional
     void delete(String uuid) {
-        MatchEvent matchEvent = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        MatchEvent matchEvent = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new MatchEventNotFoundException(uuid));
         repository.delete(matchEvent);
     }
 
     private void setDependants(MatchEventDto matchEventDto, MatchEvent matchEvent) {
-        UUID matchUuid = matchEventDto.getMatchUuid();
-        if (matchUuid != null && !matchUuid.equals(matchEvent.getUuid())) {
-            Match match = matchRepository.findByUuid(matchUuid)
-                .orElseThrow(() -> new RoundNotFoundException(matchUuid.toString()));
+        UUID matchId = matchEventDto.getMatchId();
+        if (matchId != null && !matchId.equals(matchEvent.getId())) {
+            Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new RoundNotFoundException(matchId.toString()));
             matchEvent.setMatch(match);
         }
-        Team team = teamRepository.findByUuid(matchEventDto.getTeamUuid())
-            .orElseThrow(() -> new TeamNotFoundException(matchEventDto.getTeamUuid().toString()));
+        Team team = teamRepository.findById(matchEventDto.getTeamId())
+            .orElseThrow(() -> new TeamNotFoundException(matchEventDto.getTeamId().toString()));
         matchEvent.setTeam(team);
     }
 }

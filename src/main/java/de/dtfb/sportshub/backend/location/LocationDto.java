@@ -8,7 +8,7 @@ import java.util.UUID;
 @Getter
 @Setter
 public class LocationDto {
-    private UUID uuid;
+    private UUID id;
     private String name;
     private String address;
 }

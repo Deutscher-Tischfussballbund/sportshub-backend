@@ -9,7 +9,7 @@ import java.util.UUID;
 @Setter
 public class DisciplineDto {
     private UUID id;
-    private UUID eventUuid;
+    private UUID eventId;
     private String name;
     private String shortName;
 }

@@ -21,20 +21,19 @@ public class SeasonService {
     }
 
     SeasonDto get(String uuid) {
-        Season season = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Season season = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new SeasonNotFoundException(uuid));
         return mapper.toDto(season);
     }
 
     SeasonDto create(SeasonDto seasonDto) {
         Season newSeason = mapper.toEntity(seasonDto);
-        newSeason.setUuid(UUID.randomUUID());
         Season savedSeason = repository.save(newSeason);
         return mapper.toDto(savedSeason);
     }
 
     SeasonDto update(String uuid, SeasonDto seasonDto) {
-        Season season = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Season season = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new SeasonNotFoundException(uuid));
 
         mapper.updateEntityFromDto(seasonDto, season);
@@ -45,7 +44,7 @@ public class SeasonService {
 
     @Transactional
     void delete(String uuid) {
-        Season season = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Season season = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new SeasonNotFoundException(uuid));
         repository.delete(season);
     }

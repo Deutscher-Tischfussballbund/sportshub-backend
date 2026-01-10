@@ -27,7 +27,7 @@ public class PoolController {
     public ResponseEntity<PoolDto> create(@Valid @RequestBody PoolDto poolDto) {
         PoolDto returnedDto = service.create(poolDto);
 
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getUuid().toString()).build().toUri();
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId().toString()).build().toUri();
 
         return ResponseEntity.created(location).body(returnedDto);
     }

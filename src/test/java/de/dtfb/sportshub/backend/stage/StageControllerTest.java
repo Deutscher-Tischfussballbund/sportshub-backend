@@ -31,11 +31,11 @@ class StageControllerTest {
     @PostConstruct
     void setup() throws Exception {
         MvcResult season = createSeason();
-        String seasonUuid = JsonPath.read(season.getResponse().getContentAsString(), "$.uuid");
-        MvcResult event = createEvent(seasonUuid);
-        String eventUuid = JsonPath.read(event.getResponse().getContentAsString(), "$.uuid");
-        MvcResult discipline = createDiscipline(eventUuid);
-        uuid = JsonPath.read(discipline.getResponse().getContentAsString(), "$.uuid");
+        String seasonId = JsonPath.read(season.getResponse().getContentAsString(), "$.id");
+        MvcResult event = createEvent(seasonId);
+        String eventId = JsonPath.read(event.getResponse().getContentAsString(), "$.id");
+        MvcResult discipline = createDiscipline(eventId);
+        uuid = JsonPath.read(discipline.getResponse().getContentAsString(), "$.id");
     }
 
     @BeforeEach
@@ -70,7 +70,7 @@ class StageControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Hauptrunde",
-                            "disciplineUuid": "%s"}
+                            "disciplineId": "%s"}
                     """, uuid)))
             .andExpect(status().isOk());
 
@@ -123,7 +123,7 @@ class StageControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Turnier",
-                            "seasonUuid": "%s"}
+                            "seasonId": "%s"}
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();
@@ -134,7 +134,7 @@ class StageControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Offenes Einzel",
-                            "eventUuid": "%s"}
+                            "eventId": "%s"}
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();
@@ -145,7 +145,7 @@ class StageControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Vorrunde",
-                            "disciplineUuid": "%s"}
+                            "disciplineId": "%s"}
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();

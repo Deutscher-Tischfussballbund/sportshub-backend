@@ -21,7 +21,7 @@ public class TeamService {
     }
 
     TeamDto get(String uuid) {
-        Team team = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Team team = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new TeamNotFoundException(uuid));
         return mapper.toDto(team);
     }
@@ -33,7 +33,7 @@ public class TeamService {
     }
 
     TeamDto update(String uuid, TeamDto teamDto) {
-        Team team = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Team team = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new TeamNotFoundException(uuid));
 
         mapper.updateEntityFromDto(teamDto, team);
@@ -44,7 +44,7 @@ public class TeamService {
 
     @Transactional
     void delete(String uuid) {
-        Team team = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Team team = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new TeamNotFoundException(uuid));
         repository.delete(team);
     }

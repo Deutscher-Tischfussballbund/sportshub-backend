@@ -26,17 +26,16 @@ public class PoolService {
     }
 
     PoolDto get(String uuid) {
-        Pool pool = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Pool pool = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new PoolNotFoundException(uuid));
         return mapper.toDto(pool);
     }
 
     PoolDto create(PoolDto poolDto) {
         Pool pool = mapper.toEntity(poolDto);
-        pool.setUuid(UUID.randomUUID());
 
-        Stage stage = stageRepository.findByUuid(poolDto.getStageUuid())
-            .orElseThrow(() -> new StageNotFoundException(poolDto.getStageUuid().toString()));
+        Stage stage = stageRepository.findById(poolDto.getStageId())
+            .orElseThrow(() -> new StageNotFoundException(poolDto.getStageId().toString()));
         pool.setStage(stage);
 
         Pool savedPool = repository.save(pool);
@@ -44,13 +43,13 @@ public class PoolService {
     }
 
     PoolDto update(String uuid, PoolDto poolDto) {
-        Pool pool = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Pool pool = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new PoolNotFoundException(uuid));
 
         mapper.updateEntityFromDto(poolDto, pool);
 
-        Stage stage = stageRepository.findByUuid(poolDto.getStageUuid())
-            .orElseThrow(() -> new StageNotFoundException(poolDto.getStageUuid().toString()));
+        Stage stage = stageRepository.findById(poolDto.getStageId())
+            .orElseThrow(() -> new StageNotFoundException(poolDto.getStageId().toString()));
         pool.setStage(stage);
 
         Pool savedPool = repository.save(pool);
@@ -59,7 +58,7 @@ public class PoolService {
 
     @Transactional
     void delete(String uuid) {
-        Pool pool = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Pool pool = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new PoolNotFoundException(uuid));
         repository.delete(pool);
     }

@@ -10,7 +10,7 @@ import java.util.List;
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface MatchMapper {
 
-    @Mapping(source = "matchDay.uuid", target = "matchDayUuid")
+    @Mapping(source = "matchDay.id", target = "matchDayId")
     MatchDto toDto(Match match);
 
     @Mapping(target = "id", ignore = true)
@@ -18,7 +18,6 @@ public interface MatchMapper {
     Match toEntity(MatchDto matchDto);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "matchDay", ignore = true)
     void updateEntityFromDto(MatchDto dto, @MappingTarget Match entity);
 

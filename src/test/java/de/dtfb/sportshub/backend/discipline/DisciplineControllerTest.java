@@ -31,9 +31,9 @@ class DisciplineControllerTest {
     @PostConstruct
     void setup() throws Exception {
         MvcResult season = createSeason();
-        String seasonUuid = JsonPath.read(season.getResponse().getContentAsString(), "$.uuid");
-        MvcResult event = createEvent(seasonUuid);
-        uuid = JsonPath.read(event.getResponse().getContentAsString(), "$.uuid");
+        String seasonId = JsonPath.read(season.getResponse().getContentAsString(), "$.id");
+        MvcResult event = createEvent(seasonId);
+        uuid = JsonPath.read(event.getResponse().getContentAsString(), "$.id");
     }
 
     @BeforeEach
@@ -68,7 +68,7 @@ class DisciplineControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Replacement",
-                            "eventUuid": "%s"}
+                            "eventId": "%s"}
                     """, uuid)))
             .andExpect(status().isOk());
 
@@ -122,7 +122,7 @@ class DisciplineControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Turnier",
-                            "seasonUuid": "%s"}
+                            "seasonId": "%s"}
                     """, uuid)))
             .andReturn();
     }
@@ -132,7 +132,7 @@ class DisciplineControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Offenes Einzel",
-                            "eventUuid": "%s"}
+                            "eventId": "%s"}
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();

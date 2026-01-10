@@ -26,17 +26,16 @@ public class EventService {
     }
 
     EventDto get(String uuid) {
-        Event event = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Event event = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new EventNotFoundException(uuid));
         return mapper.toDto(event);
     }
 
     EventDto create(EventDto eventDto) {
         Event event = mapper.toEntity(eventDto);
-        event.setUuid(UUID.randomUUID());
 
-        Season season = seasonRepository.findByUuid(eventDto.getSeasonUuid())
-            .orElseThrow(() -> new SeasonNotFoundException(eventDto.getSeasonUuid().toString()));
+        Season season = seasonRepository.findById(eventDto.getSeasonId())
+            .orElseThrow(() -> new SeasonNotFoundException(eventDto.getSeasonId().toString()));
         event.setSeason(season);
 
         Event savedEvent = repository.save(event);
@@ -44,13 +43,13 @@ public class EventService {
     }
 
     EventDto update(String uuid, EventDto eventDto) {
-        Event event = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Event event = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new EventNotFoundException(uuid));
 
         mapper.updateEntityFromDto(eventDto, event);
 
-        Season season = seasonRepository.findByUuid(eventDto.getSeasonUuid())
-            .orElseThrow(() -> new SeasonNotFoundException(eventDto.getSeasonUuid().toString()));
+        Season season = seasonRepository.findById(eventDto.getSeasonId())
+            .orElseThrow(() -> new SeasonNotFoundException(eventDto.getSeasonId().toString()));
         event.setSeason(season);
 
         Event savedEvent = repository.save(event);
@@ -59,7 +58,7 @@ public class EventService {
 
     @Transactional
     void delete(String uuid) {
-        Event event = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Event event = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new EventNotFoundException(uuid));
         repository.delete(event);
     }

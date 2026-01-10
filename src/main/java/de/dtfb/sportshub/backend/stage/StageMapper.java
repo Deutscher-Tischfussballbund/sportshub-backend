@@ -9,7 +9,7 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface StageMapper {
 
-    @Mapping(source = "discipline.uuid", target = "disciplineUuid")
+    @Mapping(source = "discipline.id", target = "disciplineId")
     StageDto toDto(Stage stage);
 
     @Mapping(target = "id", ignore = true)
@@ -17,7 +17,6 @@ public interface StageMapper {
     Stage toEntity(StageDto stageDto);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "discipline", ignore = true)
     void updateEntityFromDto(StageDto dto, @MappingTarget Stage entity);
 

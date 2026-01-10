@@ -31,15 +31,15 @@ class RoundControllerTest {
     @PostConstruct
     void setup() throws Exception {
         MvcResult season = createSeason();
-        String seasonUuid = JsonPath.read(season.getResponse().getContentAsString(), "$.uuid");
-        MvcResult event = createEvent(seasonUuid);
-        String eventUuid = JsonPath.read(event.getResponse().getContentAsString(), "$.uuid");
-        MvcResult discipline = createDiscipline(eventUuid);
-        String disciplineUuid = JsonPath.read(discipline.getResponse().getContentAsString(), "$.uuid");
-        MvcResult stage = createStage(disciplineUuid);
-        String stageUuid = JsonPath.read(stage.getResponse().getContentAsString(), "$.uuid");
-        MvcResult pool = createPool(stageUuid);
-        uuid = JsonPath.read(pool.getResponse().getContentAsString(), "$.uuid");
+        String seasonId = JsonPath.read(season.getResponse().getContentAsString(), "$.id");
+        MvcResult event = createEvent(seasonId);
+        String eventId = JsonPath.read(event.getResponse().getContentAsString(), "$.id");
+        MvcResult discipline = createDiscipline(eventId);
+        String disciplineId = JsonPath.read(discipline.getResponse().getContentAsString(), "$.id");
+        MvcResult stage = createStage(disciplineId);
+        String stageId = JsonPath.read(stage.getResponse().getContentAsString(), "$.id");
+        MvcResult pool = createPool(stageId);
+        uuid = JsonPath.read(pool.getResponse().getContentAsString(), "$.id");
     }
 
     @BeforeEach
@@ -75,7 +75,7 @@ class RoundControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Round1",
-                            "poolUuid": "%s"}
+                            "poolId": "%s"}
                     """, uuid)))
             .andExpect(status().isOk());
 
@@ -129,7 +129,7 @@ class RoundControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Turnier",
-                            "seasonUuid": "%s"}
+                            "seasonId": "%s"}
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();
@@ -140,7 +140,7 @@ class RoundControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Offenes Einzel",
-                            "eventUuid": "%s"}
+                            "eventId": "%s"}
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();
@@ -151,7 +151,7 @@ class RoundControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Vorrunde",
-                            "disciplineUuid": "%s"}
+                            "disciplineId": "%s"}
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();
@@ -163,7 +163,7 @@ class RoundControllerTest {
                 .content(String.format("""
                             {"name": "Pool1",
                             "tournamentMode": "SWISS",
-                            "stageUuid": "%s",
+                            "stageId": "%s",
                             "poolState": "READY"
                             }
                     """, uuid)))
@@ -177,7 +177,7 @@ class RoundControllerTest {
                 .content(String.format("""
                             {"name": "Runde1",
                             "index": 1,
-                            "poolUuid": "%s"}
+                            "poolId": "%s"}
                     """, uuid)))
             .andExpect(status().isCreated())
             .andReturn();

@@ -26,7 +26,7 @@ public class DisciplineController {
     public ResponseEntity<DisciplineDto> create(@RequestBody DisciplineDto disciplineDto) {
         DisciplineDto returnedDto = service.create(disciplineDto);
 
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getUuid().toString()).build().toUri();
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId().toString()).build().toUri();
 
         return ResponseEntity.created(location).body(returnedDto);
     }

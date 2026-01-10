@@ -10,6 +10,6 @@ import java.util.UUID;
 public class RoundDto {
     private UUID id;
     private String name;
-    private UUID poolUuid;
+    private UUID poolId;
     private Integer index;
 }

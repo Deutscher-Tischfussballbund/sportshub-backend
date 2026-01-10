@@ -21,20 +21,19 @@ public class LocationService {
     }
 
     LocationDto get(String uuid) {
-        Location location = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Location location = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new LocationNotFoundException(uuid));
         return mapper.toDto(location);
     }
 
     LocationDto create(LocationDto locationDto) {
         Location newLocation = mapper.toEntity(locationDto);
-        newLocation.setUuid(UUID.randomUUID());
         Location savedLocation = repository.save(newLocation);
         return mapper.toDto(savedLocation);
     }
 
     LocationDto update(String uuid, LocationDto locationDto) {
-        Location location = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Location location = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new LocationNotFoundException(uuid));
 
         mapper.updateEntityFromDto(locationDto, location);
@@ -45,7 +44,7 @@ public class LocationService {
 
     @Transactional
     void delete(String uuid) {
-        Location location = repository.findByUuid(UUID.fromString(uuid)).orElseThrow(
+        Location location = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new LocationNotFoundException(uuid));
         repository.delete(location);
     }

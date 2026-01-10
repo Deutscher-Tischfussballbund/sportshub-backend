@@ -26,7 +26,7 @@ public class MatchSetController {
     public ResponseEntity<MatchSetDto> create(@RequestBody MatchSetDto matchSetDto) {
         MatchSetDto returnedDto = service.create(matchSetDto);
 
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getUuid().toString()).build().toUri();
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId().toString()).build().toUri();
 
         return ResponseEntity.created(location).body(returnedDto);
     }

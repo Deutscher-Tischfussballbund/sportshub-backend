@@ -15,7 +15,6 @@ public interface SeasonMapper {
     Season toEntity(SeasonDto seasonDto);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "uuid", ignore = true)
     void updateEntityFromDto(SeasonDto dto, @MappingTarget Season entity);
 
     List<SeasonDto> toDtoList(List<Season> seasons);
