@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.season;
 
+import de.dtfb.sportshub.backend.federation.Federation;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,4 +19,8 @@ public class Season {
     private UUID id;
 
     private String name;
+
+    @ManyToOne
+    @JoinColumn(name = "federation_id")
+    private Federation federation;
 }

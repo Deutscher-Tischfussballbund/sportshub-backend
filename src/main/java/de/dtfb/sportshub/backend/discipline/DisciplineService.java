@@ -31,6 +31,7 @@ public class DisciplineService {
         return mapper.toDto(discipline);
     }
 
+    @Transactional
     DisciplineDto create(DisciplineDto disciplineDto) {
         Discipline discipline = mapper.toEntity(disciplineDto);
 
@@ -42,6 +43,7 @@ public class DisciplineService {
         return mapper.toDto(savedDiscipline);
     }
 
+    @Transactional
     DisciplineDto update(String uuid, DisciplineDto disciplineDto) {
         Discipline discipline = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new DisciplineNotFoundException(uuid));

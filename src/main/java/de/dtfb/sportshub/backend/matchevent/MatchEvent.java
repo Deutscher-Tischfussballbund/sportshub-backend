@@ -28,7 +28,7 @@ public class MatchEvent {
     @JoinColumn(name = "team_id")
     private Team team;
 
-    private UUID playerUuid;
+    private UUID playerId;
 
     private Instant timestamp;
 

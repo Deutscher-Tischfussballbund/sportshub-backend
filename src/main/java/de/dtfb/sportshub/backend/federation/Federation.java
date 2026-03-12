@@ -1,6 +1,9 @@
-package de.dtfb.sportshub.backend.team;
+package de.dtfb.sportshub.backend.federation;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
@@ -10,7 +13,7 @@ import java.util.UUID;
 @Entity
 @Getter
 @Setter
-public class Team {
+public class Federation {
     @Id
     @GeneratedValue
     @UuidGenerator
@@ -18,6 +21,4 @@ public class Team {
     private UUID id;
 
     private String name;
-
-    //TODO link to federation? since name is not unique
 }
