@@ -1,15 +1,12 @@
 package de.dtfb.sportshub.backend.matchevent;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.*;
 
 import java.io.IOException;
 import java.util.List;
 
+@SuppressWarnings("unused")
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface MatchEventMapper {
 
@@ -17,11 +14,13 @@ public interface MatchEventMapper {
 
     @Mapping(source = "match.id", target = "matchId")
     @Mapping(source = "team.id", target = "teamId")
+    @Mapping(target = "json", expression = "java(fromJsonString(matchEvent.getJson()))")
     MatchEventDto toDto(MatchEvent matchEvent);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "match", ignore = true)
     @Mapping(target = "team", ignore = true)
+    @Mapping(target = "json", expression = "java(toJsonString(matchEventDto.getJson()))")
     MatchEvent toEntity(MatchEventDto matchEventDto);
 
     @Mapping(target = "id", ignore = true)
@@ -31,15 +30,33 @@ public interface MatchEventMapper {
 
     List<MatchEventDto> toDtoList(List<MatchEvent> matchEvents);
 
-    default String map(JsonNode node) {
-        return node == null ? null : node.toString();
+    default Object fromJsonString(String json) {
+        if (json == null) {
+            return null;
+        }
+        try {
+            return OBJECT_MAPPER.readValue(json, Object.class);
+        } catch (IOException e) {
+            throw new IllegalStateException("Invalid JSON stored in DB", e);
+        }
     }
 
-    default JsonNode map(String json) {
-        try {
-            return json == null ? null : OBJECT_MAPPER.readTree(json);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Invalid JSON stored in DB", e);
+    default String toJsonString(Object json) {
+        if (json == null) {
+            return null;
         }
+        try {
+            return OBJECT_MAPPER.writeValueAsString(json);
+        } catch (IOException e) {
+            throw new IllegalStateException("Invalid JSON stored in DB", e);
+        }
+    }
+
+    @AfterMapping
+    default void updateJsonAfterMapping(MatchEventDto dto, @MappingTarget MatchEvent entity) {
+        if (dto.getJson() != null) {
+            entity.setJson(toJsonString(dto.getJson()));
+        }
+        // if dto.getJson() is null, do nothing → preserves existing JSON
     }
 }

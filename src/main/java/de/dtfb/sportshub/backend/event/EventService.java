@@ -31,6 +31,7 @@ public class EventService {
         return mapper.toDto(event);
     }
 
+    @Transactional
     EventDto create(EventDto eventDto) {
         Event event = mapper.toEntity(eventDto);
 
@@ -42,6 +43,7 @@ public class EventService {
         return mapper.toDto(savedEvent);
     }
 
+    @Transactional
     EventDto update(String uuid, EventDto eventDto) {
         Event event = repository.findById(UUID.fromString(uuid)).orElseThrow(
             () -> new EventNotFoundException(uuid));
