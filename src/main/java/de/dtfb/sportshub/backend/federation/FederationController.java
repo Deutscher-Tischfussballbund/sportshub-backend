@@ -8,7 +8,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/events")
+@RequestMapping("/api/v1/federation")
 public class FederationController {
 
     private final FederationService service;
@@ -23,8 +23,8 @@ public class FederationController {
     }
 
     @PostMapping
-    public ResponseEntity<FederationDto> create(@RequestBody FederationDto eventDto) {
-        FederationDto returnedDto = service.create(eventDto);
+    public ResponseEntity<FederationDto> create(@RequestBody FederationDto federationDto) {
+        FederationDto returnedDto = service.create(federationDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId().toString()).build().toUri();
 
@@ -37,8 +37,8 @@ public class FederationController {
     }
 
     @PutMapping("/{uuid}")
-    public FederationDto update(@PathVariable String uuid, @RequestBody FederationDto eventDto) {
-        return service.update(uuid, eventDto);
+    public FederationDto update(@PathVariable String uuid, @RequestBody FederationDto federationDto) {
+        return service.update(uuid, federationDto);
     }
 
     @DeleteMapping("/{uuid}")

@@ -7,7 +7,6 @@ import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.season.SeasonRepository;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SeasonImporter {
@@ -22,7 +21,6 @@ public class SeasonImporter {
         this.em = em;
     }
 
-    @Transactional
     public void importSeason(ImportSeason importingSeason, Federation federation) {
 
         Season season = seasonRepository
@@ -48,5 +46,6 @@ public class SeasonImporter {
                 season = em.merge(season);
             }
         }
+        em.flush();
     }
 }

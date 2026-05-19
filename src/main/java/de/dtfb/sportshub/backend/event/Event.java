@@ -23,4 +23,6 @@ public class Event {
     private Season season;
 
     private String name;
+
+    private boolean imported;
 }

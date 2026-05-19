@@ -8,6 +8,6 @@ import lombok.Setter;
 @Setter
 public class ImportPlayer {
     private String name;
-    private String id;
+    private String playerNr;
     private Side side;
 }

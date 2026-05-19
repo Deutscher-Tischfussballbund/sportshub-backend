@@ -17,4 +17,5 @@ public class MatchDto {
     private MatchType type;
     private Integer homeScore;
     private Integer awayScore;
+    private Winner winner;
 }

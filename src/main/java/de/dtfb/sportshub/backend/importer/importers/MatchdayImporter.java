@@ -9,12 +9,15 @@ import de.dtfb.sportshub.backend.team.Team;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+
 @Component
 public class MatchdayImporter {
     private final MatchDayRepository matchdayRepository;
     private final MatchImporter matchImporter;
     private final TeamImporter teamImporter;
     private final EntityManager em;
+    private static final Instant UNKNOWN_DATE_TIME = Instant.EPOCH;
 
     public MatchdayImporter(MatchDayRepository matchdayRepository, MatchImporter matchImporter, TeamImporter teamImporter, EntityManager em) {
         this.matchdayRepository = matchdayRepository;
@@ -29,17 +32,19 @@ public class MatchdayImporter {
             .orElseGet(() -> {
                 MatchDay md = new MatchDay();
                 md.setName(importingMatchday.getName());
-                return matchdayRepository.save(md);
+                return md;
             });
 
-        matchDay.setStartDate(importingMatchday.getStartDate());
-        matchDay.setEndDate(importingMatchday.getEndDate());
+        matchDay.setStartDate(importingMatchday.getStartDate() == null ? UNKNOWN_DATE_TIME : importingMatchday.getStartDate());
+        matchDay.setEndDate(importingMatchday.getEndDate() == null ? UNKNOWN_DATE_TIME : importingMatchday.getEndDate());
 
         Team homeTeam = teamImporter.importTeam(importingMatchday.getTeamHome());
         Team awayTeam = teamImporter.importTeam(importingMatchday.getTeamAway());
         matchDay.setTeamHome(homeTeam);
         matchDay.setTeamAway(awayTeam);
         matchDay.setRound(round);
+
+        matchdayRepository.save(matchDay);
 
         int counter = 0;
         for (ImportMatch m : importingMatchday.getMatches()) {
@@ -55,5 +60,6 @@ public class MatchdayImporter {
                 matchDay = em.merge(matchDay);
             }
         }
+        em.flush();
     }
 }

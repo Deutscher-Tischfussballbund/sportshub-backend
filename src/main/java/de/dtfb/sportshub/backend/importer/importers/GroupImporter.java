@@ -47,5 +47,6 @@ public class GroupImporter {
                 pool = em.merge(pool);
             }
         }
+        em.flush();
     }
 }

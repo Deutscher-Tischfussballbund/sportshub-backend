@@ -1,83 +1,85 @@
 {
-    "meta": {
-        "organisation": "TFVSH"
-    },
-    "seasons": [
+  "meta": {
+    "organisation": "TFVSH"
+  },
+  "seasons": [
+    {
+      "name": "2026",
+      "events": [
         {
-            "name": "2026",
-            "events": [
+          "name": "eventA",
+          "disciplines": [
+            {
+              "name": "disciplineA",
+              "shortName": "dA",
+              "stages": [
                 {
-                    "name": "eventA",
-                    "disciplines": [
+                  "name": "stageA",
+                  "groups": [
+                    {
+                      "name": "groupA",
+                      "tournamentMode": "unknown",
+                      "state": "FINISHED",
+                      "rounds": [
                         {
-                            "name": "disciplineA",
-                            "shortname": "dA",
-                            "stages": [
+                          "index": 1,
+                          "name": "Round 1",
+                          "matchdays": [
+                            {
+                              "name": "Day1",
+                              "startDate": "2026-03-08T19:02:00Z",
+                              "endDate": "2026-03-08T19:02:00Z",
+                              "teamHome": {
+                                "name": "TeamA"
+                              },
+                              "teamAway": {
+                                "name": "TeamB"
+                              },
+                              "matches": [
                                 {
-                                    "name": "stageA",
-                                    "groups": [
-                                        {
-                                            "name": "groupA",
-                                            "_comment": "tournamentMode and state (PoolState) are enums",
-                                            "tournamentMode": "round robin",
-                                            "state": "FINISHED",
-                                            "rounds": [
-                                                {
-                                                    "index": 1,
-                                                    "name": "Round 1",
-                                                    "matchdays": [
-                                                        {
-                                                            "name": "Day1",
-                                                            "start_date": "2026-03-08T19:02:00Z",
-                                                            "end_date": "2026-03-08T19:02:00Z",
-                                                            "team_home": {
-                                                                "name": "TeamA"
-                                                            },
-                                                            "team_away": {
-                                                                "name": "TeamB"
-                                                            },
-                                                            "matches": [
-                                                                {
-                                                                    "start_time": "2026-03-08T19:02:00Z",
-                                                                    "end_time": "2026-03-08T19:02:00Z",
-                                                                    "type": "SINGLE",
-                                                                    "_comment": "type (MatchType) and state (MatchState) are enums",
-                                                                    "state": "PLAYED",
-                                                                    "players": [
-                                                                        {
-                                                                            "name": "PlayerA",
-                                                                            "player_nr": "14-141414",
-                                                                            "_comment": "side is an enum",
-                                                                            "side": "HOME"
-                                                                        },
-                                                                        {
-                                                                            "name": "PlayerB",
-                                                                            "player_nr": "14-222222",
-                                                                            "_comment": "side is an enum",
-                                                                            "side": "AWAY"
-                                                                        }
-                                                                    ],
-                                                                    "sets": [
-                                                                        {
-                                                                            "number": 1,
-                                                                            "score_home": 2,
-                                                                            "score_away": 4
-                                                                        }
-                                                                    ]
-                                                                }
-                                                            ]
-                                                        }
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    ]
+                                  "startDate": "2026-03-08T19:02:00Z",
+                                  "endDate": "2026-03-08T19:02:00Z",
+                                  "type": "SINGLE",
+                                  "state": "PLAYED",
+                                  "players": [
+                                    {
+                                      "name": "PlayerA",
+                                      "playerNr": "14-141414",
+                                      "side": "HOME"
+                                    },
+                                    {
+                                      "name": "PlayerB",
+                                      "playerNr": "14-222222",
+                                      "side": "AWAY"
+                                    }
+                                  ],
+                                  "sets": [
+                                    {
+                                      "number": 1,
+                                      "scoreHome": 2,
+                                      "scoreAway": 4
+                                    },
+                                    {
+                                      "number": 2,
+                                      "scoreHome": 22,
+                                      "scoreAway": 5
+                                    }
+                                  ],
+                                  "winner": "DRAW"
                                 }
-                            ]
+                              ]
+                            }
+                          ]
                         }
-                    ]
+                      ]
+                    }
+                  ]
                 }
-            ]
+              ]
+            }
+          ]
         }
-    ]
+      ]
+    }
+  ]
 }

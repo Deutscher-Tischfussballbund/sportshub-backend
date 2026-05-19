@@ -9,6 +9,7 @@ import de.dtfb.sportshub.backend.matchset.MatchSet;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +18,7 @@ public class MatchImporter {
     private final MatchRepository matchRepository;
     private final SetImporter setImporter;
     private final EntityManager em;
+    public static final Instant UNKNOWN_DATE_TIME = Instant.EPOCH;
 
     public MatchImporter(MatchRepository matchRepository, SetImporter setImporter, EntityManager em) {
         this.matchRepository = matchRepository;
@@ -30,14 +32,16 @@ public class MatchImporter {
             .orElseGet(() -> {
                 Match m = new Match();
                 m.setMatchDay(matchDay);
-                return matchRepository.save(m);
+                return m;
             });
 
         match.setType(importingMatch.getType());
         match.setState(importingMatch.getState());
-        match.setStartTime(importingMatch.getStartDate());
-        match.setEndTime(importingMatch.getEndDate());
+        match.setWinner(importingMatch.getWinner());
+        match.setStartTime(importingMatch.getStartDate() == null ? UNKNOWN_DATE_TIME : importingMatch.getStartDate());
+        match.setEndTime(importingMatch.getEndDate() == null ? UNKNOWN_DATE_TIME : importingMatch.getEndDate());
 
+        matchRepository.save(match);
         List<MatchSet> matchSets = new ArrayList<>();
         int counter = 0;
         for (ImportSet s : importingMatch.getSets()) {

@@ -24,6 +24,7 @@ public class DisciplineImporter {
     public void importDiscipline(ImportDiscipline importingDiscipline, Event event) {
 
         Discipline discipline = disciplineRepository
+//            .findByName(importingDiscipline.getName()) // TODO: reuse of discipline only valid if discipline not bound to event also use @ManyToMany on both event and discipline
             .findByEventAndName(event, importingDiscipline.getName())
             .orElseGet(() -> {
                 Discipline d = new Discipline();
@@ -47,5 +48,6 @@ public class DisciplineImporter {
                 discipline = em.merge(discipline);
             }
         }
+        em.flush();
     }
 }

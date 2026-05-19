@@ -17,6 +17,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -70,32 +71,32 @@ class MatchEventControllerTest {
     }
 
     @Test
-    void getAllMatches() throws Exception {
+    void getAllMatchEvents() throws Exception {
         mockMvc.perform(get("/api/v1/matchevents"))
             .andExpect(status().isOk());
     }
 
     @Test
-    void getMatch_expectException() throws Exception {
+    void getMatchEvent_expectException() throws Exception {
         mockMvc.perform(get("/api/v1/matchevents/" + UUID.randomUUID()))
             .andExpect(status().isNotFound());
     }
 
     @Test
-    void createAndGetMatch() throws Exception {
+    void createAndGetMatchEvent() throws Exception {
         mockMvc.perform(get(url))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.type").value("GOAL"))
             .andExpect(jsonPath("$.matchId").value(matchId))
             .andExpect(jsonPath("$.teamId").value(teamHomeId))
             .andExpect(jsonPath("$.playerId").value(playerId.toString()))
-            .andExpect(jsonPath("$.json").value("{\"name\": \"test\"}"))
+            .andExpect(jsonPath("$.json.name").value("test"))
             .andExpect(jsonPath("$.homeScore").value(5))
             .andExpect(jsonPath("$.awayScore").value(4));
     }
 
     @Test
-    void updateMatch() throws Exception {
+    void updateMatchEvent() throws Exception {
         mockMvc.perform(put(url)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
@@ -112,7 +113,7 @@ class MatchEventControllerTest {
             .andExpect(jsonPath("$.matchId").value(matchId))
             .andExpect(jsonPath("$.teamId").value(teamHomeId))
             .andExpect(jsonPath("$.playerId").value(playerId.toString()))
-            .andExpect(jsonPath("$.json").value("{\"name\": \"test\"}"))
+            .andExpect(jsonPath("$.json").value("{\"name\":\"test\"}"))
             .andExpect(jsonPath("$.homeScore").value(5))
             .andExpect(jsonPath("$.awayScore").value(4))
             .andReturn().getResponse().getContentAsString();
@@ -123,7 +124,7 @@ class MatchEventControllerTest {
     }
 
     @Test
-    void updateMatch_expectException() throws Exception {
+    void updateMatchEvent_expectException() throws Exception {
         mockMvc.perform(put("/api/v1/matchevents/" + UUID.randomUUID())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
@@ -133,7 +134,7 @@ class MatchEventControllerTest {
     }
 
     @Test
-    void deleteMatch() throws Exception {
+    void deleteMatchEvent() throws Exception {
         mockMvc.perform(delete(url))
             .andExpect(status().isOk());
 
@@ -142,7 +143,7 @@ class MatchEventControllerTest {
     }
 
     @Test
-    void deleteMatch_expectException() throws Exception {
+    void deleteMatchEvent_expectException() throws Exception {
         mockMvc.perform(delete("/api/v1/matchevents/" + UUID.randomUUID()))
             .andExpect(status().isNotFound());
     }
@@ -290,6 +291,7 @@ class MatchEventControllerTest {
                             }
                     """, matchId, teamHomeId, playerId, sampleDate)))
             .andExpect(status().isCreated())
+            .andDo(print())
             .andReturn();
     }
     //endregion

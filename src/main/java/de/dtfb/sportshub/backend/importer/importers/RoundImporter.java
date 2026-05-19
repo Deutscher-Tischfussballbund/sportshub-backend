@@ -46,5 +46,6 @@ public class RoundImporter {
                 round = em.merge(round);
             }
         }
+        em.flush();
     }
 }

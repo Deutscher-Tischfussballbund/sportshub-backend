@@ -9,16 +9,13 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface FederationMapper {
 
-    @Mapping(source = "season.id", target = "seasonId")
-    FederationDto toDto(Federation event);
+    FederationDto toDto(Federation federation);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "season", ignore = true)
-    Federation toEntity(FederationDto eventDto);
+    Federation toEntity(FederationDto federationDto);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "season", ignore = true)
     void updateEntityFromDto(FederationDto dto, @MappingTarget Federation entity);
 
-    List<FederationDto> toDtoList(List<Federation> events);
+    List<FederationDto> toDtoList(List<Federation> federations);
 }

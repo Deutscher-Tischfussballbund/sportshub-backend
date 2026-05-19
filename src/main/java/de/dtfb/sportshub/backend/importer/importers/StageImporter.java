@@ -44,5 +44,6 @@ public class StageImporter {
                 stage = em.merge(stage);
             }
         }
+        em.flush();
     }
 }

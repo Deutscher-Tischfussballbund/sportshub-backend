@@ -2,6 +2,7 @@ package de.dtfb.sportshub.backend.importer.data;
 
 import de.dtfb.sportshub.backend.match.MatchState;
 import de.dtfb.sportshub.backend.match.MatchType;
+import de.dtfb.sportshub.backend.match.Winner;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,4 +18,5 @@ public class ImportMatch {
     private MatchState state;
     private List<ImportPlayer> players;
     private List<ImportSet> sets;
+    private Winner winner;
 }

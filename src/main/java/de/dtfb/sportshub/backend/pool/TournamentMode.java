@@ -14,6 +14,7 @@ public enum TournamentMode {
     ROUNDS("rounds"),
     SNAKE_DRAW("snake draw"),
     SWISS("swiss"),
+    UNKNOWN("unknown"),
     WHIST("whist");
 
     private final String value;

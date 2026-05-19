@@ -37,4 +37,7 @@ public class Match {
 
     @Enumerated(EnumType.STRING)
     private MatchType type;
+
+    @Enumerated(EnumType.STRING)
+    private Winner winner;
 }

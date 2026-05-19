@@ -3,21 +3,24 @@
 ## Domain
 
 - ~~GroupState is not defined~~
-- ~~Should the round index start at 0 or 1?~~ -> start at 0
+- ~~Should the round index start at 0 or 1?~~ → start at 0
 - ~~Does every team have a matchday in a league? So there are 4 matchDays on the same day with a league of 8 teams? And
   for one season there would be 28 matchDays? what if a matchday would be the sum of all encounters (4), so there would
-  be 7 matchDays with 4 encounters?~~ -> matchday stays, even for tournaments, later we could improve by updating the match with round
-- remove ids, use uuids in database
-- check if saving of uuid would be sufficient for entity relationships
-- MatchEventType ``Goal`` vs ``Own_goal``?
-- MatchEvent vs SetEvent?
+  be 7 matchDays with 4 encounters?~~ → matchday stays, even for tournaments, later we could improve by updating the
+  match with round
+- ~~remove ids, use uuids in database~~ -> done
+- ~~check if saving of uuid would be sufficient for entity relationships~~ → would remove jpa features and is not
+  recommended
+- updates: check for querying + saving the relations
+- ~~MatchEventType ``Goal`` vs ``Own_goal``?~~ → ai generated, could be different, not needed yet
+- ~~MatchEvent vs SetEvent?~~ → later, unknown, remove scores
 
 ## Rest
 
-- api versioning (path based?)
-- Pagination for getAllxxx methods
-- PUT will only update resources, it will not create any new
-- Should get create a new resource when it is not existing? like createOrGet?
+- ~~api versioning (path based?)~~ → path based, check options in later stage
+- ~~PUT will only update resources, it will not create any new~~ → fine
+- ~~Should get create a new resource when it is not existing? like createOrGet?~~
+- ~~Pagination for getAllxxx methods~~ → questionable if pagination is needed
 
 ## JPA
 
@@ -46,3 +49,8 @@
 
 - Connection Timeout and Read timeout, how to set with spring boot 4? Officially it is
   ``spring.http.clients.connect-timeout``, but variable can not be resolved
+
+## Next steps
+
+- Import von Altdaten
+- Verband

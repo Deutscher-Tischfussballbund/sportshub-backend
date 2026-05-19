@@ -7,5 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface DisciplineRepository extends JpaRepository<Discipline, UUID> {
+    Optional<Discipline> findByName(String name);
+
     Optional<Discipline> findByEventAndName(Event event, String name);
 }

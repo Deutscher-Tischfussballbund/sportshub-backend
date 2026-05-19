@@ -8,6 +8,8 @@ import de.dtfb.sportshub.backend.importer.data.ImportSeason;
 import de.dtfb.sportshub.backend.importer.importers.FederationImporter;
 import de.dtfb.sportshub.backend.importer.importers.SeasonImporter;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,20 +18,28 @@ import java.io.InputStream;
 public class ImportService {
     private final FederationImporter federationImporter;
     private final SeasonImporter seasonImporter;
+    private final ObjectMapper objectMapper;
 
-    public ImportService(FederationImporter federationImporter, SeasonImporter seasonImporter) {
+    public ImportService(FederationImporter federationImporter, SeasonImporter seasonImporter, ObjectMapper objectMapper) {
         this.federationImporter = federationImporter;
         this.seasonImporter = seasonImporter;
+        this.objectMapper = objectMapper;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public ImportResult importData(InputStream input) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
         ImportResult result = new ImportResult();
         JsonParser parser = objectMapper.getFactory().createParser(input);
 
-        while (!parser.isClosed()) {
-
-            ImportPayload payload = objectMapper.readValue(parser, ImportPayload.class);
+        while (parser.nextToken() != null) {
+            ImportPayload payload;
+            try {
+                payload = objectMapper.readValue(parser, ImportPayload.class);
+            } catch (Exception ex) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                result.setMessage(ex.getMessage());
+                return result;
+            }
 
             Federation federation = federationImporter.importFederation(payload.getMeta());
 

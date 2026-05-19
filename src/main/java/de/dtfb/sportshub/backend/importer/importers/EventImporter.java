@@ -29,6 +29,7 @@ public class EventImporter {
                 Event e = new Event();
                 e.setName(importingEvent.getName());
                 e.setSeason(season);
+                e.setImported(true);
                 return eventRepository.save(e);
             });
 
@@ -46,5 +47,6 @@ public class EventImporter {
                 event = em.merge(event);
             }
         }
+        em.flush();
     }
 }
