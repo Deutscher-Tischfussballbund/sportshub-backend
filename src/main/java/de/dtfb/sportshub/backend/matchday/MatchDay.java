@@ -1,26 +1,22 @@
 package de.dtfb.sportshub.backend.matchday;
 
+import de.dtfb.sportshub.backend.base.BaseEntity;
 import de.dtfb.sportshub.backend.location.Location;
 import de.dtfb.sportshub.backend.round.Round;
 import de.dtfb.sportshub.backend.team.Team;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.UuidGenerator;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Entity
 @Getter
 @Setter
-public class MatchDay {
-    @Id
-    @GeneratedValue
-    @UuidGenerator
-    @Column(columnDefinition = "uuid", nullable = false, updatable = false)
-    private UUID id;
-
+public class MatchDay extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "round_id")
     private Round round;
@@ -43,5 +39,4 @@ public class MatchDay {
     private Instant startDate;
 
     private Instant endDate;
-
 }

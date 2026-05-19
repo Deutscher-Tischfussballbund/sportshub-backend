@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.match;
 
+import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.annotation.PostConstruct;
 import org.assertj.core.api.Assertions;
@@ -14,7 +15,6 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -73,7 +73,7 @@ class MatchControllerTest {
 
     @Test
     void getMatch_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/matches/" + UUID.randomUUID()))
+        mockMvc.perform(get("/api/v1/matches/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -117,7 +117,7 @@ class MatchControllerTest {
 
     @Test
     void updateMatch_expectException() throws Exception {
-        mockMvc.perform(put("/api/v1/matches/" + UUID.randomUUID())
+        mockMvc.perform(put("/api/v1/matches/" + NanoIdUtils.randomNanoId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"state": "PLANNED"}
@@ -136,7 +136,7 @@ class MatchControllerTest {
 
     @Test
     void deleteMatch_expectException() throws Exception {
-        mockMvc.perform(delete("/api/v1/matches/" + UUID.randomUUID()))
+        mockMvc.perform(delete("/api/v1/matches/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 

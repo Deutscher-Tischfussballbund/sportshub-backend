@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.matchday;
 
+import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.annotation.PostConstruct;
 import org.assertj.core.api.Assertions;
@@ -14,7 +15,6 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -73,7 +73,7 @@ class MatchDayControllerTest {
 
     @Test
     void getMatchday_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/matchdays/" + UUID.randomUUID()))
+        mockMvc.perform(get("/api/v1/matchdays/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -116,7 +116,7 @@ class MatchDayControllerTest {
 
     @Test
     void updateMatchday_expectException() throws Exception {
-        mockMvc.perform(put("/api/v1/matchdays/" + UUID.randomUUID())
+        mockMvc.perform(put("/api/v1/matchdays/" + NanoIdUtils.randomNanoId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "Matchday1"}
@@ -135,7 +135,7 @@ class MatchDayControllerTest {
 
     @Test
     void deleteMatchday_expectException() throws Exception {
-        mockMvc.perform(delete("/api/v1/matchdays/" + UUID.randomUUID()))
+        mockMvc.perform(delete("/api/v1/matchdays/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 

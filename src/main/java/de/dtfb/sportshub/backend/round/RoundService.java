@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class RoundService {
@@ -26,7 +25,7 @@ public class RoundService {
     }
 
     RoundDto get(String uuid) {
-        Round round = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Round round = repository.findById(uuid).orElseThrow(
             () -> new RoundNotFoundException(uuid));
         return mapper.toDto(round);
     }
@@ -35,7 +34,7 @@ public class RoundService {
         Round round = mapper.toEntity(roundDto);
 
         Pool pool = poolRepository.findById(roundDto.getPoolId())
-            .orElseThrow(() -> new PoolNotFoundException(roundDto.getPoolId().toString()));
+            .orElseThrow(() -> new PoolNotFoundException(roundDto.getPoolId()));
         round.setPool(pool);
 
         Round savedRound = repository.save(round);
@@ -43,13 +42,13 @@ public class RoundService {
     }
 
     RoundDto update(String uuid, RoundDto roundDto) {
-        Round round = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Round round = repository.findById(uuid).orElseThrow(
             () -> new RoundNotFoundException(uuid));
 
         mapper.updateEntityFromDto(roundDto, round);
 
         Pool pool = poolRepository.findById(roundDto.getPoolId())
-            .orElseThrow(() -> new PoolNotFoundException(roundDto.getPoolId().toString()));
+            .orElseThrow(() -> new PoolNotFoundException(roundDto.getPoolId()));
         round.setPool(pool);
 
         Round savedRound = repository.save(round);
@@ -58,7 +57,7 @@ public class RoundService {
 
     @Transactional
     void delete(String uuid) {
-        Round round = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Round round = repository.findById(uuid).orElseThrow(
             () -> new RoundNotFoundException(uuid));
         repository.delete(round);
     }

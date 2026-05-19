@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class MatchEventService {
@@ -31,7 +30,7 @@ public class MatchEventService {
     }
 
     MatchEventDto get(String uuid) {
-        MatchEvent matchEvent = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        MatchEvent matchEvent = repository.findById(uuid).orElseThrow(
             () -> new MatchEventNotFoundException(uuid));
         return mapper.toDto(matchEvent);
     }
@@ -46,7 +45,7 @@ public class MatchEventService {
     }
 
     MatchEventDto update(String uuid, MatchEventDto matchEventDto) {
-        MatchEvent matchEvent = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        MatchEvent matchEvent = repository.findById(uuid).orElseThrow(
             () -> new MatchEventNotFoundException(uuid));
 
         mapper.updateEntityFromDto(matchEventDto, matchEvent);
@@ -59,20 +58,20 @@ public class MatchEventService {
 
     @Transactional
     void delete(String uuid) {
-        MatchEvent matchEvent = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        MatchEvent matchEvent = repository.findById(uuid).orElseThrow(
             () -> new MatchEventNotFoundException(uuid));
         repository.delete(matchEvent);
     }
 
     private void setDependants(MatchEventDto matchEventDto, MatchEvent matchEvent) {
-        UUID matchId = matchEventDto.getMatchId();
+        String matchId = matchEventDto.getMatchId();
         if (matchId != null && !matchId.equals(matchEvent.getId())) {
             Match match = matchRepository.findById(matchId)
-                .orElseThrow(() -> new RoundNotFoundException(matchId.toString()));
+                .orElseThrow(() -> new RoundNotFoundException(matchId));
             matchEvent.setMatch(match);
         }
         Team team = teamRepository.findById(matchEventDto.getTeamId())
-            .orElseThrow(() -> new TeamNotFoundException(matchEventDto.getTeamId().toString()));
+            .orElseThrow(() -> new TeamNotFoundException(matchEventDto.getTeamId()));
         matchEvent.setTeam(team);
     }
 }

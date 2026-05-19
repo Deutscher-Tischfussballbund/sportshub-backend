@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class DisciplineService {
@@ -26,7 +25,7 @@ public class DisciplineService {
     }
 
     DisciplineDto get(String uuid) {
-        Discipline discipline = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Discipline discipline = repository.findById(uuid).orElseThrow(
             () -> new DisciplineNotFoundException(uuid));
         return mapper.toDto(discipline);
     }
@@ -36,7 +35,7 @@ public class DisciplineService {
         Discipline discipline = mapper.toEntity(disciplineDto);
 
         Event event = eventRepository.findById(disciplineDto.getEventId())
-            .orElseThrow(() -> new EventNotFoundException(disciplineDto.getEventId().toString()));
+            .orElseThrow(() -> new EventNotFoundException(disciplineDto.getEventId()));
         discipline.setEvent(event);
 
         Discipline savedDiscipline = repository.save(discipline);
@@ -45,13 +44,13 @@ public class DisciplineService {
 
     @Transactional
     DisciplineDto update(String uuid, DisciplineDto disciplineDto) {
-        Discipline discipline = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Discipline discipline = repository.findById(uuid).orElseThrow(
             () -> new DisciplineNotFoundException(uuid));
 
         mapper.updateEntityFromDto(disciplineDto, discipline);
 
         Event event = eventRepository.findById(disciplineDto.getEventId())
-            .orElseThrow(() -> new EventNotFoundException(disciplineDto.getEventId().toString()));
+            .orElseThrow(() -> new EventNotFoundException(disciplineDto.getEventId()));
         discipline.setEvent(event);
 
         Discipline savedDiscipline = repository.save(discipline);
@@ -60,7 +59,7 @@ public class DisciplineService {
 
     @Transactional
     void delete(String uuid) {
-        Discipline discipline = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Discipline discipline = repository.findById(uuid).orElseThrow(
             () -> new DisciplineNotFoundException(uuid));
         repository.delete(discipline);
     }

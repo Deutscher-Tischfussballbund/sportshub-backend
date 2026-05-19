@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.exception;
 
+import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
 import de.dtfb.sportshub.backend.externalApi.ExternalApiClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -8,8 +9,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -28,7 +27,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void getPlayer_expectException() throws Exception {
-        UUID id = UUID.randomUUID();
+        String id = NanoIdUtils.randomNanoId();
 
         Mockito.when(externalApiClient.fetchById(any())).thenThrow(new RuntimeException());
 

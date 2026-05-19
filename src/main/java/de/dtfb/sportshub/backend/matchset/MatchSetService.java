@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class MatchSetService {
@@ -26,7 +25,7 @@ public class MatchSetService {
     }
 
     MatchSetDto get(String uuid) {
-        MatchSet matchSet = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        MatchSet matchSet = repository.findById(uuid).orElseThrow(
             () -> new MatchSetNotFoundException(uuid));
         return mapper.toDto(matchSet);
     }
@@ -35,7 +34,7 @@ public class MatchSetService {
         MatchSet matchSet = mapper.toEntity(setDto);
 
         Match match = matchRepository.findById(setDto.getMatchId())
-            .orElseThrow(() -> new MatchDayNotFoundException(setDto.getMatchId().toString()));
+            .orElseThrow(() -> new MatchDayNotFoundException(setDto.getMatchId()));
         matchSet.setMatch(match);
 
         MatchSet savedSet = repository.save(matchSet);
@@ -43,13 +42,13 @@ public class MatchSetService {
     }
 
     MatchSetDto update(String uuid, MatchSetDto setDto) {
-        MatchSet matchSet = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        MatchSet matchSet = repository.findById(uuid).orElseThrow(
             () -> new MatchSetNotFoundException(uuid));
 
         mapper.updateEntityFromDto(setDto, matchSet);
 
         Match match = matchRepository.findById(setDto.getMatchId())
-            .orElseThrow(() -> new MatchDayNotFoundException(setDto.getMatchId().toString()));
+            .orElseThrow(() -> new MatchDayNotFoundException(setDto.getMatchId()));
         matchSet.setMatch(match);
 
         MatchSet savedSet = repository.save(matchSet);
@@ -58,7 +57,7 @@ public class MatchSetService {
 
     @Transactional
     void delete(String uuid) {
-        MatchSet matchSet = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        MatchSet matchSet = repository.findById(uuid).orElseThrow(
             () -> new MatchSetNotFoundException(uuid));
         repository.delete(matchSet);
     }

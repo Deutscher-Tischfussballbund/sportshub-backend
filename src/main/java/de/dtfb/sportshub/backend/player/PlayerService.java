@@ -3,8 +3,6 @@ package de.dtfb.sportshub.backend.player;
 import de.dtfb.sportshub.backend.externalApi.ExternalApiClient;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
-
 @Service
 public class PlayerService {
 
@@ -15,6 +13,6 @@ public class PlayerService {
     }
 
     PlayerDto get(String uuid) {
-        return client.fetchById(UUID.fromString(uuid));
+        return client.fetchById(uuid);
     }
 }

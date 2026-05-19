@@ -4,8 +4,7 @@ import de.dtfb.sportshub.backend.match.Match;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
-import java.util.UUID;
 
-public interface MatchSetRepository extends JpaRepository<MatchSet, UUID> {
+public interface MatchSetRepository extends JpaRepository<MatchSet, String> {
     Optional<MatchSet> findByMatchAndSetNumber(Match match, Integer setNumber);
 }

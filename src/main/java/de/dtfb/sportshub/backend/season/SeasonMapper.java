@@ -9,6 +9,7 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface SeasonMapper {
 
+    @Mapping(source = "federation.id", target = "federationId")
     SeasonDto toDto(Season season);
 
     @Mapping(target = "id", ignore = true)

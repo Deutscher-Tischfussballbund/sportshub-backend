@@ -5,8 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 
-public interface MatchRepository extends JpaRepository<Match, UUID> {
+public interface MatchRepository extends JpaRepository<Match, String> {
     Optional<Match> findByMatchDayAndEndTime(MatchDay matchDay, Instant endTime);
 }

@@ -7,8 +7,6 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-import java.util.UUID;
-
 @Component
 public class ExternalApiClient {
     private final RestClient restClient;
@@ -17,7 +15,7 @@ public class ExternalApiClient {
         this.restClient = restClient;
     }
 
-    public PlayerDto fetchById(UUID id) {
+    public PlayerDto fetchById(String id) {
         return restClient.get()
             .uri("/players/{id}", id)
             .retrieve()

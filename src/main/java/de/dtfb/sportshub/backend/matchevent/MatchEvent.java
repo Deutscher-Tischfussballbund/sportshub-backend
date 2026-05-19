@@ -1,25 +1,18 @@
 package de.dtfb.sportshub.backend.matchevent;
 
+import de.dtfb.sportshub.backend.base.BaseEntity;
 import de.dtfb.sportshub.backend.match.Match;
 import de.dtfb.sportshub.backend.team.Team;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.UuidGenerator;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Entity
 @Getter
 @Setter
-public class MatchEvent {
-    @Id
-    @GeneratedValue
-    @UuidGenerator
-    @Column(columnDefinition = "uuid", nullable = false, updatable = false)
-    private UUID id;
-
+public class MatchEvent extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "match_id")
     private Match match;
@@ -28,7 +21,7 @@ public class MatchEvent {
     @JoinColumn(name = "team_id")
     private Team team;
 
-    private UUID playerId;
+    private String playerId;
 
     private Instant timestamp;
 

@@ -14,10 +14,12 @@ public interface EventMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "season", ignore = true)
+    @Mapping(target = "imported", ignore = true)
     Event toEntity(EventDto eventDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "season", ignore = true)
+    @Mapping(target = "imported", ignore = true)
     void updateEntityFromDto(EventDto dto, @MappingTarget Event entity);
 
     List<EventDto> toDtoList(List<Event> events);

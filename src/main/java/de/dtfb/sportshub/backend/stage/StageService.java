@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class StageService {
@@ -26,7 +25,7 @@ public class StageService {
     }
 
     StageDto get(String uuid) {
-        Stage stage = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Stage stage = repository.findById(uuid).orElseThrow(
             () -> new StageNotFoundException(uuid));
         return mapper.toDto(stage);
     }
@@ -35,7 +34,7 @@ public class StageService {
         Stage stage = mapper.toEntity(stageDto);
 
         Discipline discipline = disciplineRepository.findById(stageDto.getDisciplineId())
-            .orElseThrow(() -> new DisciplineNotFoundException(stageDto.getDisciplineId().toString()));
+            .orElseThrow(() -> new DisciplineNotFoundException(stageDto.getDisciplineId()));
         stage.setDiscipline(discipline);
 
         Stage savedStage = repository.save(stage);
@@ -43,13 +42,13 @@ public class StageService {
     }
 
     StageDto update(String uuid, StageDto stageDto) {
-        Stage stage = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Stage stage = repository.findById(uuid).orElseThrow(
             () -> new StageNotFoundException(uuid));
 
         mapper.updateEntityFromDto(stageDto, stage);
 
         Discipline discipline = disciplineRepository.findById(stageDto.getDisciplineId())
-            .orElseThrow(() -> new DisciplineNotFoundException(stageDto.getDisciplineId().toString()));
+            .orElseThrow(() -> new DisciplineNotFoundException(stageDto.getDisciplineId()));
         stage.setDiscipline(discipline);
 
         Stage savedStage = repository.save(stage);
@@ -58,7 +57,7 @@ public class StageService {
 
     @Transactional
     void delete(String uuid) {
-        Stage stage = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Stage stage = repository.findById(uuid).orElseThrow(
             () -> new StageNotFoundException(uuid));
         repository.delete(stage);
     }

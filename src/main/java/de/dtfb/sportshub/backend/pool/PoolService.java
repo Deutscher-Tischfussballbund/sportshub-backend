@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class PoolService {
@@ -26,7 +25,7 @@ public class PoolService {
     }
 
     PoolDto get(String uuid) {
-        Pool pool = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Pool pool = repository.findById(uuid).orElseThrow(
             () -> new PoolNotFoundException(uuid));
         return mapper.toDto(pool);
     }
@@ -35,7 +34,7 @@ public class PoolService {
         Pool pool = mapper.toEntity(poolDto);
 
         Stage stage = stageRepository.findById(poolDto.getStageId())
-            .orElseThrow(() -> new StageNotFoundException(poolDto.getStageId().toString()));
+            .orElseThrow(() -> new StageNotFoundException(poolDto.getStageId()));
         pool.setStage(stage);
 
         Pool savedPool = repository.save(pool);
@@ -43,13 +42,13 @@ public class PoolService {
     }
 
     PoolDto update(String uuid, PoolDto poolDto) {
-        Pool pool = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Pool pool = repository.findById(uuid).orElseThrow(
             () -> new PoolNotFoundException(uuid));
 
         mapper.updateEntityFromDto(poolDto, pool);
 
         Stage stage = stageRepository.findById(poolDto.getStageId())
-            .orElseThrow(() -> new StageNotFoundException(poolDto.getStageId().toString()));
+            .orElseThrow(() -> new StageNotFoundException(poolDto.getStageId()));
         pool.setStage(stage);
 
         Pool savedPool = repository.save(pool);
@@ -58,7 +57,7 @@ public class PoolService {
 
     @Transactional
     void delete(String uuid) {
-        Pool pool = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Pool pool = repository.findById(uuid).orElseThrow(
             () -> new PoolNotFoundException(uuid));
         repository.delete(pool);
     }

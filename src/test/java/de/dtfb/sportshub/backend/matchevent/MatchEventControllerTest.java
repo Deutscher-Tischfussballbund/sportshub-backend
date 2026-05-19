@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.matchevent;
 
+import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.annotation.PostConstruct;
 import org.assertj.core.api.Assertions;
@@ -14,7 +15,6 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -33,7 +33,7 @@ class MatchEventControllerTest {
     private String matchId;
     private final Instant sampleDate = Instant.now().truncatedTo(ChronoUnit.MICROS); // Database will lose precision
     private String teamHomeId;
-    private final UUID playerId = UUID.randomUUID();
+    private final String playerId = NanoIdUtils.randomNanoId();
 
     @PostConstruct
     void setup() throws Exception {
@@ -78,7 +78,7 @@ class MatchEventControllerTest {
 
     @Test
     void getMatchEvent_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/matchevents/" + UUID.randomUUID()))
+        mockMvc.perform(get("/api/v1/matchevents/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -89,7 +89,7 @@ class MatchEventControllerTest {
             .andExpect(jsonPath("$.type").value("GOAL"))
             .andExpect(jsonPath("$.matchId").value(matchId))
             .andExpect(jsonPath("$.teamId").value(teamHomeId))
-            .andExpect(jsonPath("$.playerId").value(playerId.toString()))
+            .andExpect(jsonPath("$.playerId").value(playerId))
             .andExpect(jsonPath("$.json.name").value("test"))
             .andExpect(jsonPath("$.homeScore").value(5))
             .andExpect(jsonPath("$.awayScore").value(4));
@@ -112,7 +112,7 @@ class MatchEventControllerTest {
             .andExpect(jsonPath("$.type").value("TIMEOUT"))
             .andExpect(jsonPath("$.matchId").value(matchId))
             .andExpect(jsonPath("$.teamId").value(teamHomeId))
-            .andExpect(jsonPath("$.playerId").value(playerId.toString()))
+            .andExpect(jsonPath("$.playerId").value(playerId))
             .andExpect(jsonPath("$.json").value("{\"name\":\"test\"}"))
             .andExpect(jsonPath("$.homeScore").value(5))
             .andExpect(jsonPath("$.awayScore").value(4))
@@ -125,7 +125,7 @@ class MatchEventControllerTest {
 
     @Test
     void updateMatchEvent_expectException() throws Exception {
-        mockMvc.perform(put("/api/v1/matchevents/" + UUID.randomUUID())
+        mockMvc.perform(put("/api/v1/matchevents/" + NanoIdUtils.randomNanoId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"type": "START"}
@@ -144,7 +144,7 @@ class MatchEventControllerTest {
 
     @Test
     void deleteMatchEvent_expectException() throws Exception {
-        mockMvc.perform(delete("/api/v1/matchevents/" + UUID.randomUUID()))
+        mockMvc.perform(delete("/api/v1/matchevents/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 

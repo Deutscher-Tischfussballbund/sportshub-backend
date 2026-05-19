@@ -5,15 +5,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @NoArgsConstructor
 @Data
 public class MatchEventDto {
-    private UUID id;
-    private UUID playerId;
-    private UUID matchId;
-    private UUID teamId;
+    private String id;
+    private String playerId;
+    private String matchId;
+    private String teamId;
     private Instant timestamp;
     private Integer homeScore;
     private Integer awayScore;

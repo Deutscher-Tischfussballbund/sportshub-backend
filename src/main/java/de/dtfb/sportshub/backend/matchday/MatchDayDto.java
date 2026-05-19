@@ -4,17 +4,16 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Getter
 @Setter
 public class MatchDayDto {
-    private UUID id;
+    private String id;
     private String name;
-    private UUID roundId;
-    private UUID locationId;
-    private UUID teamAwayId;
-    private UUID teamHomeId;
+    private String roundId;
+    private String locationId;
+    private String teamAwayId;
+    private String teamHomeId;
     private Instant startDate;
     private Instant endDate;
 }

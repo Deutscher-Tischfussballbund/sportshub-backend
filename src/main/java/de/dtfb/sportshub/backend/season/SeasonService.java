@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class SeasonService {
@@ -26,7 +25,7 @@ public class SeasonService {
     }
 
     SeasonDto get(String uuid) {
-        Season season = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Season season = repository.findById(uuid).orElseThrow(
             () -> new SeasonNotFoundException(uuid));
         return mapper.toDto(season);
     }
@@ -36,7 +35,7 @@ public class SeasonService {
         Season newSeason = mapper.toEntity(seasonDto);
 
         Federation federation = federationRepository.findById(seasonDto.getFederationId())
-            .orElseThrow(() -> new FederationNotFoundException(seasonDto.getFederationId().toString()));
+            .orElseThrow(() -> new FederationNotFoundException(seasonDto.getFederationId()));
         newSeason.setFederation(federation);
 
         Season savedSeason = repository.save(newSeason);
@@ -45,13 +44,13 @@ public class SeasonService {
 
     @Transactional
     SeasonDto update(String uuid, SeasonDto seasonDto) {
-        Season season = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Season season = repository.findById(uuid).orElseThrow(
             () -> new SeasonNotFoundException(uuid));
 
         mapper.updateEntityFromDto(seasonDto, season);
 
         Federation federation = federationRepository.findById(seasonDto.getFederationId())
-            .orElseThrow(() -> new SeasonNotFoundException(seasonDto.getFederationId().toString()));
+            .orElseThrow(() -> new SeasonNotFoundException(seasonDto.getFederationId()));
         season.setFederation(federation);
 
         Season savedSeason = repository.save(season);
@@ -60,7 +59,7 @@ public class SeasonService {
 
     @Transactional
     void delete(String uuid) {
-        Season season = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Season season = repository.findById(uuid).orElseThrow(
             () -> new SeasonNotFoundException(uuid));
         repository.delete(season);
     }

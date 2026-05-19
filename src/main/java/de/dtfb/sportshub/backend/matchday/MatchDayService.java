@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class MatchDayService {
@@ -36,7 +35,7 @@ public class MatchDayService {
     }
 
     MatchDayDto get(String uuid) {
-        MatchDay matchDay = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        MatchDay matchDay = repository.findById(uuid).orElseThrow(
             () -> new MatchDayNotFoundException(uuid));
         return mapper.toDto(matchDay);
     }
@@ -51,7 +50,7 @@ public class MatchDayService {
     }
 
     MatchDayDto update(String uuid, MatchDayDto matchDayDto) {
-        MatchDay matchDay = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        MatchDay matchDay = repository.findById(uuid).orElseThrow(
             () -> new MatchDayNotFoundException(uuid));
 
         mapper.updateEntityFromDto(matchDayDto, matchDay);
@@ -64,23 +63,23 @@ public class MatchDayService {
 
     @Transactional
     void delete(String uuid) {
-        MatchDay matchDay = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        MatchDay matchDay = repository.findById(uuid).orElseThrow(
             () -> new MatchDayNotFoundException(uuid));
         repository.delete(matchDay);
     }
 
     private void setDependants(MatchDayDto matchDayDto, MatchDay matchDay) {
         Round round = roundRepository.findById(matchDayDto.getRoundId())
-            .orElseThrow(() -> new RoundNotFoundException(matchDayDto.getRoundId().toString()));
+            .orElseThrow(() -> new RoundNotFoundException(matchDayDto.getRoundId()));
         matchDay.setRound(round);
         Location location = locationRepository.findById(matchDayDto.getLocationId())
-            .orElseThrow(() -> new LocationNotFoundException(matchDayDto.getLocationId().toString()));
+            .orElseThrow(() -> new LocationNotFoundException(matchDayDto.getLocationId()));
         matchDay.setLocation(location);
         Team teamAway = teamRepository.findById(matchDayDto.getTeamAwayId())
-            .orElseThrow(() -> new TeamNotFoundException(matchDayDto.getTeamAwayId().toString()));
+            .orElseThrow(() -> new TeamNotFoundException(matchDayDto.getTeamAwayId()));
         matchDay.setTeamAway(teamAway);
         Team teamHome = teamRepository.findById(matchDayDto.getTeamHomeId())
-            .orElseThrow(() -> new TeamNotFoundException(matchDayDto.getTeamHomeId().toString()));
+            .orElseThrow(() -> new TeamNotFoundException(matchDayDto.getTeamHomeId()));
         matchDay.setTeamHome(teamHome);
     }
 }

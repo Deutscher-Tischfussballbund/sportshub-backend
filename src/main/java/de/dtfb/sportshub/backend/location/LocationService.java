@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class LocationService {
@@ -21,7 +20,7 @@ public class LocationService {
     }
 
     LocationDto get(String uuid) {
-        Location location = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Location location = repository.findById(uuid).orElseThrow(
             () -> new LocationNotFoundException(uuid));
         return mapper.toDto(location);
     }
@@ -33,7 +32,7 @@ public class LocationService {
     }
 
     LocationDto update(String uuid, LocationDto locationDto) {
-        Location location = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Location location = repository.findById(uuid).orElseThrow(
             () -> new LocationNotFoundException(uuid));
 
         mapper.updateEntityFromDto(locationDto, location);
@@ -44,7 +43,7 @@ public class LocationService {
 
     @Transactional
     void delete(String uuid) {
-        Location location = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Location location = repository.findById(uuid).orElseThrow(
             () -> new LocationNotFoundException(uuid));
         repository.delete(location);
     }

@@ -4,8 +4,7 @@ import de.dtfb.sportshub.backend.stage.Stage;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
-import java.util.UUID;
 
-public interface PoolRepository extends JpaRepository<Pool, UUID> {
+public interface PoolRepository extends JpaRepository<Pool, String> {
     Optional<Pool> findByStageAndName(Stage stage, String name);
 }

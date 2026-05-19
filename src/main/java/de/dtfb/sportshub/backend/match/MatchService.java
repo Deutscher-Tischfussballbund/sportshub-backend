@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class MatchService {
@@ -26,7 +25,7 @@ public class MatchService {
     }
 
     MatchDto get(String uuid) {
-        Match match = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Match match = repository.findById(uuid).orElseThrow(
             () -> new MatchNotFoundException(uuid));
         return mapper.toDto(match);
     }
@@ -35,7 +34,7 @@ public class MatchService {
         Match match = mapper.toEntity(matchDto);
 
         MatchDay matchDay = matchDayRepository.findById(matchDto.getMatchDayId())
-            .orElseThrow(() -> new MatchDayNotFoundException(matchDto.getMatchDayId().toString()));
+            .orElseThrow(() -> new MatchDayNotFoundException(matchDto.getMatchDayId()));
         match.setMatchDay(matchDay);
 
         Match savedMatch = repository.save(match);
@@ -43,13 +42,13 @@ public class MatchService {
     }
 
     MatchDto update(String uuid, MatchDto matchDto) {
-        Match match = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Match match = repository.findById(uuid).orElseThrow(
             () -> new MatchNotFoundException(uuid));
 
         mapper.updateEntityFromDto(matchDto, match);
 
         MatchDay matchDay = matchDayRepository.findById(matchDto.getMatchDayId())
-            .orElseThrow(() -> new MatchDayNotFoundException(matchDto.getMatchDayId().toString()));
+            .orElseThrow(() -> new MatchDayNotFoundException(matchDto.getMatchDayId()));
         match.setMatchDay(matchDay);
 
         Match savedMatch = repository.save(match);
@@ -58,7 +57,7 @@ public class MatchService {
 
     @Transactional
     void delete(String uuid) {
-        Match match = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Match match = repository.findById(uuid).orElseThrow(
             () -> new MatchNotFoundException(uuid));
         repository.delete(match);
     }

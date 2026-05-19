@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.round;
 
+import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.annotation.PostConstruct;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,8 +11,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-
-import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -57,7 +56,7 @@ class RoundControllerTest {
 
     @Test
     void getRound_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/rounds/" + UUID.randomUUID()))
+        mockMvc.perform(get("/api/v1/rounds/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -87,7 +86,7 @@ class RoundControllerTest {
 
     @Test
     void updateRound_expectException() throws Exception {
-        mockMvc.perform(put("/api/v1/rounds/" + UUID.randomUUID())
+        mockMvc.perform(put("/api/v1/rounds/" + NanoIdUtils.randomNanoId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "Round1"}
@@ -106,7 +105,7 @@ class RoundControllerTest {
 
     @Test
     void deleteRound_expectException() throws Exception {
-        mockMvc.perform(delete("/api/v1/rounds/" + UUID.randomUUID()))
+        mockMvc.perform(delete("/api/v1/rounds/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 

@@ -26,7 +26,7 @@ public class FederationController {
     public ResponseEntity<FederationDto> create(@RequestBody FederationDto federationDto) {
         FederationDto returnedDto = service.create(federationDto);
 
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId().toString()).build().toUri();
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId()).build().toUri();
 
         return ResponseEntity.created(location).body(returnedDto);
     }

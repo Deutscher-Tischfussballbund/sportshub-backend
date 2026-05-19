@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.discipline;
 
+import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.annotation.PostConstruct;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,8 +11,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-
-import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -51,7 +50,7 @@ class DisciplineControllerTest {
 
     @Test
     void getDiscipline_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/disciplines/" + UUID.randomUUID()))
+        mockMvc.perform(get("/api/v1/disciplines/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -79,7 +78,7 @@ class DisciplineControllerTest {
 
     @Test
     void updateDiscipline_expectException() throws Exception {
-        mockMvc.perform(put("/api/v1/disciplines/" + UUID.randomUUID())
+        mockMvc.perform(put("/api/v1/disciplines/" + NanoIdUtils.randomNanoId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "Replacement"}
@@ -98,7 +97,7 @@ class DisciplineControllerTest {
 
     @Test
     void deleteDiscipline_expectException() throws Exception {
-        mockMvc.perform(delete("/api/v1/disciplines/" + UUID.randomUUID()))
+        mockMvc.perform(delete("/api/v1/disciplines/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 

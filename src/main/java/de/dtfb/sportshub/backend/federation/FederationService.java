@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class FederationService {
@@ -21,7 +20,7 @@ public class FederationService {
     }
 
     FederationDto get(String uuid) {
-        Federation federation = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Federation federation = repository.findById(uuid).orElseThrow(
             () -> new FederationNotFoundException(uuid));
         return mapper.toDto(federation);
     }
@@ -36,7 +35,7 @@ public class FederationService {
 
     @Transactional
     FederationDto update(String uuid, FederationDto federationDto) {
-        Federation federation = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Federation federation = repository.findById(uuid).orElseThrow(
             () -> new FederationNotFoundException(uuid));
 
         mapper.updateEntityFromDto(federationDto, federation);
@@ -47,7 +46,7 @@ public class FederationService {
 
     @Transactional
     void delete(String uuid) {
-        Federation federation = repository.findById(UUID.fromString(uuid)).orElseThrow(
+        Federation federation = repository.findById(uuid).orElseThrow(
             () -> new FederationNotFoundException(uuid));
         repository.delete(federation);
     }

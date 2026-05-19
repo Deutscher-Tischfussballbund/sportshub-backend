@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.season;
 
+import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,8 +9,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-
-import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -40,7 +39,7 @@ class SeasonControllerTest {
 
     @Test
     void getSeason_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/seasons/" + UUID.randomUUID()))
+        mockMvc.perform(get("/api/v1/seasons/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -67,7 +66,7 @@ class SeasonControllerTest {
 
     @Test
     void updateSeason_expectException() throws Exception {
-        mockMvc.perform(put("/api/v1/seasons/" + UUID.randomUUID())
+        mockMvc.perform(put("/api/v1/seasons/" + NanoIdUtils.randomNanoId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "2024"}
@@ -86,7 +85,7 @@ class SeasonControllerTest {
 
     @Test
     void deleteSeason_expectException() throws Exception {
-        mockMvc.perform(delete("/api/v1/seasons/" + UUID.randomUUID()))
+        mockMvc.perform(delete("/api/v1/seasons/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 

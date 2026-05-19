@@ -30,6 +30,7 @@ dependencies {
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation "org.mapstruct:mapstruct:1.6.3"
+    implementation "com.aventrix.jnanoid:jnanoid:2.0.0"
 
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'com.mysql:mysql-connector-j'
