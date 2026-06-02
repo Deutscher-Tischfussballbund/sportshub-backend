@@ -8,6 +8,5 @@ import lombok.Setter;
 public class DisciplineDto {
     private String id;
     private String eventId;
-    private String name;
-    private String shortName;
+    private String categoryId;
 }

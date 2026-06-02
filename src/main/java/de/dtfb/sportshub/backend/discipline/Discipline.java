@@ -1,6 +1,7 @@
 package de.dtfb.sportshub.backend.discipline;
 
 import de.dtfb.sportshub.backend.base.BaseEntity;
+import de.dtfb.sportshub.backend.category.Category;
 import de.dtfb.sportshub.backend.event.Event;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -16,6 +17,7 @@ public class Discipline extends BaseEntity {
     @JoinColumn(name = "event_id")
     private Event event;
 
-    private String name;
-    private String shortName;
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
 }

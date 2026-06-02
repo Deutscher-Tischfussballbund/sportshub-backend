@@ -1,5 +1,7 @@
 package de.dtfb.sportshub.backend.importer.importers;
 
+import de.dtfb.sportshub.backend.category.Category;
+import de.dtfb.sportshub.backend.category.CategoryRepository;
 import de.dtfb.sportshub.backend.discipline.Discipline;
 import de.dtfb.sportshub.backend.discipline.DisciplineRepository;
 import de.dtfb.sportshub.backend.event.Event;
@@ -14,25 +16,29 @@ public class DisciplineImporter {
     private final DisciplineRepository disciplineRepository;
     private final StageImporter stageImporter;
     private final EntityManager em;
+    private final CategoryRepository categoryRepository;
 
-    public DisciplineImporter(DisciplineRepository disciplineRepository, StageImporter stageImporter, EntityManager em) {
+    public DisciplineImporter(DisciplineRepository disciplineRepository, StageImporter stageImporter, EntityManager em, CategoryRepository categoryRepository) {
         this.disciplineRepository = disciplineRepository;
         this.stageImporter = stageImporter;
         this.em = em;
+        this.categoryRepository = categoryRepository;
     }
 
     public void importDiscipline(ImportDiscipline importingDiscipline, Event event) {
 
+        Category check = new Category();
+        check.setName(importingDiscipline.getName());
+        check.setShortName(importingDiscipline.getShortName());
         Discipline discipline = disciplineRepository
-//            .findByName(importingDiscipline.getName()) // TODO: reuse of discipline only valid if discipline not bound to event also use @ManyToMany on both event and discipline
-            .findByEventAndName(event, importingDiscipline.getName())
+            .findByEventAndCategory(event, check)
             .orElseGet(() -> {
                 Discipline d = new Discipline();
-                d.setName(importingDiscipline.getName());
-                d.setShortName(importingDiscipline.getShortName());
                 d.setEvent(event);
                 return disciplineRepository.save(d);
             });
+
+        categoryImporter
 
         int counter = 0;
         for (ImportStage s : importingDiscipline.getStages()) {

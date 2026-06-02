@@ -10,14 +10,17 @@ import java.util.List;
 public interface DisciplineMapper {
 
     @Mapping(source = "event.id", target = "eventId")
+    @Mapping(source = "category.id", target = "categoryId")
     DisciplineDto toDto(Discipline discipline);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "event", ignore = true)
+    @Mapping(target = "category", ignore = true)
     Discipline toEntity(DisciplineDto disciplineDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "event", ignore = true)
+    @Mapping(target = "category", ignore = true)
     void updateEntityFromDto(DisciplineDto dto, @MappingTarget Discipline entity);
 
     List<DisciplineDto> toDtoList(List<Discipline> disciplines);
