@@ -21,7 +21,7 @@ public class SeasonImporter {
         this.em = em;
     }
 
-    public void importSeason(ImportSeason importingSeason, Federation federation) {
+    public void importSeason(ImportSeason importingSeason, Federation federation, String importId) {
 
         Season season = seasonRepository
             .findByFederationAndName(federation, importingSeason.getName())
@@ -34,7 +34,7 @@ public class SeasonImporter {
 
         int counter = 0;
         for (ImportEvent importingEvent : importingSeason.getEvents()) {
-            eventImporter.importEvent(importingEvent, season);
+            eventImporter.importEvent(importingEvent, season, importId);
             counter++;
 
             // batch flush every 50 events

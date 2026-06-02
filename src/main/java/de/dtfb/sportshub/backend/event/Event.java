@@ -18,5 +18,5 @@ public class Event extends BaseEntity {
 
     private String name;
 
-    private boolean imported;
+    private String importId;
 }

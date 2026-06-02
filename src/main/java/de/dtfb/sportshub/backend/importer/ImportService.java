@@ -7,6 +7,7 @@ import de.dtfb.sportshub.backend.importer.data.ImportPayload;
 import de.dtfb.sportshub.backend.importer.data.ImportSeason;
 import de.dtfb.sportshub.backend.importer.importers.FederationImporter;
 import de.dtfb.sportshub.backend.importer.importers.SeasonImporter;
+import de.dtfb.sportshub.backend.util.IdGenerator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
@@ -43,8 +44,9 @@ public class ImportService {
 
             Federation federation = federationImporter.importFederation(payload.getMeta());
 
+            String importId = IdGenerator.newId();
             for (ImportSeason season : payload.getSeasons()) {
-                seasonImporter.importSeason(season, federation);
+                seasonImporter.importSeason(season, federation, importId);
                 result.incrementSuccess();
             }
         }

@@ -21,7 +21,7 @@ public class EventImporter {
         this.em = em;
     }
 
-    public void importEvent(ImportEvent importingEvent, Season season) {
+    public void importEvent(ImportEvent importingEvent, Season season, String importId) {
 
         Event event = eventRepository
             .findBySeasonAndName(season, importingEvent.getName())
@@ -29,7 +29,7 @@ public class EventImporter {
                 Event e = new Event();
                 e.setName(importingEvent.getName());
                 e.setSeason(season);
-                e.setImported(true);
+                e.setImportId(importId);
                 return eventRepository.save(e);
             });
 
