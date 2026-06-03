@@ -1,7 +1,6 @@
 package de.dtfb.sportshub.backend.importer.importers;
 
 import de.dtfb.sportshub.backend.category.Category;
-import de.dtfb.sportshub.backend.category.CategoryRepository;
 import de.dtfb.sportshub.backend.discipline.Discipline;
 import de.dtfb.sportshub.backend.discipline.DisciplineRepository;
 import de.dtfb.sportshub.backend.event.Event;
@@ -16,29 +15,27 @@ public class DisciplineImporter {
     private final DisciplineRepository disciplineRepository;
     private final StageImporter stageImporter;
     private final EntityManager em;
-    private final CategoryRepository categoryRepository;
+    private final CategoryImporter categoryImporter;
 
-    public DisciplineImporter(DisciplineRepository disciplineRepository, StageImporter stageImporter, EntityManager em, CategoryRepository categoryRepository) {
+    public DisciplineImporter(DisciplineRepository disciplineRepository, StageImporter stageImporter, EntityManager em, CategoryImporter categoryImporter) {
         this.disciplineRepository = disciplineRepository;
         this.stageImporter = stageImporter;
         this.em = em;
-        this.categoryRepository = categoryRepository;
+        this.categoryImporter = categoryImporter;
     }
 
     public void importDiscipline(ImportDiscipline importingDiscipline, Event event) {
 
-        Category check = new Category();
-        check.setName(importingDiscipline.getName());
-        check.setShortName(importingDiscipline.getShortName());
+        Category category = categoryImporter.importCategory(importingDiscipline);
+
         Discipline discipline = disciplineRepository
-            .findByEventAndCategory(event, check)
+            .findByEventAndCategory(event, category)
             .orElseGet(() -> {
                 Discipline d = new Discipline();
                 d.setEvent(event);
+                d.setCategory(category);
                 return disciplineRepository.save(d);
             });
-
-        categoryImporter
 
         int counter = 0;
         for (ImportStage s : importingDiscipline.getStages()) {
