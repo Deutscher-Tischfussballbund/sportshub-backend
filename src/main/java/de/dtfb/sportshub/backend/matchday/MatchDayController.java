@@ -1,6 +1,8 @@
 package de.dtfb.sportshub.backend.matchday;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -44,5 +46,22 @@ public class MatchDayController {
     @DeleteMapping("/{uuid}")
     public void delete(@PathVariable String uuid) {
         service.delete(uuid);
+    }
+
+    @PostMapping("/{uuid}/result")
+    public MatchDayDto submitResult(
+            @PathVariable String uuid,
+            @RequestBody MatchDayResultRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String dtfbId = jwt.getClaimAsString("dtfb_id");
+        return service.submitResult(uuid, request, dtfbId);
+    }
+
+    @PostMapping("/{uuid}/confirm")
+    public MatchDayDto confirmResult(
+            @PathVariable String uuid,
+            @AuthenticationPrincipal Jwt jwt) {
+        String dtfbId = jwt.getClaimAsString("dtfb_id");
+        return service.confirmResult(uuid, dtfbId);
     }
 }

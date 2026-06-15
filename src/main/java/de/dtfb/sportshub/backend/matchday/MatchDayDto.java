@@ -16,4 +16,7 @@ public class MatchDayDto {
     private String teamHomeId;
     private Instant startDate;
     private Instant endDate;
+    private ResultState resultState;
+    private Instant homeConfirmedAt;
+    private Instant awayConfirmedAt;
 }

@@ -17,6 +17,11 @@ spring:
         multipart:
             max-file-size: 150MB
             max-request-size: 180MB
+    security:
+        oauth2:
+            resourceserver:
+                jwt:
+                    issuer-uri: http://localhost:8080/realms/dtfb
 server:
     port: 8082
 external-api:

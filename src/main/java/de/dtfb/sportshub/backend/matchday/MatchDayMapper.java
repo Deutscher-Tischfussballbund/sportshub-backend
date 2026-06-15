@@ -21,6 +21,9 @@ public interface MatchDayMapper {
     @Mapping(target = "location", ignore = true)
     @Mapping(target = "teamHome", ignore = true)
     @Mapping(target = "teamAway", ignore = true)
+    @Mapping(target = "submittedByDtfbId", ignore = true)
+    @Mapping(target = "homeConfirmedAt", ignore = true)
+    @Mapping(target = "awayConfirmedAt", ignore = true)
     MatchDay toEntity(MatchDayDto matchDayDto);
 
     @Mapping(target = "id", ignore = true)
@@ -28,6 +31,9 @@ public interface MatchDayMapper {
     @Mapping(target = "location", ignore = true)
     @Mapping(target = "teamHome", ignore = true)
     @Mapping(target = "teamAway", ignore = true)
+    @Mapping(target = "submittedByDtfbId", ignore = true)
+    @Mapping(target = "homeConfirmedAt", ignore = true)
+    @Mapping(target = "awayConfirmedAt", ignore = true)
     void updateEntityFromDto(MatchDayDto dto, @MappingTarget MatchDay entity);
 
     List<MatchDayDto> toDtoList(List<MatchDay> matchDays);

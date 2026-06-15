@@ -1,7 +1,10 @@
 package de.dtfb.sportshub.backend.team;
 
 import de.dtfb.sportshub.backend.base.BaseEntity;
+import de.dtfb.sportshub.backend.federation.Federation;
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,5 +14,7 @@ import lombok.Setter;
 public class Team extends BaseEntity {
     private String name;
 
-    //TODO link to federation? since name is not unique
+    @ManyToOne
+    @JoinColumn(name = "federation_id")
+    private Federation federation;
 }

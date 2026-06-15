@@ -4,10 +4,7 @@ import de.dtfb.sportshub.backend.base.BaseEntity;
 import de.dtfb.sportshub.backend.location.Location;
 import de.dtfb.sportshub.backend.round.Round;
 import de.dtfb.sportshub.backend.team.Team;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -39,4 +36,14 @@ public class MatchDay extends BaseEntity {
     private Instant startDate;
 
     private Instant endDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ResultState resultState = ResultState.OPEN;
+
+    private String submittedByDtfbId;
+
+    private Instant homeConfirmedAt;
+
+    private Instant awayConfirmedAt;
 }

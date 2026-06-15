@@ -9,12 +9,15 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface TeamMapper {
 
+    @Mapping(source = "federation.id", target = "federationId")
     TeamDto toDto(Team team);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "federation", ignore = true)
     Team toEntity(TeamDto teamDto);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "federation", ignore = true)
     void updateEntityFromDto(TeamDto dto, @MappingTarget Team entity);
 
     List<TeamDto> toDtoList(List<Team> teams);
