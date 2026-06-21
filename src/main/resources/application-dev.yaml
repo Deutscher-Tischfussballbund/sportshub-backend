@@ -13,6 +13,8 @@ spring:
     sql:
         init:
             mode: always
+            # Seed the access domain (federations, clubs, bootstrap admin) after schema creation.
+            data-locations: classpath:seed/access-seed.sql
     servlet:
         multipart:
             max-file-size: 150MB
@@ -21,7 +23,7 @@ spring:
         oauth2:
             resourceserver:
                 jwt:
-                    issuer-uri: http://localhost:8080/realms/dtfb
+                    issuer-uri: http://localhost:8084/realms/dtfb
 server:
     port: 8082
 external-api:
