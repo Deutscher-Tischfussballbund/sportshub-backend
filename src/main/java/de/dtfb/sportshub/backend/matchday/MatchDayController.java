@@ -1,6 +1,7 @@
 package de.dtfb.sportshub.backend.matchday;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -48,8 +49,8 @@ public class MatchDayController {
         service.delete(id);
     }
 
-    @PostMapping("/{uuid}/result")
     @PostMapping("/{id}/result")
+    @PreAuthorize("isAuthenticated()")
     public MatchDayDto submitResult(
             @PathVariable String id,
             @RequestBody MatchDayResultRequest request,
@@ -58,8 +59,8 @@ public class MatchDayController {
         return service.submitResult(id, request, dtfbId);
     }
 
-    @PostMapping("/{uuid}/confirm")
     @PostMapping("/{id}/confirm")
+    @PreAuthorize("isAuthenticated()")
     public MatchDayDto confirmResult(
             @PathVariable String id,
             @AuthenticationPrincipal Jwt jwt) {

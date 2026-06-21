@@ -3,6 +3,7 @@ package de.dtfb.sportshub.backend.configuration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
@@ -24,18 +26,13 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // CORS preflight must never require a token
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // Swagger / OpenAPI - public
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // H2 console for dev
                 .requestMatchers("/h2-console/**").permitAll()
-                // All GET requests are public (read-only league data)
-                .requestMatchers(HttpMethod.GET, "/api/v1/**").permitAll()
-                // Result submission and confirmation require auth
-                .requestMatchers(HttpMethod.POST, "/api/v1/matchdays/*/result").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/v1/matchdays/*/confirm").authenticated()
-                // /me endpoint
-                .requestMatchers("/api/v1/users/me").authenticated()
-                // Everything else (admin CRUD) requires auth
+                // Everything else requires authentication — reads and writes alike
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
