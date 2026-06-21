@@ -6,7 +6,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * Web MVC configuration. Opens CORS for the Angular dev server so the greenfield
- * frontend (http://localhost:4200) can call the REST API during development.
+ * frontend (<a href="http://localhost:4200">Frontend</a>) can call the REST API during development.
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {

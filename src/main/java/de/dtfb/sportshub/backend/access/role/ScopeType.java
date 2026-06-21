@@ -3,7 +3,7 @@ package de.dtfb.sportshub.backend.access.role;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-/** Kind of scope a {@link RoleAssignment} applies to. Wire values match the frontend. */
+/** Kind of scope a {@link de.dtfb.sportshub.backend.access.roleassignment.RoleAssignment} applies to. Wire values match the frontend. */
 public enum ScopeType {
     GLOBAL("global"),
     REGION("region"),

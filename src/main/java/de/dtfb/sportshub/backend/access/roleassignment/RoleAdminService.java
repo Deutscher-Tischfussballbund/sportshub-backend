@@ -177,7 +177,7 @@ public class RoleAdminService {
         List<String> ids = scopeIds(rows, ScopeType.REGION);
         return ids.isEmpty() ? Map.of()
             : federationRepository.findAllById(ids).stream()
-                .collect(Collectors.toMap(Federation::getId, Function.identity()));
+            .collect(Collectors.toMap(Federation::getId, Function.identity()));
     }
 
     private List<String> scopeIds(List<RoleAssignment> rows, ScopeType type) {
@@ -196,7 +196,7 @@ public class RoleAdminService {
             .toList();
         return dtfbIds.isEmpty() ? Map.of()
             : playerRepository.findByDtfbIdIn(dtfbIds).stream()
-                .collect(Collectors.toMap(Player::getDtfbId, Function.identity()));
+            .collect(Collectors.toMap(Player::getDtfbId, Function.identity()));
     }
 
     // --- mapping helpers -----------------------------------------------------
@@ -207,7 +207,7 @@ public class RoleAdminService {
     }
 
     private RoleAssignmentDto toDto(RoleAssignment ra) {
-        return toDtos(List.of(ra)).get(0);
+        return toDtos(List.of(ra)).getFirst();
     }
 
     private String granterId(RoleAssignment ra, Map<String, Player> granters) {

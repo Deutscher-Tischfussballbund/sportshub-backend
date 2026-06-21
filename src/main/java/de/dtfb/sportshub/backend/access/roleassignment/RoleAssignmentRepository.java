@@ -16,5 +16,4 @@ public interface RoleAssignmentRepository extends JpaRepository<RoleAssignment, 
 
     List<RoleAssignment> findByRoleAndPlayer_Id(Role role, String playerId);
 
-    boolean existsByPlayerAndRoleAndScopeId(Player player, Role role, String scopeId);
 }
