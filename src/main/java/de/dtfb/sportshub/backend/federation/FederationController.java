@@ -8,7 +8,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/federation")
+@RequestMapping("/v1/federation")
 public class FederationController {
 
     private final FederationService service;
@@ -31,18 +31,18 @@ public class FederationController {
         return ResponseEntity.created(location).body(returnedDto);
     }
 
-    @GetMapping("/{uuid}")
-    public FederationDto get(@PathVariable String uuid) {
-        return service.get(uuid);
+    @GetMapping("/{id}")
+    public FederationDto get(@PathVariable String id) {
+        return service.get(id);
     }
 
-    @PutMapping("/{uuid}")
-    public FederationDto update(@PathVariable String uuid, @RequestBody FederationDto federationDto) {
-        return service.update(uuid, federationDto);
+    @PutMapping("/{id}")
+    public FederationDto update(@PathVariable String id, @RequestBody FederationDto federationDto) {
+        return service.update(id, federationDto);
     }
 
-    @DeleteMapping("/{uuid}")
-    public void delete(@PathVariable String uuid) {
-        service.delete(uuid);
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable String id) {
+        service.delete(id);
     }
 }

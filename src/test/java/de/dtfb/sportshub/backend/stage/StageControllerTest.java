@@ -46,13 +46,13 @@ class StageControllerTest {
 
     @Test
     void getAllStages() throws Exception {
-        mockMvc.perform(get("/api/v1/stages"))
+        mockMvc.perform(get("/v1/stages"))
             .andExpect(status().isOk());
     }
 
     @Test
     void getStage_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/stages/" + NanoIdUtils.randomNanoId()))
+        mockMvc.perform(get("/v1/stages/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -80,7 +80,7 @@ class StageControllerTest {
 
     @Test
     void updateStage_expectException() throws Exception {
-        mockMvc.perform(put("/api/v1/stages/" + NanoIdUtils.randomNanoId())
+        mockMvc.perform(put("/v1/stages/" + NanoIdUtils.randomNanoId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "Hauptrunde"}
@@ -99,7 +99,7 @@ class StageControllerTest {
 
     @Test
     void deleteStage_expectException() throws Exception {
-        mockMvc.perform(delete("/api/v1/stages/" + NanoIdUtils.randomNanoId()))
+        mockMvc.perform(delete("/v1/stages/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -111,14 +111,14 @@ class StageControllerTest {
 
     //region helpers
     private MvcResult createSeason() throws Exception {
-        return mockMvc.perform(post("/api/v1/seasons")
+        return mockMvc.perform(post("/v1/seasons")
             .contentType(MediaType.APPLICATION_JSON).content("""
                 {"name": "2025"}
                 """)).andReturn();
     }
 
     private MvcResult createEvent(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/events")
+        return mockMvc.perform(post("/v1/events")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Turnier",
@@ -129,7 +129,7 @@ class StageControllerTest {
     }
 
     private MvcResult createDiscipline(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/disciplines")
+        return mockMvc.perform(post("/v1/disciplines")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Offenes Einzel",
@@ -140,7 +140,7 @@ class StageControllerTest {
     }
 
     private MvcResult createStage(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/stages")
+        return mockMvc.perform(post("/v1/stages")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Vorrunde",

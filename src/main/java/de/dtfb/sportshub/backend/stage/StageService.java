@@ -20,17 +20,20 @@ public class StageService {
         this.disciplineRepository = disciplineRepository;
     }
 
-    List<StageDto> getAll() {
+    @Transactional(readOnly = true)
+    public List<StageDto> getAll() {
         return mapper.toDtoList(repository.findAll());
     }
 
-    StageDto get(String uuid) {
-        Stage stage = repository.findById(uuid).orElseThrow(
-            () -> new StageNotFoundException(uuid));
+    @Transactional(readOnly = true)
+    public StageDto get(String id) {
+        Stage stage = repository.findById(id).orElseThrow(
+            () -> new StageNotFoundException(id));
         return mapper.toDto(stage);
     }
 
-    StageDto create(StageDto stageDto) {
+    @Transactional
+    public StageDto create(StageDto stageDto) {
         Stage stage = mapper.toEntity(stageDto);
 
         Discipline discipline = disciplineRepository.findById(stageDto.getDisciplineId())
@@ -41,9 +44,10 @@ public class StageService {
         return mapper.toDto(savedStage);
     }
 
-    StageDto update(String uuid, StageDto stageDto) {
-        Stage stage = repository.findById(uuid).orElseThrow(
-            () -> new StageNotFoundException(uuid));
+    @Transactional
+    public StageDto update(String id, StageDto stageDto) {
+        Stage stage = repository.findById(id).orElseThrow(
+            () -> new StageNotFoundException(id));
 
         mapper.updateEntityFromDto(stageDto, stage);
 
@@ -56,9 +60,9 @@ public class StageService {
     }
 
     @Transactional
-    void delete(String uuid) {
-        Stage stage = repository.findById(uuid).orElseThrow(
-            () -> new StageNotFoundException(uuid));
+    public void delete(String id) {
+        Stage stage = repository.findById(id).orElseThrow(
+            () -> new StageNotFoundException(id));
         repository.delete(stage);
     }
 }

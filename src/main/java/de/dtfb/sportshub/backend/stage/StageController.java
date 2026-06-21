@@ -8,7 +8,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/stages")
+@RequestMapping("/v1/stages")
 public class StageController {
 
     private final StageService service;
@@ -31,18 +31,18 @@ public class StageController {
         return ResponseEntity.created(location).body(returnedDto);
     }
 
-    @GetMapping("/{uuid}")
-    public StageDto get(@PathVariable String uuid) {
-        return service.get(uuid);
+    @GetMapping("/{id}")
+    public StageDto get(@PathVariable String id) {
+        return service.get(id);
     }
 
-    @PutMapping("/{uuid}")
-    public StageDto update(@PathVariable String uuid, @RequestBody StageDto stageDto) {
-        return service.update(uuid, stageDto);
+    @PutMapping("/{id}")
+    public StageDto update(@PathVariable String id, @RequestBody StageDto stageDto) {
+        return service.update(id, stageDto);
     }
 
-    @DeleteMapping("/{uuid}")
-    public void delete(@PathVariable String uuid) {
-        service.delete(uuid);
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable String id) {
+        service.delete(id);
     }
 }

@@ -72,13 +72,13 @@ class MatchEventControllerTest {
 
     @Test
     void getAllMatchEvents() throws Exception {
-        mockMvc.perform(get("/api/v1/matchevents"))
+        mockMvc.perform(get("/v1/matchevents"))
             .andExpect(status().isOk());
     }
 
     @Test
     void getMatchEvent_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/matchevents/" + NanoIdUtils.randomNanoId()))
+        mockMvc.perform(get("/v1/matchevents/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -125,7 +125,7 @@ class MatchEventControllerTest {
 
     @Test
     void updateMatchEvent_expectException() throws Exception {
-        mockMvc.perform(put("/api/v1/matchevents/" + NanoIdUtils.randomNanoId())
+        mockMvc.perform(put("/v1/matchevents/" + NanoIdUtils.randomNanoId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"type": "START"}
@@ -144,7 +144,7 @@ class MatchEventControllerTest {
 
     @Test
     void deleteMatchEvent_expectException() throws Exception {
-        mockMvc.perform(delete("/api/v1/matchevents/" + NanoIdUtils.randomNanoId()))
+        mockMvc.perform(delete("/v1/matchevents/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -156,14 +156,14 @@ class MatchEventControllerTest {
 
     //region helpers
     private MvcResult createSeason() throws Exception {
-        return mockMvc.perform(post("/api/v1/seasons")
+        return mockMvc.perform(post("/v1/seasons")
             .contentType(MediaType.APPLICATION_JSON).content("""
                 {"name": "2025"}
                 """)).andReturn();
     }
 
     private MvcResult createEvent(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/events")
+        return mockMvc.perform(post("/v1/events")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Turnier",
@@ -174,7 +174,7 @@ class MatchEventControllerTest {
     }
 
     private MvcResult createDiscipline(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/disciplines")
+        return mockMvc.perform(post("/v1/disciplines")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Offenes Einzel",
@@ -185,7 +185,7 @@ class MatchEventControllerTest {
     }
 
     private MvcResult createStage(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/stages")
+        return mockMvc.perform(post("/v1/stages")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Vorrunde",
@@ -196,7 +196,7 @@ class MatchEventControllerTest {
     }
 
     private MvcResult createPool(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/pools")
+        return mockMvc.perform(post("/v1/pools")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Pool1",
@@ -210,7 +210,7 @@ class MatchEventControllerTest {
     }
 
     private MvcResult createRound(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/rounds")
+        return mockMvc.perform(post("/v1/rounds")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Runde1",
@@ -222,7 +222,7 @@ class MatchEventControllerTest {
     }
 
     private MvcResult createLocation() throws Exception {
-        return mockMvc.perform(post("/api/v1/locations")
+        return mockMvc.perform(post("/v1/locations")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "MKK",
@@ -233,7 +233,7 @@ class MatchEventControllerTest {
     }
 
     private MvcResult createTeam(String name) throws Exception {
-        return mockMvc.perform(post("/api/v1/teams")
+        return mockMvc.perform(post("/v1/teams")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "%s"}
@@ -243,7 +243,7 @@ class MatchEventControllerTest {
     }
 
     private MvcResult createMatchday(String roundId, String locationId, String teamHomeId, String teamAwayId, Instant sampleDate) throws Exception {
-        return mockMvc.perform(post("/api/v1/matchdays")
+        return mockMvc.perform(post("/v1/matchdays")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Matchday1",
@@ -260,7 +260,7 @@ class MatchEventControllerTest {
     }
 
     private MvcResult createMatch(String uuid, Instant sampleDate) throws Exception {
-        return mockMvc.perform(post("/api/v1/matches")
+        return mockMvc.perform(post("/v1/matches")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"type": "DOUBLE",
@@ -277,7 +277,7 @@ class MatchEventControllerTest {
     }
 
     private MvcResult createMatchEvent() throws Exception {
-        return mockMvc.perform(post("/api/v1/matchevents")
+        return mockMvc.perform(post("/v1/matchevents")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"type": "GOAL",

@@ -15,25 +15,29 @@ public class LocationService {
         this.mapper = mapper;
     }
 
-    List<LocationDto> getAll() {
+    @Transactional(readOnly = true)
+    public List<LocationDto> getAll() {
         return mapper.toDtoList(repository.findAll());
     }
 
-    LocationDto get(String uuid) {
-        Location location = repository.findById(uuid).orElseThrow(
-            () -> new LocationNotFoundException(uuid));
+    @Transactional(readOnly = true)
+    public LocationDto get(String id) {
+        Location location = repository.findById(id).orElseThrow(
+            () -> new LocationNotFoundException(id));
         return mapper.toDto(location);
     }
 
-    LocationDto create(LocationDto locationDto) {
+    @Transactional
+    public LocationDto create(LocationDto locationDto) {
         Location newLocation = mapper.toEntity(locationDto);
         Location savedLocation = repository.save(newLocation);
         return mapper.toDto(savedLocation);
     }
 
-    LocationDto update(String uuid, LocationDto locationDto) {
-        Location location = repository.findById(uuid).orElseThrow(
-            () -> new LocationNotFoundException(uuid));
+    @Transactional
+    public LocationDto update(String id, LocationDto locationDto) {
+        Location location = repository.findById(id).orElseThrow(
+            () -> new LocationNotFoundException(id));
 
         mapper.updateEntityFromDto(locationDto, location);
 
@@ -42,9 +46,9 @@ public class LocationService {
     }
 
     @Transactional
-    void delete(String uuid) {
-        Location location = repository.findById(uuid).orElseThrow(
-            () -> new LocationNotFoundException(uuid));
+    public void delete(String id) {
+        Location location = repository.findById(id).orElseThrow(
+            () -> new LocationNotFoundException(id));
         repository.delete(location);
     }
 }

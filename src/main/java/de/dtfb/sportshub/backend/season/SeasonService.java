@@ -20,18 +20,20 @@ public class SeasonService {
         this.federationRepository = federationRepository;
     }
 
-    List<SeasonDto> getAll() {
+    @Transactional(readOnly = true)
+    public List<SeasonDto> getAll() {
         return mapper.toDtoList(repository.findAll());
     }
 
-    SeasonDto get(String uuid) {
-        Season season = repository.findById(uuid).orElseThrow(
-            () -> new SeasonNotFoundException(uuid));
+    @Transactional(readOnly = true)
+    public SeasonDto get(String id) {
+        Season season = repository.findById(id).orElseThrow(
+            () -> new SeasonNotFoundException(id));
         return mapper.toDto(season);
     }
 
     @Transactional
-    SeasonDto create(SeasonDto seasonDto) {
+    public SeasonDto create(SeasonDto seasonDto) {
         Season newSeason = mapper.toEntity(seasonDto);
 
         Federation federation = federationRepository.findById(seasonDto.getFederationId())
@@ -43,14 +45,14 @@ public class SeasonService {
     }
 
     @Transactional
-    SeasonDto update(String uuid, SeasonDto seasonDto) {
-        Season season = repository.findById(uuid).orElseThrow(
-            () -> new SeasonNotFoundException(uuid));
+    public SeasonDto update(String id, SeasonDto seasonDto) {
+        Season season = repository.findById(id).orElseThrow(
+            () -> new SeasonNotFoundException(id));
 
         mapper.updateEntityFromDto(seasonDto, season);
 
         Federation federation = federationRepository.findById(seasonDto.getFederationId())
-            .orElseThrow(() -> new SeasonNotFoundException(seasonDto.getFederationId()));
+            .orElseThrow(() -> new FederationNotFoundException(seasonDto.getFederationId()));
         season.setFederation(federation);
 
         Season savedSeason = repository.save(season);
@@ -58,9 +60,9 @@ public class SeasonService {
     }
 
     @Transactional
-    void delete(String uuid) {
-        Season season = repository.findById(uuid).orElseThrow(
-            () -> new SeasonNotFoundException(uuid));
+    public void delete(String id) {
+        Season season = repository.findById(id).orElseThrow(
+            () -> new SeasonNotFoundException(id));
         repository.delete(season);
     }
 }

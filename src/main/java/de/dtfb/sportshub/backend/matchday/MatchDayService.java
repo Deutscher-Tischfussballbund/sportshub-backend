@@ -44,17 +44,20 @@ public class MatchDayService {
         this.eventPublisher = eventPublisher;
     }
 
-    List<MatchDayDto> getAll() {
+    @Transactional(readOnly = true)
+    public List<MatchDayDto> getAll() {
         return mapper.toDtoList(repository.findAll());
     }
 
-    MatchDayDto get(String uuid) {
-        MatchDay matchDay = repository.findById(uuid).orElseThrow(
-            () -> new MatchDayNotFoundException(uuid));
+    @Transactional(readOnly = true)
+    public MatchDayDto get(String id) {
+        MatchDay matchDay = repository.findById(id).orElseThrow(
+            () -> new MatchDayNotFoundException(id));
         return mapper.toDto(matchDay);
     }
 
-    MatchDayDto create(MatchDayDto matchDayDto) {
+    @Transactional
+    public MatchDayDto create(MatchDayDto matchDayDto) {
         MatchDay matchDay = mapper.toEntity(matchDayDto);
 
         setDependants(matchDayDto, matchDay);
@@ -63,9 +66,10 @@ public class MatchDayService {
         return mapper.toDto(savedMatchDay);
     }
 
-    MatchDayDto update(String uuid, MatchDayDto matchDayDto) {
-        MatchDay matchDay = repository.findById(uuid).orElseThrow(
-            () -> new MatchDayNotFoundException(uuid));
+    @Transactional
+    public MatchDayDto update(String id, MatchDayDto matchDayDto) {
+        MatchDay matchDay = repository.findById(id).orElseThrow(
+            () -> new MatchDayNotFoundException(id));
 
         mapper.updateEntityFromDto(matchDayDto, matchDay);
 
@@ -76,9 +80,9 @@ public class MatchDayService {
     }
 
     @Transactional
-    void delete(String uuid) {
-        MatchDay matchDay = repository.findById(uuid).orElseThrow(
-            () -> new MatchDayNotFoundException(uuid));
+    public void delete(String id) {
+        MatchDay matchDay = repository.findById(id).orElseThrow(
+            () -> new MatchDayNotFoundException(id));
         repository.delete(matchDay);
     }
 

@@ -20,17 +20,20 @@ public class RoundService {
         this.poolRepository = poolRepository;
     }
 
-    List<RoundDto> getAll() {
+    @Transactional(readOnly = true)
+    public List<RoundDto> getAll() {
         return mapper.toDtoList(repository.findAll());
     }
 
-    RoundDto get(String uuid) {
-        Round round = repository.findById(uuid).orElseThrow(
-            () -> new RoundNotFoundException(uuid));
+    @Transactional(readOnly = true)
+    public RoundDto get(String id) {
+        Round round = repository.findById(id).orElseThrow(
+            () -> new RoundNotFoundException(id));
         return mapper.toDto(round);
     }
 
-    RoundDto create(RoundDto roundDto) {
+    @Transactional
+    public RoundDto create(RoundDto roundDto) {
         Round round = mapper.toEntity(roundDto);
 
         Pool pool = poolRepository.findById(roundDto.getPoolId())
@@ -41,9 +44,10 @@ public class RoundService {
         return mapper.toDto(savedRound);
     }
 
-    RoundDto update(String uuid, RoundDto roundDto) {
-        Round round = repository.findById(uuid).orElseThrow(
-            () -> new RoundNotFoundException(uuid));
+    @Transactional
+    public RoundDto update(String id, RoundDto roundDto) {
+        Round round = repository.findById(id).orElseThrow(
+            () -> new RoundNotFoundException(id));
 
         mapper.updateEntityFromDto(roundDto, round);
 
@@ -56,9 +60,9 @@ public class RoundService {
     }
 
     @Transactional
-    void delete(String uuid) {
-        Round round = repository.findById(uuid).orElseThrow(
-            () -> new RoundNotFoundException(uuid));
+    public void delete(String id) {
+        Round round = repository.findById(id).orElseThrow(
+            () -> new RoundNotFoundException(id));
         repository.delete(round);
     }
 }

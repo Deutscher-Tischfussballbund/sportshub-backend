@@ -20,17 +20,20 @@ public class PoolService {
         this.stageRepository = stageRepository;
     }
 
-    List<PoolDto> getAll() {
+    @Transactional(readOnly = true)
+    public List<PoolDto> getAll() {
         return mapper.toDtoList(repository.findAll());
     }
 
-    PoolDto get(String uuid) {
-        Pool pool = repository.findById(uuid).orElseThrow(
-            () -> new PoolNotFoundException(uuid));
+    @Transactional(readOnly = true)
+    public PoolDto get(String id) {
+        Pool pool = repository.findById(id).orElseThrow(
+            () -> new PoolNotFoundException(id));
         return mapper.toDto(pool);
     }
 
-    PoolDto create(PoolDto poolDto) {
+    @Transactional
+    public PoolDto create(PoolDto poolDto) {
         Pool pool = mapper.toEntity(poolDto);
 
         Stage stage = stageRepository.findById(poolDto.getStageId())
@@ -41,9 +44,10 @@ public class PoolService {
         return mapper.toDto(savedPool);
     }
 
-    PoolDto update(String uuid, PoolDto poolDto) {
-        Pool pool = repository.findById(uuid).orElseThrow(
-            () -> new PoolNotFoundException(uuid));
+    @Transactional
+    public PoolDto update(String id, PoolDto poolDto) {
+        Pool pool = repository.findById(id).orElseThrow(
+            () -> new PoolNotFoundException(id));
 
         mapper.updateEntityFromDto(poolDto, pool);
 
@@ -56,9 +60,9 @@ public class PoolService {
     }
 
     @Transactional
-    void delete(String uuid) {
-        Pool pool = repository.findById(uuid).orElseThrow(
-            () -> new PoolNotFoundException(uuid));
+    public void delete(String id) {
+        Pool pool = repository.findById(id).orElseThrow(
+            () -> new PoolNotFoundException(id));
         repository.delete(pool);
     }
 }

@@ -15,18 +15,20 @@ public class FederationService {
         this.mapper = mapper;
     }
 
-    List<FederationDto> getAll() {
+    @Transactional(readOnly = true)
+    public List<FederationDto> getAll() {
         return mapper.toDtoList(repository.findAll());
     }
 
-    FederationDto get(String uuid) {
-        Federation federation = repository.findById(uuid).orElseThrow(
-            () -> new FederationNotFoundException(uuid));
+    @Transactional(readOnly = true)
+    public FederationDto get(String id) {
+        Federation federation = repository.findById(id).orElseThrow(
+            () -> new FederationNotFoundException(id));
         return mapper.toDto(federation);
     }
 
     @Transactional
-    FederationDto create(FederationDto federationDto) {
+    public FederationDto create(FederationDto federationDto) {
         Federation federation = mapper.toEntity(federationDto);
 
         Federation savedFederation = repository.save(federation);
@@ -34,9 +36,9 @@ public class FederationService {
     }
 
     @Transactional
-    FederationDto update(String uuid, FederationDto federationDto) {
-        Federation federation = repository.findById(uuid).orElseThrow(
-            () -> new FederationNotFoundException(uuid));
+    public FederationDto update(String id, FederationDto federationDto) {
+        Federation federation = repository.findById(id).orElseThrow(
+            () -> new FederationNotFoundException(id));
 
         mapper.updateEntityFromDto(federationDto, federation);
 
@@ -45,9 +47,9 @@ public class FederationService {
     }
 
     @Transactional
-    void delete(String uuid) {
-        Federation federation = repository.findById(uuid).orElseThrow(
-            () -> new FederationNotFoundException(uuid));
+    public void delete(String id) {
+        Federation federation = repository.findById(id).orElseThrow(
+            () -> new FederationNotFoundException(id));
         repository.delete(federation);
     }
 }

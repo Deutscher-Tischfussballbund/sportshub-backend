@@ -26,16 +26,18 @@ public class DisciplineService {
         this.categoryRepository = categoryRepository;
     }
 
-    List<DisciplineDto> getAll() {
+    @Transactional(readOnly = true)
+    public List<DisciplineDto> getAll() {
         return mapper.toDtoList(repository.findAll());
     }
 
-    DisciplineDto get(String uuid) {
-        return mapper.toDto(getDiscipline(uuid));
+    @Transactional(readOnly = true)
+    public DisciplineDto get(String id) {
+        return mapper.toDto(getDiscipline(id));
     }
 
     @Transactional
-    DisciplineDto create(DisciplineDto disciplineDto) {
+    public DisciplineDto create(DisciplineDto disciplineDto) {
         Discipline discipline = mapper.toEntity(disciplineDto);
 
         discipline.setEvent(getEvent(disciplineDto));
@@ -45,8 +47,8 @@ public class DisciplineService {
     }
 
     @Transactional
-    DisciplineDto update(String uuid, DisciplineDto disciplineDto) {
-        Discipline discipline = getDiscipline(uuid);
+    public DisciplineDto update(String id, DisciplineDto disciplineDto) {
+        Discipline discipline = getDiscipline(id);
 
         mapper.updateEntityFromDto(disciplineDto, discipline);
 
@@ -57,14 +59,14 @@ public class DisciplineService {
     }
 
     @Transactional
-    void delete(String uuid) {
-        Discipline discipline = getDiscipline(uuid);
+    public void delete(String id) {
+        Discipline discipline = getDiscipline(id);
         repository.delete(discipline);
     }
 
-    private @NonNull Discipline getDiscipline(String uuid) {
-        return repository.findById(uuid).orElseThrow(
-            () -> new DisciplineNotFoundException(uuid));
+    private @NonNull Discipline getDiscipline(String id) {
+        return repository.findById(id).orElseThrow(
+            () -> new DisciplineNotFoundException(id));
     }
 
     private @NonNull Category getCategory(DisciplineDto disciplineDto) {

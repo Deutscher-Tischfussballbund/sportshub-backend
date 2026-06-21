@@ -8,7 +8,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/matchevents")
+@RequestMapping("/v1/matchevents")
 public class MatchEventController {
 
     private final MatchEventService service;
@@ -31,18 +31,18 @@ public class MatchEventController {
         return ResponseEntity.created(location).body(returnedDto);
     }
 
-    @GetMapping("/{uuid}")
-    public MatchEventDto get(@PathVariable String uuid) {
-        return service.get(uuid);
+    @GetMapping("/{id}")
+    public MatchEventDto get(@PathVariable String id) {
+        return service.get(id);
     }
 
-    @PutMapping("/{uuid}")
-    public MatchEventDto update(@PathVariable String uuid, @RequestBody MatchEventDto matchEventDto) {
-        return service.update(uuid, matchEventDto);
+    @PutMapping("/{id}")
+    public MatchEventDto update(@PathVariable String id, @RequestBody MatchEventDto matchEventDto) {
+        return service.update(id, matchEventDto);
     }
 
-    @DeleteMapping("/{uuid}")
-    public void delete(@PathVariable String uuid) {
-        service.delete(uuid);
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable String id) {
+        service.delete(id);
     }
 }

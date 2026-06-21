@@ -8,7 +8,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/events")
+@RequestMapping("/v1/events")
 public class EventController {
 
     private final EventService service;
@@ -31,18 +31,18 @@ public class EventController {
         return ResponseEntity.created(location).body(returnedDto);
     }
 
-    @GetMapping("/{uuid}")
-    public EventDto get(@PathVariable String uuid) {
-        return service.get(uuid);
+    @GetMapping("/{id}")
+    public EventDto get(@PathVariable String id) {
+        return service.get(id);
     }
 
-    @PutMapping("/{uuid}")
-    public EventDto update(@PathVariable String uuid, @RequestBody EventDto eventDto) {
-        return service.update(uuid, eventDto);
+    @PutMapping("/{id}")
+    public EventDto update(@PathVariable String id, @RequestBody EventDto eventDto) {
+        return service.update(id, eventDto);
     }
 
-    @DeleteMapping("/{uuid}")
-    public void delete(@PathVariable String uuid) {
-        service.delete(uuid);
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable String id) {
+        service.delete(id);
     }
 }

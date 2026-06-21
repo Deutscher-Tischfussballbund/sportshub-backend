@@ -8,7 +8,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/category")
+@RequestMapping("/v1/category")
 public class CategoryController {
 
     private final CategoryService service;
@@ -31,18 +31,18 @@ public class CategoryController {
         return ResponseEntity.created(location).body(returnedDto);
     }
 
-    @GetMapping("/{uuid}")
-    public CategoryDto get(@PathVariable String uuid) {
-        return service.get(uuid);
+    @GetMapping("/{id}")
+    public CategoryDto get(@PathVariable String id) {
+        return service.get(id);
     }
 
-    @PutMapping("/{uuid}")
-    public CategoryDto update(@PathVariable String uuid, @RequestBody CategoryDto categoryDto) {
-        return service.update(uuid, categoryDto);
+    @PutMapping("/{id}")
+    public CategoryDto update(@PathVariable String id, @RequestBody CategoryDto categoryDto) {
+        return service.update(id, categoryDto);
     }
 
-    @DeleteMapping("/{uuid}")
-    public void delete(@PathVariable String uuid) {
-        service.delete(uuid);
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable String id) {
+        service.delete(id);
     }
 }

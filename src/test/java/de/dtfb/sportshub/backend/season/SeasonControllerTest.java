@@ -33,13 +33,13 @@ class SeasonControllerTest {
 
     @Test
     void getAllSeasons() throws Exception {
-        mockMvc.perform(get("/api/v1/seasons"))
+        mockMvc.perform(get("/v1/seasons"))
             .andExpect(status().isOk());
     }
 
     @Test
     void getSeason_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/seasons/" + NanoIdUtils.randomNanoId()))
+        mockMvc.perform(get("/v1/seasons/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -66,7 +66,7 @@ class SeasonControllerTest {
 
     @Test
     void updateSeason_expectException() throws Exception {
-        mockMvc.perform(put("/api/v1/seasons/" + NanoIdUtils.randomNanoId())
+        mockMvc.perform(put("/v1/seasons/" + NanoIdUtils.randomNanoId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "2024"}
@@ -85,7 +85,7 @@ class SeasonControllerTest {
 
     @Test
     void deleteSeason_expectException() throws Exception {
-        mockMvc.perform(delete("/api/v1/seasons/" + NanoIdUtils.randomNanoId()))
+        mockMvc.perform(delete("/v1/seasons/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -97,7 +97,7 @@ class SeasonControllerTest {
 
     //region helpers
     private MvcResult createSeason() throws Exception {
-        return mockMvc.perform(post("/api/v1/seasons")
+        return mockMvc.perform(post("/v1/seasons")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "2000"}

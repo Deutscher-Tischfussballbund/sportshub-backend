@@ -8,7 +8,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/rounds")
+@RequestMapping("/v1/rounds")
 public class RoundController {
 
     private final RoundService service;
@@ -31,18 +31,18 @@ public class RoundController {
         return ResponseEntity.created(location).body(returnedDto);
     }
 
-    @GetMapping("/{uuid}")
-    public RoundDto get(@PathVariable String uuid) {
-        return service.get(uuid);
+    @GetMapping("/{id}")
+    public RoundDto get(@PathVariable String id) {
+        return service.get(id);
     }
 
-    @PutMapping("/{uuid}")
-    public RoundDto update(@PathVariable String uuid, @RequestBody RoundDto roundDto) {
-        return service.update(uuid, roundDto);
+    @PutMapping("/{id}")
+    public RoundDto update(@PathVariable String id, @RequestBody RoundDto roundDto) {
+        return service.update(id, roundDto);
     }
 
-    @DeleteMapping("/{uuid}")
-    public void delete(@PathVariable String uuid) {
-        service.delete(uuid);
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable String id) {
+        service.delete(id);
     }
 }

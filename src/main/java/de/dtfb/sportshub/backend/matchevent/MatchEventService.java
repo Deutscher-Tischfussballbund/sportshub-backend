@@ -1,8 +1,8 @@
 package de.dtfb.sportshub.backend.matchevent;
 
 import de.dtfb.sportshub.backend.match.Match;
+import de.dtfb.sportshub.backend.match.MatchNotFoundException;
 import de.dtfb.sportshub.backend.match.MatchRepository;
-import de.dtfb.sportshub.backend.round.RoundNotFoundException;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamNotFoundException;
 import de.dtfb.sportshub.backend.team.TeamRepository;
@@ -25,17 +25,20 @@ public class MatchEventService {
         this.teamRepository = teamRepository;
     }
 
-    List<MatchEventDto> getAll() {
+    @Transactional(readOnly = true)
+    public List<MatchEventDto> getAll() {
         return mapper.toDtoList(repository.findAll());
     }
 
-    MatchEventDto get(String uuid) {
-        MatchEvent matchEvent = repository.findById(uuid).orElseThrow(
-            () -> new MatchEventNotFoundException(uuid));
+    @Transactional(readOnly = true)
+    public MatchEventDto get(String id) {
+        MatchEvent matchEvent = repository.findById(id).orElseThrow(
+            () -> new MatchEventNotFoundException(id));
         return mapper.toDto(matchEvent);
     }
 
-    MatchEventDto create(MatchEventDto matchEventDto) {
+    @Transactional
+    public MatchEventDto create(MatchEventDto matchEventDto) {
         MatchEvent matchEvent = mapper.toEntity(matchEventDto);
 
         setDependants(matchEventDto, matchEvent);
@@ -44,9 +47,10 @@ public class MatchEventService {
         return mapper.toDto(savedMatchEvent);
     }
 
-    MatchEventDto update(String uuid, MatchEventDto matchEventDto) {
-        MatchEvent matchEvent = repository.findById(uuid).orElseThrow(
-            () -> new MatchEventNotFoundException(uuid));
+    @Transactional
+    public MatchEventDto update(String id, MatchEventDto matchEventDto) {
+        MatchEvent matchEvent = repository.findById(id).orElseThrow(
+            () -> new MatchEventNotFoundException(id));
 
         mapper.updateEntityFromDto(matchEventDto, matchEvent);
 
@@ -57,9 +61,9 @@ public class MatchEventService {
     }
 
     @Transactional
-    void delete(String uuid) {
-        MatchEvent matchEvent = repository.findById(uuid).orElseThrow(
-            () -> new MatchEventNotFoundException(uuid));
+    public void delete(String id) {
+        MatchEvent matchEvent = repository.findById(id).orElseThrow(
+            () -> new MatchEventNotFoundException(id));
         repository.delete(matchEvent);
     }
 
@@ -67,7 +71,7 @@ public class MatchEventService {
         String matchId = matchEventDto.getMatchId();
         if (matchId != null && !matchId.equals(matchEvent.getId())) {
             Match match = matchRepository.findById(matchId)
-                .orElseThrow(() -> new RoundNotFoundException(matchId));
+                .orElseThrow(() -> new MatchNotFoundException(matchId));
             matchEvent.setMatch(match);
         }
         Team team = teamRepository.findById(matchEventDto.getTeamId())

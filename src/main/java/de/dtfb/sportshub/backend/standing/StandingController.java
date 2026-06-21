@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/pools")
+@RequestMapping("/v1/pools")
 public class StandingController {
 
     private final StandingService standingService;
@@ -17,8 +17,8 @@ public class StandingController {
         this.standingService = standingService;
     }
 
-    @GetMapping("/{uuid}/standings")
-    public List<StandingDto> getStandings(@PathVariable String uuid) {
-        return standingService.getByPool(uuid);
+    @GetMapping("/{id}/standings")
+    public List<StandingDto> getStandings(@PathVariable String id) {
+        return standingService.getByPool(id);
     }
 }

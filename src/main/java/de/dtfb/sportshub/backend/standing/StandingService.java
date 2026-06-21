@@ -29,6 +29,7 @@ public class StandingService {
         this.matchRepository = matchRepository;
     }
 
+    @Transactional(readOnly = true)
     public List<StandingDto> getByPool(String poolId) {
         Pool pool = poolRepository.findById(poolId)
             .orElseThrow(() -> new PoolNotFoundException(poolId));

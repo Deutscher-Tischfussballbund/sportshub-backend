@@ -16,24 +16,26 @@ public class CategoryService {
         this.mapper = mapper;
     }
 
-    List<CategoryDto> getAll() {
+    @Transactional(readOnly = true)
+    public List<CategoryDto> getAll() {
         return mapper.toDtoList(repository.findAll());
     }
 
-    CategoryDto get(String uuid) {
-        return mapper.toDto(getCategory(uuid));
+    @Transactional(readOnly = true)
+    public CategoryDto get(String id) {
+        return mapper.toDto(getCategory(id));
     }
 
     @Transactional
-    CategoryDto create(CategoryDto categoryDto) {
+    public CategoryDto create(CategoryDto categoryDto) {
         Category category = mapper.toEntity(categoryDto);
 
         return mapper.toDto(repository.save(category));
     }
 
     @Transactional
-    CategoryDto update(String uuid, CategoryDto categoryDto) {
-        Category category = getCategory(uuid);
+    public CategoryDto update(String id, CategoryDto categoryDto) {
+        Category category = getCategory(id);
 
         mapper.updateEntityFromDto(categoryDto, category);
 
@@ -41,12 +43,12 @@ public class CategoryService {
     }
 
     @Transactional
-    void delete(String uuid) {
-        repository.delete(getCategory(uuid));
+    public void delete(String id) {
+        repository.delete(getCategory(id));
     }
 
-    private @NonNull Category getCategory(String uuid) {
-        return repository.findById(uuid).orElseThrow(
-            () -> new CategoryNotFoundException(uuid));
+    private @NonNull Category getCategory(String id) {
+        return repository.findById(id).orElseThrow(
+            () -> new CategoryNotFoundException(id));
     }
 }

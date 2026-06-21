@@ -8,7 +8,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/locations")
+@RequestMapping("/v1/locations")
 public class LocationController {
 
     private final LocationService service;
@@ -31,18 +31,18 @@ public class LocationController {
         return ResponseEntity.created(location).body(returnedDto);
     }
 
-    @GetMapping("/{uuid}")
-    public LocationDto get(@PathVariable String uuid) {
-        return service.get(uuid);
+    @GetMapping("/{id}")
+    public LocationDto get(@PathVariable String id) {
+        return service.get(id);
     }
 
-    @PutMapping("/{uuid}")
-    public LocationDto update(@PathVariable String uuid, @RequestBody LocationDto locationDto) {
-        return service.update(uuid, locationDto);
+    @PutMapping("/{id}")
+    public LocationDto update(@PathVariable String id, @RequestBody LocationDto locationDto) {
+        return service.update(id, locationDto);
     }
 
-    @DeleteMapping("/{uuid}")
-    public void delete(@PathVariable String uuid) {
-        service.delete(uuid);
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable String id) {
+        service.delete(id);
     }
 }

@@ -67,13 +67,13 @@ class MatchDayControllerTest {
 
     @Test
     void getAllMatchdays() throws Exception {
-        mockMvc.perform(get("/api/v1/matchdays"))
+        mockMvc.perform(get("/v1/matchdays"))
             .andExpect(status().isOk());
     }
 
     @Test
     void getMatchday_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/matchdays/" + NanoIdUtils.randomNanoId()))
+        mockMvc.perform(get("/v1/matchdays/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -116,7 +116,7 @@ class MatchDayControllerTest {
 
     @Test
     void updateMatchday_expectException() throws Exception {
-        mockMvc.perform(put("/api/v1/matchdays/" + NanoIdUtils.randomNanoId())
+        mockMvc.perform(put("/v1/matchdays/" + NanoIdUtils.randomNanoId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "Matchday1"}
@@ -135,7 +135,7 @@ class MatchDayControllerTest {
 
     @Test
     void deleteMatchday_expectException() throws Exception {
-        mockMvc.perform(delete("/api/v1/matchdays/" + NanoIdUtils.randomNanoId()))
+        mockMvc.perform(delete("/v1/matchdays/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -147,14 +147,14 @@ class MatchDayControllerTest {
 
     //region helpers
     private MvcResult createSeason() throws Exception {
-        return mockMvc.perform(post("/api/v1/seasons")
+        return mockMvc.perform(post("/v1/seasons")
             .contentType(MediaType.APPLICATION_JSON).content("""
                 {"name": "2025"}
                 """)).andReturn();
     }
 
     private MvcResult createEvent(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/events")
+        return mockMvc.perform(post("/v1/events")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Turnier",
@@ -165,7 +165,7 @@ class MatchDayControllerTest {
     }
 
     private MvcResult createDiscipline(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/disciplines")
+        return mockMvc.perform(post("/v1/disciplines")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Offenes Einzel",
@@ -176,7 +176,7 @@ class MatchDayControllerTest {
     }
 
     private MvcResult createStage(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/stages")
+        return mockMvc.perform(post("/v1/stages")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Vorrunde",
@@ -187,7 +187,7 @@ class MatchDayControllerTest {
     }
 
     private MvcResult createPool(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/pools")
+        return mockMvc.perform(post("/v1/pools")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Pool1",
@@ -201,7 +201,7 @@ class MatchDayControllerTest {
     }
 
     private MvcResult createRound(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/rounds")
+        return mockMvc.perform(post("/v1/rounds")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Runde1",
@@ -213,7 +213,7 @@ class MatchDayControllerTest {
     }
 
     private MvcResult createLocation() throws Exception {
-        return mockMvc.perform(post("/api/v1/locations")
+        return mockMvc.perform(post("/v1/locations")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "MKK",
@@ -224,7 +224,7 @@ class MatchDayControllerTest {
     }
 
     private MvcResult createTeam(String name) throws Exception {
-        return mockMvc.perform(post("/api/v1/teams")
+        return mockMvc.perform(post("/v1/teams")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "%s"}
@@ -234,7 +234,7 @@ class MatchDayControllerTest {
     }
 
     private MvcResult createMatchday() throws Exception {
-        return mockMvc.perform(post("/api/v1/matchdays")
+        return mockMvc.perform(post("/v1/matchdays")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Matchday1",

@@ -8,7 +8,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/matchsets")
+@RequestMapping("/v1/matchsets")
 public class MatchSetController {
 
     private final MatchSetService service;
@@ -31,18 +31,18 @@ public class MatchSetController {
         return ResponseEntity.created(location).body(returnedDto);
     }
 
-    @GetMapping("/{uuid}")
-    public MatchSetDto get(@PathVariable String uuid) {
-        return service.get(uuid);
+    @GetMapping("/{id}")
+    public MatchSetDto get(@PathVariable String id) {
+        return service.get(id);
     }
 
-    @PutMapping("/{uuid}")
-    public MatchSetDto update(@PathVariable String uuid, @RequestBody MatchSetDto matchSetDto) {
-        return service.update(uuid, matchSetDto);
+    @PutMapping("/{id}")
+    public MatchSetDto update(@PathVariable String id, @RequestBody MatchSetDto matchSetDto) {
+        return service.update(id, matchSetDto);
     }
 
-    @DeleteMapping("/{uuid}")
-    public void delete(@PathVariable String uuid) {
-        service.delete(uuid);
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable String id) {
+        service.delete(id);
     }
 }

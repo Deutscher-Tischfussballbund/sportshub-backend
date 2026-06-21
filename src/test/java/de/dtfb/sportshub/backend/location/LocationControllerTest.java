@@ -33,13 +33,13 @@ class LocationControllerTest {
 
     @Test
     void getAllLocations() throws Exception {
-        mockMvc.perform(get("/api/v1/locations"))
+        mockMvc.perform(get("/v1/locations"))
             .andExpect(status().isOk());
     }
 
     @Test
     void getLocation_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/locations/" + NanoIdUtils.randomNanoId()))
+        mockMvc.perform(get("/v1/locations/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -67,7 +67,7 @@ class LocationControllerTest {
 
     @Test
     void updateLocation_expectException() throws Exception {
-        mockMvc.perform(put("/api/v1/locations/" + NanoIdUtils.randomNanoId())
+        mockMvc.perform(put("/v1/locations/" + NanoIdUtils.randomNanoId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "Kixx",
@@ -87,7 +87,7 @@ class LocationControllerTest {
 
     @Test
     void deleteLocation_expectException() throws Exception {
-        mockMvc.perform(delete("/api/v1/locations/" + NanoIdUtils.randomNanoId()))
+        mockMvc.perform(delete("/v1/locations/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -99,7 +99,7 @@ class LocationControllerTest {
 
     //region helpers
     private MvcResult createLocation() throws Exception {
-        return mockMvc.perform(post("/api/v1/locations")
+        return mockMvc.perform(post("/v1/locations")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "MKK",

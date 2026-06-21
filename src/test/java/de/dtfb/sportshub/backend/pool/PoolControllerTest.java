@@ -48,13 +48,13 @@ class PoolControllerTest {
 
     @Test
     void getAllPools() throws Exception {
-        mockMvc.perform(get("/api/v1/pools"))
+        mockMvc.perform(get("/v1/pools"))
             .andExpect(status().isOk());
     }
 
     @Test
     void getPool_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/pools/" + NanoIdUtils.randomNanoId()))
+        mockMvc.perform(get("/v1/pools/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -88,7 +88,7 @@ class PoolControllerTest {
 
     @Test
     void updatePool_expectException() throws Exception {
-        mockMvc.perform(put("/api/v1/pools/" + NanoIdUtils.randomNanoId())
+        mockMvc.perform(put("/v1/pools/" + NanoIdUtils.randomNanoId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "Pool1",
@@ -109,7 +109,7 @@ class PoolControllerTest {
 
     @Test
     void deletePool_expectException() throws Exception {
-        mockMvc.perform(delete("/api/v1/pools/" + NanoIdUtils.randomNanoId()))
+        mockMvc.perform(delete("/v1/pools/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -121,14 +121,14 @@ class PoolControllerTest {
 
     //region helpers
     private MvcResult createSeason() throws Exception {
-        return mockMvc.perform(post("/api/v1/seasons")
+        return mockMvc.perform(post("/v1/seasons")
             .contentType(MediaType.APPLICATION_JSON).content("""
                 {"name": "2025"}
                 """)).andReturn();
     }
 
     private MvcResult createEvent(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/events")
+        return mockMvc.perform(post("/v1/events")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Turnier",
@@ -139,7 +139,7 @@ class PoolControllerTest {
     }
 
     private MvcResult createDiscipline(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/disciplines")
+        return mockMvc.perform(post("/v1/disciplines")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Offenes Einzel",
@@ -150,7 +150,7 @@ class PoolControllerTest {
     }
 
     private MvcResult createStage(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/stages")
+        return mockMvc.perform(post("/v1/stages")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Vorrunde",
@@ -161,7 +161,7 @@ class PoolControllerTest {
     }
 
     private MvcResult createPool(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/pools")
+        return mockMvc.perform(post("/v1/pools")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Pool1",

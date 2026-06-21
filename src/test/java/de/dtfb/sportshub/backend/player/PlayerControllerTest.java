@@ -39,7 +39,7 @@ class PlayerControllerTest {
 
         Mockito.when(externalApiClient.fetchById(any())).thenReturn(mockDto);
 
-        mockMvc.perform(get("/api/v1/players/" + id))
+        mockMvc.perform(get("/v1/players/" + id))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.firstName").value(mockDto.getFirstName()))
             .andExpect(jsonPath("$.lastName").value(mockDto.getLastName()))
@@ -52,7 +52,7 @@ class PlayerControllerTest {
 
         Mockito.when(externalApiClient.fetchById(any())).thenThrow(new ExternalApiUnavailableException());
 
-        mockMvc.perform(get("/api/v1/players/" + id))
+        mockMvc.perform(get("/v1/players/" + id))
             .andExpect(status().isServiceUnavailable());
     }
 
@@ -60,7 +60,7 @@ class PlayerControllerTest {
     void getUnknownPlayer_expectException() throws Exception {
         String id = NanoIdUtils.randomNanoId();
         Mockito.when(externalApiClient.fetchById(any())).thenThrow(new ExternalResourceNotFoundException());
-        mockMvc.perform(get("/api/v1/players/" + id))
+        mockMvc.perform(get("/v1/players/" + id))
             .andExpect(status().isNotFound());
     }
 
@@ -68,7 +68,7 @@ class PlayerControllerTest {
     void getPlayer_badRequest_expectException() throws Exception {
         String id = NanoIdUtils.randomNanoId();
         Mockito.when(externalApiClient.fetchById(any())).thenThrow(new ExternalApiException("Bad Request"));
-        mockMvc.perform(get("/api/v1/players/" + id))
+        mockMvc.perform(get("/v1/players/" + id))
             .andExpect(status().isBadRequest());
     }
 }

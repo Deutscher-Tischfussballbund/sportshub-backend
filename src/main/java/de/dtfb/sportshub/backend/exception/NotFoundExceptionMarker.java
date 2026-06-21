@@ -1,9 +1,15 @@
 package de.dtfb.sportshub.backend.exception;
 
+import lombok.Getter;
+
+@Getter
 public abstract class NotFoundExceptionMarker extends RuntimeException {
-    public NotFoundExceptionMarker(String message) {
-        super(message);
+
+    private final String errorCode;
+
+    protected NotFoundExceptionMarker(String entity, String errorCode, String id) {
+        super("Could not find " + entity + " with id " + id);
+        this.errorCode = errorCode;
     }
 
-    public abstract String getErrorCode();
 }

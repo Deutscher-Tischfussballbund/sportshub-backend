@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/players")
+@RequestMapping("/v1/players")
 public class PlayerController {
 
     private final PlayerService service;
@@ -15,8 +15,8 @@ public class PlayerController {
         this.service = service;
     }
 
-    @GetMapping("/{uuid}")
-    public PlayerDto get(@PathVariable String uuid) {
-        return service.get(uuid);
+    @GetMapping("/{id}")
+    public PlayerDto get(@PathVariable String id) {
+        return service.get(id);
     }
 }

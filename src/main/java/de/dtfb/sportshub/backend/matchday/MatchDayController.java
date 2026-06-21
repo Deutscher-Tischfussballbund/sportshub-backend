@@ -10,7 +10,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/matchdays")
+@RequestMapping("/v1/matchdays")
 public class MatchDayController {
 
     private final MatchDayService service;
@@ -33,35 +33,37 @@ public class MatchDayController {
         return ResponseEntity.created(location).body(returnedDto);
     }
 
-    @GetMapping("/{uuid}")
-    public MatchDayDto get(@PathVariable String uuid) {
-        return service.get(uuid);
+    @GetMapping("/{id}")
+    public MatchDayDto get(@PathVariable String id) {
+        return service.get(id);
     }
 
-    @PutMapping("/{uuid}")
-    public MatchDayDto update(@PathVariable String uuid, @RequestBody MatchDayDto matchDayDto) {
-        return service.update(uuid, matchDayDto);
+    @PutMapping("/{id}")
+    public MatchDayDto update(@PathVariable String id, @RequestBody MatchDayDto matchDayDto) {
+        return service.update(id, matchDayDto);
     }
 
-    @DeleteMapping("/{uuid}")
-    public void delete(@PathVariable String uuid) {
-        service.delete(uuid);
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable String id) {
+        service.delete(id);
     }
 
     @PostMapping("/{uuid}/result")
+    @PostMapping("/{id}/result")
     public MatchDayDto submitResult(
-            @PathVariable String uuid,
+            @PathVariable String id,
             @RequestBody MatchDayResultRequest request,
             @AuthenticationPrincipal Jwt jwt) {
         String dtfbId = jwt.getClaimAsString("dtfb_id");
-        return service.submitResult(uuid, request, dtfbId);
+        return service.submitResult(id, request, dtfbId);
     }
 
     @PostMapping("/{uuid}/confirm")
+    @PostMapping("/{id}/confirm")
     public MatchDayDto confirmResult(
-            @PathVariable String uuid,
+            @PathVariable String id,
             @AuthenticationPrincipal Jwt jwt) {
         String dtfbId = jwt.getClaimAsString("dtfb_id");
-        return service.confirmResult(uuid, dtfbId);
+        return service.confirmResult(id, dtfbId);
     }
 }

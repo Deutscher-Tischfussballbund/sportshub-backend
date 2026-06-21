@@ -8,7 +8,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/teams")
+@RequestMapping("/v1/teams")
 public class TeamController {
 
     private final TeamService service;
@@ -31,18 +31,18 @@ public class TeamController {
         return ResponseEntity.created(location).body(returnedDto);
     }
 
-    @GetMapping("/{uuid}")
-    public TeamDto get(@PathVariable String uuid) {
-        return service.get(uuid);
+    @GetMapping("/{id}")
+    public TeamDto get(@PathVariable String id) {
+        return service.get(id);
     }
 
-    @PutMapping("/{uuid}")
-    public TeamDto update(@PathVariable String uuid, @RequestBody TeamDto teamDto) {
-        return service.update(uuid, teamDto);
+    @PutMapping("/{id}")
+    public TeamDto update(@PathVariable String id, @RequestBody TeamDto teamDto) {
+        return service.update(id, teamDto);
     }
 
-    @DeleteMapping("/{uuid}")
-    public void delete(@PathVariable String uuid) {
-        service.delete(uuid);
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable String id) {
+        service.delete(id);
     }
 }

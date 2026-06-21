@@ -42,13 +42,13 @@ class EventControllerTest {
 
     @Test
     void getAllEvents() throws Exception {
-        mockMvc.perform(get("/api/v1/events"))
+        mockMvc.perform(get("/v1/events"))
             .andExpect(status().isOk());
     }
 
     @Test
     void getEvent_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/events/" + NanoIdUtils.randomNanoId()))
+        mockMvc.perform(get("/v1/events/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -76,7 +76,7 @@ class EventControllerTest {
 
     @Test
     void updateEvent_expectException() throws Exception {
-        mockMvc.perform(put("/api/v1/events/" + NanoIdUtils.randomNanoId())
+        mockMvc.perform(put("/v1/events/" + NanoIdUtils.randomNanoId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "Replacement"}
@@ -95,7 +95,7 @@ class EventControllerTest {
 
     @Test
     void deleteEvent_expectException() throws Exception {
-        mockMvc.perform(delete("/api/v1/events/" + NanoIdUtils.randomNanoId()))
+        mockMvc.perform(delete("/v1/events/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -107,14 +107,14 @@ class EventControllerTest {
 
     //region helpers
     private MvcResult createSeason() throws Exception {
-        return mockMvc.perform(post("/api/v1/seasons")
+        return mockMvc.perform(post("/v1/seasons")
             .contentType(MediaType.APPLICATION_JSON).content("""
                 {"name": "2025"}
                 """)).andReturn();
     }
 
     private MvcResult createEvent(String uuid) throws Exception {
-        return mockMvc.perform(post("/api/v1/events")
+        return mockMvc.perform(post("/v1/events")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Turnier",

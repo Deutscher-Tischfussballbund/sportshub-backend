@@ -12,7 +12,7 @@ public class PlayerService {
         this.client = client;
     }
 
-    PlayerDto get(String uuid) {
-        return client.fetchById(uuid);
+    public PlayerDto get(String id) {
+        return client.fetchById(id);
     }
 }

@@ -20,18 +20,20 @@ public class EventService {
         this.seasonRepository = seasonRepository;
     }
 
-    List<EventDto> getAll() {
+    @Transactional(readOnly = true)
+    public List<EventDto> getAll() {
         return mapper.toDtoList(repository.findAll());
     }
 
-    EventDto get(String uuid) {
-        Event event = repository.findById(uuid).orElseThrow(
-            () -> new EventNotFoundException(uuid));
+    @Transactional(readOnly = true)
+    public EventDto get(String id) {
+        Event event = repository.findById(id).orElseThrow(
+            () -> new EventNotFoundException(id));
         return mapper.toDto(event);
     }
 
     @Transactional
-    EventDto create(EventDto eventDto) {
+    public EventDto create(EventDto eventDto) {
         Event event = mapper.toEntity(eventDto);
 
         Season season = seasonRepository.findById(eventDto.getSeasonId())
@@ -43,9 +45,9 @@ public class EventService {
     }
 
     @Transactional
-    EventDto update(String uuid, EventDto eventDto) {
-        Event event = repository.findById(uuid).orElseThrow(
-            () -> new EventNotFoundException(uuid));
+    public EventDto update(String id, EventDto eventDto) {
+        Event event = repository.findById(id).orElseThrow(
+            () -> new EventNotFoundException(id));
 
         mapper.updateEntityFromDto(eventDto, event);
 
@@ -58,9 +60,9 @@ public class EventService {
     }
 
     @Transactional
-    void delete(String uuid) {
-        Event event = repository.findById(uuid).orElseThrow(
-            () -> new EventNotFoundException(uuid));
+    public void delete(String id) {
+        Event event = repository.findById(id).orElseThrow(
+            () -> new EventNotFoundException(id));
         repository.delete(event);
     }
 }

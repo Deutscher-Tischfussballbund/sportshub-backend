@@ -31,7 +31,7 @@ class GlobalExceptionHandlerTest {
 
         Mockito.when(externalApiClient.fetchById(any())).thenThrow(new RuntimeException());
 
-        mockMvc.perform(get("/api/v1/players/" + id))
+        mockMvc.perform(get("/v1/players/" + id))
             .andExpect(status().isInternalServerError());
     }
 }

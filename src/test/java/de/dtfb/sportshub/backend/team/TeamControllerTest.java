@@ -33,13 +33,13 @@ class TeamControllerTest {
 
     @Test
     void getAllTeams() throws Exception {
-        mockMvc.perform(get("/api/v1/teams"))
+        mockMvc.perform(get("/v1/teams"))
             .andExpect(status().isOk());
     }
 
     @Test
     void getTeam_expectException() throws Exception {
-        mockMvc.perform(get("/api/v1/teams/" + NanoIdUtils.randomNanoId()))
+        mockMvc.perform(get("/v1/teams/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -66,7 +66,7 @@ class TeamControllerTest {
 
     @Test
     void updateTeam_expectException() throws Exception {
-        mockMvc.perform(put("/api/v1/teams/" + NanoIdUtils.randomNanoId())
+        mockMvc.perform(put("/v1/teams/" + NanoIdUtils.randomNanoId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "Tabledancers"}
@@ -85,7 +85,7 @@ class TeamControllerTest {
 
     @Test
     void deleteTeam_expectException() throws Exception {
-        mockMvc.perform(delete("/api/v1/teams/" + NanoIdUtils.randomNanoId()))
+        mockMvc.perform(delete("/v1/teams/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -97,7 +97,7 @@ class TeamControllerTest {
 
     //region helpers
     private MvcResult createTeam() throws Exception {
-        return mockMvc.perform(post("/api/v1/teams")
+        return mockMvc.perform(post("/v1/teams")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "Hand und Foos"}

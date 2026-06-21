@@ -9,7 +9,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/pools")
+@RequestMapping("/v1/pools")
 public class PoolController {
 
     private final PoolService service;
@@ -32,18 +32,18 @@ public class PoolController {
         return ResponseEntity.created(location).body(returnedDto);
     }
 
-    @GetMapping("/{uuid}")
-    public PoolDto get(@PathVariable String uuid) {
-        return service.get(uuid);
+    @GetMapping("/{id}")
+    public PoolDto get(@PathVariable String id) {
+        return service.get(id);
     }
 
-    @PutMapping("/{uuid}")
-    public PoolDto update(@PathVariable String uuid, @RequestBody PoolDto poolDto) {
-        return service.update(uuid, poolDto);
+    @PutMapping("/{id}")
+    public PoolDto update(@PathVariable String id, @RequestBody PoolDto poolDto) {
+        return service.update(id, poolDto);
     }
 
-    @DeleteMapping("/{uuid}")
-    public void delete(@PathVariable String uuid) {
-        service.delete(uuid);
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable String id) {
+        service.delete(id);
     }
 }

@@ -8,7 +8,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/seasons")
+@RequestMapping("/v1/seasons")
 public class SeasonController {
 
     private final SeasonService service;
@@ -31,18 +31,18 @@ public class SeasonController {
         return ResponseEntity.created(location).body(returnedDto);
     }
 
-    @GetMapping("/{uuid}")
-    public SeasonDto get(@PathVariable String uuid) {
-        return service.get(uuid);
+    @GetMapping("/{id}")
+    public SeasonDto get(@PathVariable String id) {
+        return service.get(id);
     }
 
-    @PutMapping("/{uuid}")
-    public SeasonDto update(@PathVariable String uuid, @RequestBody SeasonDto seasonDto) {
-        return service.update(uuid, seasonDto);
+    @PutMapping("/{id}")
+    public SeasonDto update(@PathVariable String id, @RequestBody SeasonDto seasonDto) {
+        return service.update(id, seasonDto);
     }
 
-    @DeleteMapping("/{uuid}")
-    public void delete(@PathVariable String uuid) {
-        service.delete(uuid);
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable String id) {
+        service.delete(id);
     }
 }

@@ -20,26 +20,30 @@ public class TeamService {
         this.federationRepository = federationRepository;
     }
 
-    List<TeamDto> getAll() {
+    @Transactional(readOnly = true)
+    public List<TeamDto> getAll() {
         return mapper.toDtoList(repository.findAll());
     }
 
-    TeamDto get(String uuid) {
-        Team team = repository.findById(uuid).orElseThrow(
-            () -> new TeamNotFoundException(uuid));
+    @Transactional(readOnly = true)
+    public TeamDto get(String id) {
+        Team team = repository.findById(id).orElseThrow(
+            () -> new TeamNotFoundException(id));
         return mapper.toDto(team);
     }
 
-    TeamDto create(TeamDto teamDto) {
+    @Transactional
+    public TeamDto create(TeamDto teamDto) {
         Team newTeam = mapper.toEntity(teamDto);
         resolveFederation(teamDto, newTeam);
         Team savedTeam = repository.save(newTeam);
         return mapper.toDto(savedTeam);
     }
 
-    TeamDto update(String uuid, TeamDto teamDto) {
-        Team team = repository.findById(uuid).orElseThrow(
-            () -> new TeamNotFoundException(uuid));
+    @Transactional
+    public TeamDto update(String id, TeamDto teamDto) {
+        Team team = repository.findById(id).orElseThrow(
+            () -> new TeamNotFoundException(id));
 
         mapper.updateEntityFromDto(teamDto, team);
         resolveFederation(teamDto, team);
@@ -49,9 +53,9 @@ public class TeamService {
     }
 
     @Transactional
-    void delete(String uuid) {
-        Team team = repository.findById(uuid).orElseThrow(
-            () -> new TeamNotFoundException(uuid));
+    public void delete(String id) {
+        Team team = repository.findById(id).orElseThrow(
+            () -> new TeamNotFoundException(id));
         repository.delete(team);
     }
 

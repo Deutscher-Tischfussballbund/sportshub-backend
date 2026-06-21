@@ -1,8 +1,8 @@
 package de.dtfb.sportshub.backend.matchset;
 
 import de.dtfb.sportshub.backend.match.Match;
+import de.dtfb.sportshub.backend.match.MatchNotFoundException;
 import de.dtfb.sportshub.backend.match.MatchRepository;
-import de.dtfb.sportshub.backend.matchday.MatchDayNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,35 +20,24 @@ public class MatchSetService {
         this.matchRepository = matchRepository;
     }
 
-    List<MatchSetDto> getAll() {
+    @Transactional(readOnly = true)
+    public List<MatchSetDto> getAll() {
         return mapper.toDtoList(repository.findAll());
     }
 
-    MatchSetDto get(String uuid) {
-        MatchSet matchSet = repository.findById(uuid).orElseThrow(
-            () -> new MatchSetNotFoundException(uuid));
+    @Transactional(readOnly = true)
+    public MatchSetDto get(String id) {
+        MatchSet matchSet = repository.findById(id).orElseThrow(
+            () -> new MatchSetNotFoundException(id));
         return mapper.toDto(matchSet);
     }
 
-    MatchSetDto create(MatchSetDto setDto) {
+    @Transactional
+    public MatchSetDto create(MatchSetDto setDto) {
         MatchSet matchSet = mapper.toEntity(setDto);
 
         Match match = matchRepository.findById(setDto.getMatchId())
-            .orElseThrow(() -> new MatchDayNotFoundException(setDto.getMatchId()));
-        matchSet.setMatch(match);
-
-        MatchSet savedSet = repository.save(matchSet);
-        return mapper.toDto(savedSet);
-    }
-
-    MatchSetDto update(String uuid, MatchSetDto setDto) {
-        MatchSet matchSet = repository.findById(uuid).orElseThrow(
-            () -> new MatchSetNotFoundException(uuid));
-
-        mapper.updateEntityFromDto(setDto, matchSet);
-
-        Match match = matchRepository.findById(setDto.getMatchId())
-            .orElseThrow(() -> new MatchDayNotFoundException(setDto.getMatchId()));
+            .orElseThrow(() -> new MatchNotFoundException(setDto.getMatchId()));
         matchSet.setMatch(match);
 
         MatchSet savedSet = repository.save(matchSet);
@@ -56,9 +45,24 @@ public class MatchSetService {
     }
 
     @Transactional
-    void delete(String uuid) {
-        MatchSet matchSet = repository.findById(uuid).orElseThrow(
-            () -> new MatchSetNotFoundException(uuid));
+    public MatchSetDto update(String id, MatchSetDto setDto) {
+        MatchSet matchSet = repository.findById(id).orElseThrow(
+            () -> new MatchSetNotFoundException(id));
+
+        mapper.updateEntityFromDto(setDto, matchSet);
+
+        Match match = matchRepository.findById(setDto.getMatchId())
+            .orElseThrow(() -> new MatchNotFoundException(setDto.getMatchId()));
+        matchSet.setMatch(match);
+
+        MatchSet savedSet = repository.save(matchSet);
+        return mapper.toDto(savedSet);
+    }
+
+    @Transactional
+    public void delete(String id) {
+        MatchSet matchSet = repository.findById(id).orElseThrow(
+            () -> new MatchSetNotFoundException(id));
         repository.delete(matchSet);
     }
 }
