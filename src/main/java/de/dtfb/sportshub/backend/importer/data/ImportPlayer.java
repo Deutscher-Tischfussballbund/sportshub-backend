@@ -1,6 +1,5 @@
 package de.dtfb.sportshub.backend.importer.data;
 
-import de.dtfb.sportshub.backend.enums.Side;
 import lombok.Getter;
 import lombok.Setter;
 
