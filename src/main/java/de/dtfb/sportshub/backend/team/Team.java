@@ -1,7 +1,7 @@
 package de.dtfb.sportshub.backend.team;
 
 import de.dtfb.sportshub.backend.base.BaseEntity;
-import de.dtfb.sportshub.backend.federation.Federation;
+import de.dtfb.sportshub.backend.club.Club;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -15,6 +15,6 @@ public class Team extends BaseEntity {
     private String name;
 
     @ManyToOne
-    @JoinColumn(name = "federation_id")
-    private Federation federation;
+    @JoinColumn(name = "club_id")
+    private Club club;
 }

@@ -1,8 +1,8 @@
 package de.dtfb.sportshub.backend.team;
 
-import de.dtfb.sportshub.backend.federation.Federation;
-import de.dtfb.sportshub.backend.federation.FederationNotFoundException;
-import de.dtfb.sportshub.backend.federation.FederationRepository;
+import de.dtfb.sportshub.backend.club.Club;
+import de.dtfb.sportshub.backend.club.ClubNotFoundException;
+import de.dtfb.sportshub.backend.club.ClubRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,12 +12,12 @@ import java.util.List;
 public class TeamService {
     private final TeamRepository repository;
     private final TeamMapper mapper;
-    private final FederationRepository federationRepository;
+    private final ClubRepository clubRepository;
 
-    public TeamService(TeamRepository repository, TeamMapper mapper, FederationRepository federationRepository) {
+    public TeamService(TeamRepository repository, TeamMapper mapper, ClubRepository clubRepository) {
         this.repository = repository;
         this.mapper = mapper;
-        this.federationRepository = federationRepository;
+        this.clubRepository = clubRepository;
     }
 
     @Transactional(readOnly = true)
@@ -35,7 +35,7 @@ public class TeamService {
     @Transactional
     public TeamDto create(TeamDto teamDto) {
         Team newTeam = mapper.toEntity(teamDto);
-        resolveFederation(teamDto, newTeam);
+        resolveClub(teamDto, newTeam);
         Team savedTeam = repository.save(newTeam);
         return mapper.toDto(savedTeam);
     }
@@ -46,7 +46,7 @@ public class TeamService {
             () -> new TeamNotFoundException(id));
 
         mapper.updateEntityFromDto(teamDto, team);
-        resolveFederation(teamDto, team);
+        resolveClub(teamDto, team);
 
         Team savedTeam = repository.save(team);
         return mapper.toDto(savedTeam);
@@ -59,11 +59,11 @@ public class TeamService {
         repository.delete(team);
     }
 
-    private void resolveFederation(TeamDto dto, Team team) {
-        if (dto.getFederationId() != null) {
-            Federation federation = federationRepository.findById(dto.getFederationId())
-                .orElseThrow(() -> new FederationNotFoundException(dto.getFederationId()));
-            team.setFederation(federation);
+    private void resolveClub(TeamDto dto, Team team) {
+        if (dto.getClubId() != null) {
+            Club club = clubRepository.findById(dto.getClubId())
+                .orElseThrow(() -> new ClubNotFoundException(dto.getClubId()));
+            team.setClub(club);
         }
     }
 }
