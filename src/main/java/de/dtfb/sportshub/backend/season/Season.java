@@ -8,6 +8,9 @@ import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
+import java.time.LocalDate;
+
 @Entity
 @Getter
 @Setter
@@ -17,4 +20,13 @@ public class Season extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "federation_id")
     private Federation federation;
+
+    // General duration of the season.
+    private LocalDate startDate;
+    private LocalDate endDate;
+
+    // Team-registration (roster-management) window.
+    private boolean registrationOpen;            // manual master switch
+    private Instant registrationOpensAt;
+    private Instant registrationClosesAt;
 }
