@@ -1,6 +1,7 @@
 package de.dtfb.sportshub.backend.team;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -23,6 +24,9 @@ public class TeamController {
     }
 
     @PostMapping
+    // Admin of the target club (or its region / global). Every team belongs to a club
+    // (the service rejects a missing clubId), so there is no clubless path here.
+    @PreAuthorize("@authz.canManageClub(#teamDto.clubId)")
     public ResponseEntity<TeamDto> create(@RequestBody TeamDto teamDto) {
         TeamDto returnedDto = service.create(teamDto);
 
@@ -37,11 +41,13 @@ public class TeamController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@authz.canManageTeam(#id)")
     public TeamDto update(@PathVariable String id, @RequestBody TeamDto teamDto) {
         return service.update(id, teamDto);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@authz.canManageTeam(#id)")
     public void delete(@PathVariable String id) {
         service.delete(id);
     }

@@ -1,6 +1,7 @@
 package de.dtfb.sportshub.backend.category;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -23,6 +24,7 @@ public class CategoryController {
     }
 
     @PostMapping
+    @PreAuthorize("@authz.isAdmin()")
     public ResponseEntity<CategoryDto> create(@RequestBody CategoryDto categoryDto) {
         CategoryDto returnedDto = service.create(categoryDto);
 
@@ -37,11 +39,13 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@authz.isAdmin()")
     public CategoryDto update(@PathVariable String id, @RequestBody CategoryDto categoryDto) {
         return service.update(id, categoryDto);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@authz.isAdmin()")
     public void delete(@PathVariable String id) {
         service.delete(id);
     }

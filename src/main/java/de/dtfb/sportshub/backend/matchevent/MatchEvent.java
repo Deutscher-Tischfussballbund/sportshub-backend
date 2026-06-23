@@ -31,6 +31,8 @@ public class MatchEvent extends BaseEntity {
     private Integer homeScore;
     private Integer awayScore;
 
-    @Column(columnDefinition = "json")
+    // Stored as plain text; the JSON payload is (de)serialized in MatchEventMapper, not the DB.
+    // (A native "json" column re-encodes the stored string, corrupting the round-trip.)
+    @Lob
     private String json;
 }

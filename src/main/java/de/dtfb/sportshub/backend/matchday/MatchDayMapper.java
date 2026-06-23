@@ -22,6 +22,8 @@ public interface MatchDayMapper {
     @Mapping(target = "teamHome", ignore = true)
     @Mapping(target = "teamAway", ignore = true)
     @Mapping(target = "submittedByDtfbId", ignore = true)
+    // Result flow is server-managed: a new match day keeps its OPEN default, never the DTO's null.
+    @Mapping(target = "resultState", ignore = true)
     @Mapping(target = "homeConfirmedAt", ignore = true)
     @Mapping(target = "awayConfirmedAt", ignore = true)
     MatchDay toEntity(MatchDayDto matchDayDto);

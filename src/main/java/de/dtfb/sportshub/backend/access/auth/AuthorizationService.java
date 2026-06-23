@@ -8,8 +8,17 @@ import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignment;
 import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignmentRepository;
 import de.dtfb.sportshub.backend.club.Club;
 import de.dtfb.sportshub.backend.club.ClubRepository;
+import de.dtfb.sportshub.backend.event.Event;
+import de.dtfb.sportshub.backend.event.EventRepository;
+import de.dtfb.sportshub.backend.federation.Federation;
+import de.dtfb.sportshub.backend.location.Location;
+import de.dtfb.sportshub.backend.location.LocationRepository;
+import de.dtfb.sportshub.backend.matchday.MatchDay;
+import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
 import de.dtfb.sportshub.backend.player.Player;
 import de.dtfb.sportshub.backend.player.PlayerRegistryService;
+import de.dtfb.sportshub.backend.season.Season;
+import de.dtfb.sportshub.backend.season.SeasonRepository;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamRepository;
 import org.springframework.security.access.AccessDeniedException;
@@ -42,15 +51,30 @@ public class AuthorizationService {
     private final RoleAssignmentRepository roleAssignmentRepository;
     private final ClubRepository clubRepository;
     private final TeamRepository teamRepository;
+    private final EventRepository eventRepository;
+    private final SeasonRepository seasonRepository;
+    private final LocationRepository locationRepository;
+    private final MatchDayRepository matchDayRepository;
+    private final CompetitionEventResolver competitionEventResolver;
 
     public AuthorizationService(PlayerRegistryService registry,
                                 RoleAssignmentRepository roleAssignmentRepository,
                                 ClubRepository clubRepository,
-                                TeamRepository teamRepository) {
+                                TeamRepository teamRepository,
+                                EventRepository eventRepository,
+                                SeasonRepository seasonRepository,
+                                LocationRepository locationRepository,
+                                MatchDayRepository matchDayRepository,
+                                CompetitionEventResolver competitionEventResolver) {
         this.registry = registry;
         this.roleAssignmentRepository = roleAssignmentRepository;
         this.clubRepository = clubRepository;
         this.teamRepository = teamRepository;
+        this.eventRepository = eventRepository;
+        this.seasonRepository = seasonRepository;
+        this.locationRepository = locationRepository;
+        this.matchDayRepository = matchDayRepository;
+        this.competitionEventResolver = competitionEventResolver;
     }
 
     /** Global DTFB administrator. */
@@ -66,6 +90,151 @@ public class AuthorizationService {
     /** May administer the given club (global admin, or admin of the club's region, or of the club). */
     public boolean canManageClub(String clubId) {
         return canManageScope(currentRoles(), ScopeType.CLUB, clubId);
+    }
+
+    /** May administer the given team (global/region/club admin above it). */
+    public boolean canManageTeam(String teamId) {
+        return canManageScope(currentRoles(), ScopeType.TEAM, teamId);
+    }
+
+    /**
+     * May administer the given season: a season belongs to a region via {@link Season#getFederation()},
+     * so its region's admin (or a global admin) manages it. A season with no federation is global —
+     * only a global admin may manage it.
+     */
+    public boolean canManageSeason(String seasonId) {
+        List<RoleAssignment> roles = currentRoles();
+        if (AccessRoles.isGlobalAdmin(roles)) {
+            return true;
+        }
+        Season season = seasonId == null ? null : seasonRepository.findById(seasonId).orElse(null);
+        Federation region = season == null ? null : season.getFederation();
+        return region != null && isRegionAdmin(roles, region.getId());
+    }
+
+    /** May administer the given event's meta (its region's admin, or global) — see the EVENT scope. */
+    public boolean canManageEvent(String eventId) {
+        return canManageScope(currentRoles(), ScopeType.EVENT, eventId);
+    }
+
+    /**
+     * May administer the given location: a venue belongs to a region via
+     * {@link Location#getFederation()} (or is global if region-less, then admin-only).
+     */
+    public boolean canManageLocation(String locationId) {
+        List<RoleAssignment> roles = currentRoles();
+        if (AccessRoles.isGlobalAdmin(roles)) {
+            return true;
+        }
+        Location location = locationId == null ? null : locationRepository.findById(locationId).orElse(null);
+        Federation region = location == null ? null : location.getFederation();
+        return region != null && isRegionAdmin(roles, region.getId());
+    }
+
+    /**
+     * May administer the given discipline: a discipline belongs to an event, so it inherits that
+     * event's region scope. (Its {@code Category} is a global classification and does not bear
+     * scope.) This is region-config authority (admins) — for running the competition *under* a
+     * discipline, see {@link #canOrganizeDiscipline}.
+     */
+    public boolean canManageDiscipline(String disciplineId) {
+        Event event = competitionEventResolver.ofDiscipline(disciplineId);
+        return canManageScope(currentRoles(), ScopeType.EVENT, event == null ? null : event.getId());
+    }
+
+    // --- Tier C: competition data. May run the competition the entity belongs to — the region/global
+    // admin above its event, OR an event_organizer appointed to that event. Each entity resolves to
+    // its owning Event via CompetitionEventResolver (Stage→Discipline→Event, Match→MatchDay→…→Event).
+
+    public boolean canOrganizeDiscipline(String disciplineId) {
+        return canOrganize(competitionEventResolver.ofDiscipline(disciplineId));
+    }
+
+    public boolean canOrganizeStage(String stageId) {
+        return canOrganize(competitionEventResolver.ofStage(stageId));
+    }
+
+    public boolean canOrganizePool(String poolId) {
+        return canOrganize(competitionEventResolver.ofPool(poolId));
+    }
+
+    public boolean canOrganizeRound(String roundId) {
+        return canOrganize(competitionEventResolver.ofRound(roundId));
+    }
+
+    public boolean canOrganizeMatchDay(String matchDayId) {
+        return canOrganize(competitionEventResolver.ofMatchDay(matchDayId));
+    }
+
+    public boolean canOrganizeMatch(String matchId) {
+        return canOrganize(competitionEventResolver.ofMatch(matchId));
+    }
+
+    public boolean canOrganizeMatchSet(String matchSetId) {
+        return canOrganize(competitionEventResolver.ofMatchSet(matchSetId));
+    }
+
+    public boolean canOrganizeMatchEvent(String matchEventId) {
+        return canOrganize(competitionEventResolver.ofMatchEvent(matchEventId));
+    }
+
+    /**
+     * Competition-data capability for the given event: the region/global admin above it OR an
+     * {@code event_organizer} appointed to that event. Distinct from {@link #canManageEvent} (event
+     * meta — admins only); an organizer runs the competition, not the event's place in the tree.
+     */
+    private boolean canOrganize(Event event) {
+        List<RoleAssignment> roles = currentRoles();
+        if (AccessRoles.isGlobalAdmin(roles)) {
+            return true;
+        }
+        if (event == null) {
+            return false;
+        }
+        Federation region = event.getSeason() == null ? null : event.getSeason().getFederation();
+        boolean regionAdmin = region != null && isRegionAdmin(roles, region.getId());
+        return regionAdmin || isEventOrganizer(roles, event.getId());
+    }
+
+    private boolean isEventOrganizer(List<RoleAssignment> roles, String eventId) {
+        return eventId != null && roles.stream().anyMatch(ra ->
+            ra.getRole() == Role.EVENT_ORGANIZER && Objects.equals(ra.getScopeId(), eventId));
+    }
+
+    /**
+     * Tier D: may submit/confirm the league result of the given match day, gating the team-rep
+     * workflow. The caller must represent a *participating* team (axis 🟦+🟨) — a {@code team_admin}
+     * of {@code teamHome}/{@code teamAway}, or an admin above that team (club/region/global). The
+     * submitter-vs-opponent distinction on confirm is enforced in {@code MatchDayService} (a person
+     * may not confirm their own submission); this gate only establishes affiliation.
+     */
+    public boolean canReportMatchDay(String matchDayId) {
+        List<RoleAssignment> roles = currentRoles();
+        if (AccessRoles.isGlobalAdmin(roles)) {
+            return true;
+        }
+        MatchDay matchDay = matchDayId == null ? null : matchDayRepository.findById(matchDayId).orElse(null);
+        if (matchDay == null) {
+            return false;
+        }
+        return canRepresent(roles, matchDay.getTeamHome()) || canRepresent(roles, matchDay.getTeamAway());
+    }
+
+    /**
+     * Whether the current player may act for {@code team}: its {@code team_admin}, or an admin above
+     * it (club admin of its club, region admin of its region). Unlike {@link #canManageTeam} (team
+     * CRUD — admins above only), this also accepts the {@code team_admin} role itself, which exists
+     * precisely to act for one team in the result flow.
+     */
+    private boolean canRepresent(List<RoleAssignment> roles, Team team) {
+        if (team == null) {
+            return false;
+        }
+        boolean teamAdmin = roles.stream().anyMatch(ra ->
+            ra.getRole() == Role.TEAM_ADMIN && Objects.equals(ra.getScopeId(), team.getId()));
+        Club club = team.getClub();
+        return teamAdmin
+            || (club != null && (isRegionAdmin(roles, club.getFederationId()) || isClubAdmin(roles, club.getId())));
     }
 
     /** May grant the role/scope in {@code dto}: the granter must administer the target scope. */
@@ -107,6 +276,14 @@ public class AuthorizationService {
                 Club club = team == null ? null : team.getClub();
                 yield club != null
                     && (isRegionAdmin(roles, club.getFederationId()) || isClubAdmin(roles, club.getId()));
+            }
+            case EVENT -> {
+                // An event belongs to its region via Event -> Season -> Federation; the region
+                // admin of that region administers the event (e.g. to appoint an event organizer).
+                Event event = scopeId == null ? null : eventRepository.findById(scopeId).orElse(null);
+                Federation region = event == null || event.getSeason() == null
+                    ? null : event.getSeason().getFederation();
+                yield region != null && isRegionAdmin(roles, region.getId());
             }
         };
     }

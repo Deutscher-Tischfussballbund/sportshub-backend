@@ -17,12 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
-@SpringBootTest
-@AutoConfigureMockMvc
-class EventControllerTest {
-
-    @Autowired
-    MockMvc mockMvc;
+class EventControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
 
     String uuid;
     String url;
@@ -107,10 +102,11 @@ class EventControllerTest {
 
     //region helpers
     private MvcResult createSeason() throws Exception {
+        String federationId = createFederation();
         return mockMvc.perform(post("/v1/seasons")
-            .contentType(MediaType.APPLICATION_JSON).content("""
-                {"name": "2025"}
-                """)).andReturn();
+            .contentType(MediaType.APPLICATION_JSON).content(String.format("""
+                {"name": "2025", "federationId": "%s"}
+                """, federationId))).andReturn();
     }
 
     private MvcResult createEvent(String uuid) throws Exception {

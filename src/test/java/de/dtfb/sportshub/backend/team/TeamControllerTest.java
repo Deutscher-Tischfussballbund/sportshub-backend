@@ -15,12 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
-@SpringBootTest
-@AutoConfigureMockMvc
-class TeamControllerTest {
-
-    @Autowired
-    MockMvc mockMvc;
+class TeamControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
 
     String url;
 
@@ -89,6 +84,16 @@ class TeamControllerTest {
             .andExpect(status().isNotFound());
     }
 
+    @Test
+    void createTeam_withoutClub_isBadRequest() throws Exception {
+        mockMvc.perform(post("/v1/teams")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                            {"name": "Clubless"}
+                    """))
+            .andExpect(status().isBadRequest());
+    }
+
     /**
      * =========================================================
      * helper operations
@@ -97,11 +102,12 @@ class TeamControllerTest {
 
     //region helpers
     private MvcResult createTeam() throws Exception {
+        String clubId = createClub();
         return mockMvc.perform(post("/v1/teams")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                            {"name": "Hand und Foos"}
-                    """))
+                .content(String.format("""
+                            {"name": "Hand und Foos", "clubId": "%s"}
+                    """, clubId)))
             .andExpect(status().isCreated())
             .andReturn();
     }

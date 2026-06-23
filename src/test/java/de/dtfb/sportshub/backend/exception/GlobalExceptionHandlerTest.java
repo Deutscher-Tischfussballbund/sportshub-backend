@@ -15,12 +15,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
-@SpringBootTest
-@AutoConfigureMockMvc
-class GlobalExceptionHandlerTest {
-
-    @Autowired
-    MockMvc mockMvc;
+class GlobalExceptionHandlerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
 
     @MockitoBean
     ExternalApiClient externalApiClient;

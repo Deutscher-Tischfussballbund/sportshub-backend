@@ -70,7 +70,7 @@ public class DisciplineService {
     }
 
     private @NonNull Category getCategory(DisciplineDto disciplineDto) {
-        return categoryRepository.findById(disciplineDto.getEventId())
+        return categoryRepository.findById(disciplineDto.getCategoryId())
             .orElseThrow(() -> new CategoryNotFoundException(disciplineDto.getCategoryId()));
     }
 

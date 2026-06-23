@@ -21,12 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
-@SpringBootTest
-@AutoConfigureMockMvc
-class MatchDayControllerTest {
-
-    @Autowired
-    MockMvc mockMvc;
+class MatchDayControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
 
     private String url;
     private String roundId;
@@ -147,10 +142,11 @@ class MatchDayControllerTest {
 
     //region helpers
     private MvcResult createSeason() throws Exception {
+        String federationId = createFederation();
         return mockMvc.perform(post("/v1/seasons")
-            .contentType(MediaType.APPLICATION_JSON).content("""
-                {"name": "2025"}
-                """)).andReturn();
+            .contentType(MediaType.APPLICATION_JSON).content(String.format("""
+                {"name": "2025", "federationId": "%s"}
+                """, federationId))).andReturn();
     }
 
     private MvcResult createEvent(String uuid) throws Exception {
@@ -165,12 +161,14 @@ class MatchDayControllerTest {
     }
 
     private MvcResult createDiscipline(String uuid) throws Exception {
+        String categoryId = createCategory();
         return mockMvc.perform(post("/v1/disciplines")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Offenes Einzel",
-                            "eventId": "%s"}
-                    """, uuid)))
+                            "eventId": "%s",
+                            "categoryId": "%s"}
+                    """, uuid, categoryId)))
             .andExpect(status().isCreated())
             .andReturn();
     }
@@ -224,11 +222,12 @@ class MatchDayControllerTest {
     }
 
     private MvcResult createTeam(String name) throws Exception {
+        String clubId = createClub();
         return mockMvc.perform(post("/v1/teams")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "%s"}
-                    """, name)))
+                            {"name": "%s", "clubId": "%s"}
+                    """, name, clubId)))
             .andExpect(status().isCreated())
             .andReturn();
     }

@@ -1,6 +1,7 @@
 package de.dtfb.sportshub.backend.round;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -23,6 +24,7 @@ public class RoundController {
     }
 
     @PostMapping
+    @PreAuthorize("@authz.canOrganizePool(#roundDto.poolId)")
     public ResponseEntity<RoundDto> create(@RequestBody RoundDto roundDto) {
         RoundDto returnedDto = service.create(roundDto);
 
@@ -37,11 +39,13 @@ public class RoundController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@authz.canOrganizeRound(#id)")
     public RoundDto update(@PathVariable String id, @RequestBody RoundDto roundDto) {
         return service.update(id, roundDto);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@authz.canOrganizeRound(#id)")
     public void delete(@PathVariable String id) {
         service.delete(id);
     }

@@ -1,6 +1,7 @@
 package de.dtfb.sportshub.backend.location;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -23,6 +24,7 @@ public class LocationController {
     }
 
     @PostMapping
+    @PreAuthorize("@authz.canManageRegion(#locationDto.federationId)")
     public ResponseEntity<LocationDto> create(@RequestBody LocationDto locationDto) {
         LocationDto returnedDto = service.create(locationDto);
 
@@ -37,11 +39,13 @@ public class LocationController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@authz.canManageLocation(#id)")
     public LocationDto update(@PathVariable String id, @RequestBody LocationDto locationDto) {
         return service.update(id, locationDto);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@authz.canManageLocation(#id)")
     public void delete(@PathVariable String id) {
         service.delete(id);
     }

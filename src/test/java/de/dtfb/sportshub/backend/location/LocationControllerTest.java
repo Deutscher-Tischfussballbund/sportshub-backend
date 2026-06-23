@@ -15,12 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
-@SpringBootTest
-@AutoConfigureMockMvc
-class LocationControllerTest {
-
-    @Autowired
-    MockMvc mockMvc;
+class LocationControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
 
     String url;
 

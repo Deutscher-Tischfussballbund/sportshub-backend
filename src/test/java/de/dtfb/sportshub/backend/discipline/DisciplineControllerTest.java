@@ -17,12 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
-@SpringBootTest
-@AutoConfigureMockMvc
-class DisciplineControllerTest {
-
-    @Autowired
-    MockMvc mockMvc;
+class DisciplineControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
 
     String uuid;
     String url;
@@ -58,22 +53,24 @@ class DisciplineControllerTest {
     void createAndGetDiscipline() throws Exception {
         mockMvc.perform(get(url))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.name").value("Offenes Einzel"));
+            .andExpect(jsonPath("$.eventId").value(uuid));
     }
 
     @Test
     void updateDiscipline() throws Exception {
+        String categoryId = createCategory();
         mockMvc.perform(put(url)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Replacement",
-                            "eventId": "%s"}
-                    """, uuid)))
+                            "eventId": "%s",
+                            "categoryId": "%s"}
+                    """, uuid, categoryId)))
             .andExpect(status().isOk());
 
         mockMvc.perform(get(url))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.name").value("Replacement"));
+            .andExpect(jsonPath("$.categoryId").value(categoryId));
     }
 
     @Test
@@ -109,10 +106,11 @@ class DisciplineControllerTest {
 
     //region helpers
     private MvcResult createSeason() throws Exception {
+        String federationId = createFederation();
         return mockMvc.perform(post("/v1/seasons")
-                .contentType(MediaType.APPLICATION_JSON).content("""
-                            {"name": "2025"}
-                    """))
+                .contentType(MediaType.APPLICATION_JSON).content(String.format("""
+                            {"name": "2025", "federationId": "%s"}
+                    """, federationId)))
             .andReturn();
     }
 
@@ -127,12 +125,14 @@ class DisciplineControllerTest {
     }
 
     private MvcResult createDiscipline(String uuid) throws Exception {
+        String categoryId = createCategory();
         return mockMvc.perform(post("/v1/disciplines")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Offenes Einzel",
-                            "eventId": "%s"}
-                    """, uuid)))
+                            "eventId": "%s",
+                            "categoryId": "%s"}
+                    """, uuid, categoryId)))
             .andExpect(status().isCreated())
             .andReturn();
     }

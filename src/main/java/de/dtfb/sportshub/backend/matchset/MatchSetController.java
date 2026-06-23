@@ -1,6 +1,7 @@
 package de.dtfb.sportshub.backend.matchset;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -23,6 +24,7 @@ public class MatchSetController {
     }
 
     @PostMapping
+    @PreAuthorize("@authz.canOrganizeMatch(#matchSetDto.matchId)")
     public ResponseEntity<MatchSetDto> create(@RequestBody MatchSetDto matchSetDto) {
         MatchSetDto returnedDto = service.create(matchSetDto);
 
@@ -37,11 +39,13 @@ public class MatchSetController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@authz.canOrganizeMatchSet(#id)")
     public MatchSetDto update(@PathVariable String id, @RequestBody MatchSetDto matchSetDto) {
         return service.update(id, matchSetDto);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@authz.canOrganizeMatchSet(#id)")
     public void delete(@PathVariable String id) {
         service.delete(id);
     }

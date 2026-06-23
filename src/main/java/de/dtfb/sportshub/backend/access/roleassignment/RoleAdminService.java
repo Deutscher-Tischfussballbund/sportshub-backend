@@ -250,7 +250,8 @@ public class RoleAdminService {
         return switch (ra.getScopeType()) {
             case REGION -> Optional.ofNullable(federations.get(ra.getScopeId())).map(Federation::getName).orElse(null);
             case CLUB -> Optional.ofNullable(clubs.get(ra.getScopeId())).map(Club::getName).orElse(null);
-            case GLOBAL, TEAM -> null;
+            // TEAM/EVENT scope names need a Team/Event lookup — added with the enforcement work.
+            case GLOBAL, TEAM, EVENT -> null;
         };
     }
 

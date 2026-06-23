@@ -26,10 +26,15 @@ public interface MatchEventMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "match", ignore = true)
     @Mapping(target = "team", ignore = true)
+    @Mapping(target = "json", ignore = true) // handled by updateJsonAfterMapping
     void updateEntityFromDto(MatchEventDto dto, @MappingTarget MatchEvent entity);
 
     List<MatchEventDto> toDtoList(List<MatchEvent> matchEvents);
 
+    // @Named so MapStruct does NOT adopt these as implicit String<->Object converters for every
+    // String field (which would JSON-quote id/matchId/teamId/playerId). Only the json mapping,
+    // which references them explicitly via expression(), uses them.
+    @Named("fromJsonString")
     default Object fromJsonString(String json) {
         if (json == null) {
             return null;
@@ -41,6 +46,7 @@ public interface MatchEventMapper {
         }
     }
 
+    @Named("toJsonString")
     default String toJsonString(Object json) {
         if (json == null) {
             return null;

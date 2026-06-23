@@ -17,12 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
-@SpringBootTest
-@AutoConfigureMockMvc
-class RoundControllerTest {
-
-    @Autowired
-    MockMvc mockMvc;
+class RoundControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
 
     String uuid;
     String url;
@@ -117,10 +112,11 @@ class RoundControllerTest {
 
     //region helpers
     private MvcResult createSeason() throws Exception {
+        String federationId = createFederation();
         return mockMvc.perform(post("/v1/seasons")
-            .contentType(MediaType.APPLICATION_JSON).content("""
-                {"name": "2025"}
-                """)).andReturn();
+            .contentType(MediaType.APPLICATION_JSON).content(String.format("""
+                {"name": "2025", "federationId": "%s"}
+                """, federationId))).andReturn();
     }
 
     private MvcResult createEvent(String uuid) throws Exception {
@@ -135,12 +131,14 @@ class RoundControllerTest {
     }
 
     private MvcResult createDiscipline(String uuid) throws Exception {
+        String categoryId = createCategory();
         return mockMvc.perform(post("/v1/disciplines")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Offenes Einzel",
-                            "eventId": "%s"}
-                    """, uuid)))
+                            "eventId": "%s",
+                            "categoryId": "%s"}
+                    """, uuid, categoryId)))
             .andExpect(status().isCreated())
             .andReturn();
     }

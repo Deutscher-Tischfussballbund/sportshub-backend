@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.importer;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,6 +20,7 @@ public class ImportController {
     }
 
     @PostMapping("/data")
+    @PreAuthorize("@authz.isAdmin()")
     public ImportResult importData(@RequestParam("file") MultipartFile file) throws IOException {
         return importService.importData(file.getInputStream());
     }

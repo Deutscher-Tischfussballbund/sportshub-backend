@@ -1,6 +1,7 @@
 package de.dtfb.sportshub.backend.stage;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -23,6 +24,7 @@ public class StageController {
     }
 
     @PostMapping
+    @PreAuthorize("@authz.canOrganizeDiscipline(#stageDto.disciplineId)")
     public ResponseEntity<StageDto> create(@RequestBody StageDto stageDto) {
         StageDto returnedDto = service.create(stageDto);
 
@@ -37,11 +39,13 @@ public class StageController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@authz.canOrganizeStage(#id)")
     public StageDto update(@PathVariable String id, @RequestBody StageDto stageDto) {
         return service.update(id, stageDto);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@authz.canOrganizeStage(#id)")
     public void delete(@PathVariable String id) {
         service.delete(id);
     }

@@ -1,6 +1,7 @@
 package de.dtfb.sportshub.backend.event;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -23,6 +24,7 @@ public class EventController {
     }
 
     @PostMapping
+    @PreAuthorize("@authz.canManageSeason(#eventDto.seasonId)")
     public ResponseEntity<EventDto> create(@RequestBody EventDto eventDto) {
         EventDto returnedDto = service.create(eventDto);
 
@@ -37,11 +39,13 @@ public class EventController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@authz.canManageEvent(#id)")
     public EventDto update(@PathVariable String id, @RequestBody EventDto eventDto) {
         return service.update(id, eventDto);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@authz.canManageEvent(#id)")
     public void delete(@PathVariable String id) {
         service.delete(id);
     }

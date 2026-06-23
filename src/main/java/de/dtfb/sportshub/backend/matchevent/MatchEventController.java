@@ -1,6 +1,7 @@
 package de.dtfb.sportshub.backend.matchevent;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -23,6 +24,7 @@ public class MatchEventController {
     }
 
     @PostMapping
+    @PreAuthorize("@authz.canOrganizeMatch(#matchEventDto.matchId)")
     public ResponseEntity<MatchEventDto> create(@RequestBody MatchEventDto matchEventDto) {
         MatchEventDto returnedDto = service.create(matchEventDto);
 
@@ -37,11 +39,13 @@ public class MatchEventController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@authz.canOrganizeMatchEvent(#id)")
     public MatchEventDto update(@PathVariable String id, @RequestBody MatchEventDto matchEventDto) {
         return service.update(id, matchEventDto);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@authz.canOrganizeMatchEvent(#id)")
     public void delete(@PathVariable String id) {
         service.delete(id);
     }

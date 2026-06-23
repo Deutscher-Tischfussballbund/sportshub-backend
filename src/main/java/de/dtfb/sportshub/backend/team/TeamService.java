@@ -3,8 +3,10 @@ package de.dtfb.sportshub.backend.team;
 import de.dtfb.sportshub.backend.club.Club;
 import de.dtfb.sportshub.backend.club.ClubNotFoundException;
 import de.dtfb.sportshub.backend.club.ClubRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -34,6 +36,10 @@ public class TeamService {
 
     @Transactional
     public TeamDto create(TeamDto teamDto) {
+        // Every team belongs to a club — there are no clubless teams.
+        if (teamDto.getClubId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A team requires a club");
+        }
         Team newTeam = mapper.toEntity(teamDto);
         resolveClub(teamDto, newTeam);
         Team savedTeam = repository.save(newTeam);

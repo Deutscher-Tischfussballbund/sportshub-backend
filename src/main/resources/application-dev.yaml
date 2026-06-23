@@ -6,6 +6,9 @@ spring:
         driver-class-name: org.h2.Driver
         username: sa
         password:
+    h2:
+        console:
+            enabled: true
     jpa:
         hibernate:
             ddl-auto: create-drop
@@ -24,6 +27,12 @@ spring:
             resourceserver:
                 jwt:
                     issuer-uri: http://localhost:8084/realms/dtfb
+springdoc:
+    swagger-ui:
+        # Keycloak login from the "Authorize" dialog (public SPA client, PKCE).
+        oauth:
+            client-id: dtfb-admin-web
+            use-pkce-with-authorization-code-grant: true
 server:
     port: 8082
 external-api:

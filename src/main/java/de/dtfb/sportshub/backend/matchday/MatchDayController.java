@@ -26,6 +26,7 @@ public class MatchDayController {
     }
 
     @PostMapping
+    @PreAuthorize("@authz.canOrganizeRound(#matchDayDto.roundId)")
     public ResponseEntity<MatchDayDto> create(@RequestBody MatchDayDto matchDayDto) {
         MatchDayDto returnedDto = service.create(matchDayDto);
 
@@ -40,17 +41,19 @@ public class MatchDayController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@authz.canOrganizeMatchDay(#id)")
     public MatchDayDto update(@PathVariable String id, @RequestBody MatchDayDto matchDayDto) {
         return service.update(id, matchDayDto);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@authz.canOrganizeMatchDay(#id)")
     public void delete(@PathVariable String id) {
         service.delete(id);
     }
 
     @PostMapping("/{id}/result")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("@authz.canReportMatchDay(#id)")
     public MatchDayDto submitResult(
             @PathVariable String id,
             @RequestBody MatchDayResultRequest request,
@@ -60,7 +63,7 @@ public class MatchDayController {
     }
 
     @PostMapping("/{id}/confirm")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("@authz.canReportMatchDay(#id)")
     public MatchDayDto confirmResult(
             @PathVariable String id,
             @AuthenticationPrincipal Jwt jwt) {

@@ -1,6 +1,5 @@
 package de.dtfb.sportshub.backend.matchevent;
 
-import com.fasterxml.jackson.annotation.JsonRawValue;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -18,7 +17,6 @@ public class MatchEventDto {
     private Integer awayScore;
     private MatchEventType type;
 
-    //TODO WIP
-    @JsonRawValue
+    /** Arbitrary event payload; stored as a JSON string, exposed as parsed JSON. */
     private Object json;
 }

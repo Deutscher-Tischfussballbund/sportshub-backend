@@ -37,6 +37,8 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'com.mysql:mysql-connector-j'
     runtimeOnly 'com.h2database:h2' // development only
+    // Spring Boot 4 split H2ConsoleAutoConfiguration into its own module; dev-only console
+    developmentOnly 'org.springframework.boot:spring-boot-h2console'
     annotationProcessor 'org.projectlombok:lombok'
     annotationProcessor "org.mapstruct:mapstruct-processor:1.6.3"
 

@@ -1,4 +1,4 @@
-# noinspection SqlResolveForFile
+-- noinspection SqlResolveForFile
 
 -- Dev seed for the access domain: German Landesverbände, demo clubs, and a bootstrap
 -- global admin so the first login is not stuck at /no-access.
@@ -36,7 +36,8 @@ VALUES ('club-tfcm', 'TFC München', 'TFCM', 'München', TRUE, 'fed-by'),
 
 -- Bootstrap global admin (dtfb_id "admin" matches the Keycloak dev user).
 INSERT INTO player (id, dtfb_id, first_name, last_name, nationality, national_license, active)
-VALUES ('player-admin', 'admin', 'DTFB', 'Administrator', 'DE', 'A', TRUE);
+VALUES ('player-admin', 'admin', 'DTFB', 'Administrator', 'DE', 'A', TRUE),
+       ('player-test', 'test', 'Test', 'Player', 'DE', 'A', TRUE);
 
 INSERT INTO role_assignment (id, player_id, role, scope_type, scope_id, created_at)
 VALUES ('ra-admin-glob', 'player-admin', 'ADMIN', 'GLOBAL', NULL, TIMESTAMP '2024-01-01 00:00:00');

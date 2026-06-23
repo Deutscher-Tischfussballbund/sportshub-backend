@@ -1,6 +1,7 @@
 package de.dtfb.sportshub.backend.discipline;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -23,6 +24,7 @@ public class DisciplineController {
     }
 
     @PostMapping
+    @PreAuthorize("@authz.canManageEvent(#disciplineDto.eventId)")
     public ResponseEntity<DisciplineDto> create(@RequestBody DisciplineDto disciplineDto) {
         DisciplineDto returnedDto = service.create(disciplineDto);
 
@@ -37,11 +39,13 @@ public class DisciplineController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@authz.canManageDiscipline(#id)")
     public DisciplineDto update(@PathVariable String id, @RequestBody DisciplineDto eventDto) {
         return service.update(id, eventDto);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@authz.canManageDiscipline(#id)")
     public void delete(@PathVariable String id) {
         service.delete(id);
     }
