@@ -50,7 +50,7 @@ public class OpenApiConfig {
      */
     private static final List<String> TAG_ORDER = List.of(
         "Federation", "Region", "Club", "Team",
-        "Season", "Event", "Discipline", "Category", "Location",
+        "Season", "Competition", "Discipline", "Category", "Location",
         "Stage", "Pool", "Round", "Match Day", "Match", "Match Set", "Match Event", "Standing",
         "Player", "Player Admin",
         "Auth Me", "Role Admin", "Role Catalog",
@@ -63,7 +63,7 @@ public class OpenApiConfig {
         Map.entry("Club", "Vereine within a region. Read-only — clubs arrive via import."),
         Map.entry("Team", "Teams within a club. Managed by the club's or region's admin; every team belongs to a club."),
         Map.entry("Season", "Spielzeiten, scoped to a region. Managed by that region's admin."),
-        Map.entry("Event", "Competitions (leagues & tournaments) within a season. Region-admin managed."),
+        Map.entry("Competition", "Competitions (leagues & tournaments) within a season. Region-admin managed."),
         Map.entry("Discipline", "An event's disciplines (a Category within an Event). Region-admin managed."),
         Map.entry("Category", "Global classifications (e.g. Herren). Admin-managed."),
         Map.entry("Location", "Venues, optionally tied to a region. Region- or admin-managed."),

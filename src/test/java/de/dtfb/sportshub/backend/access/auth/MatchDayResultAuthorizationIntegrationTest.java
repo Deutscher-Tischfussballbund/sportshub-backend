@@ -62,10 +62,10 @@ class MatchDayResultAuthorizationIntegrationTest {
     void setup() throws Exception {
         String federationId = create("/v1/federation", "{\"name\":\"Testverband\"}");
         String seasonId = create("/v1/seasons", "{\"name\":\"2025\",\"federationId\":\"" + federationId + "\"}");
-        String eventId = create("/v1/events", "{\"name\":\"Liga\",\"seasonId\":\"" + seasonId + "\"}");
+        String competitionId = create("/v1/competitions", "{\"name\":\"Liga\",\"seasonId\":\"" + seasonId + "\"}");
         String categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"H\"}");
         String disciplineId = create("/v1/disciplines",
-            "{\"name\":\"Einzel\",\"eventId\":\"" + eventId + "\",\"categoryId\":\"" + categoryId + "\"}");
+            "{\"name\":\"Einzel\",\"competitionId\":\"" + competitionId + "\",\"categoryId\":\"" + categoryId + "\"}");
         String stageId = create("/v1/stages", "{\"name\":\"Vorrunde\",\"disciplineId\":\"" + disciplineId + "\"}");
         String poolId = create("/v1/pools",
             "{\"name\":\"Pool1\",\"tournamentMode\":\"SWISS\",\"poolState\":\"READY\",\"stageId\":\"" + stageId + "\"}");

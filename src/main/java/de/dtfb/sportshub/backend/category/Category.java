@@ -1,7 +1,6 @@
 package de.dtfb.sportshub.backend.category;
 
 import de.dtfb.sportshub.backend.base.BaseEntity;
-import de.dtfb.sportshub.backend.event.Event;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;

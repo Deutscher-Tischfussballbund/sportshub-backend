@@ -31,7 +31,7 @@ DTFB (national)
 **Competition** (owned by the federation running it)
 
 ```
-Season → Event → Discipline (+ Category) → Stage → Pool → Round
+Season → Competition → Discipline (+ Category) → Stage → Pool → Round
        → MatchDay (home/away Team, Location) → Match → MatchSet / MatchEvent
 ```
 
@@ -66,7 +66,7 @@ Roles mapped onto the organisation tree (the scope each role is granted at):
     │
   Federation  REGION_ADMIN · REGION_TOURNAMENT_UPLOADER
   (region)      └─ owns this region's competition tree:
-    │              Season → Event → Discipline → Stage → Pool → Round
+    │              Season → Competition → Discipline → Stage → Pool → Round
     │              → MatchDay → Match → MatchSet / MatchEvent
     │
   Club        CLUB_ADMIN · TOURNAMENT_UPLOADER

@@ -3,7 +3,7 @@ package de.dtfb.sportshub.backend.importer.importers;
 import de.dtfb.sportshub.backend.category.Category;
 import de.dtfb.sportshub.backend.discipline.Discipline;
 import de.dtfb.sportshub.backend.discipline.DisciplineRepository;
-import de.dtfb.sportshub.backend.event.Event;
+import de.dtfb.sportshub.backend.competition.Competition;
 import de.dtfb.sportshub.backend.importer.data.ImportDiscipline;
 import de.dtfb.sportshub.backend.importer.data.ImportStage;
 import jakarta.persistence.EntityManager;
@@ -24,15 +24,15 @@ public class DisciplineImporter {
         this.categoryImporter = categoryImporter;
     }
 
-    public void importDiscipline(ImportDiscipline importingDiscipline, Event event) {
+    public void importDiscipline(ImportDiscipline importingDiscipline, Competition competition) {
 
         Category category = categoryImporter.importCategory(importingDiscipline);
 
         Discipline discipline = disciplineRepository
-            .findByEventAndCategory(event, category)
+            .findByCompetitionAndCategory(competition, category)
             .orElseGet(() -> {
                 Discipline d = new Discipline();
-                d.setEvent(event);
+                d.setCompetition(competition);
                 d.setCategory(category);
                 return disciplineRepository.save(d);
             });

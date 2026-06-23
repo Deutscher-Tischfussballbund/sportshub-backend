@@ -17,10 +17,10 @@ class RoleCatalogControllerTest extends AuthorizedControllerTest {
             .andExpect(status().isOk())
             // Every active role is present (wire values).
             .andExpect(jsonPath("$[*].role").value(hasItems(
-                "admin", "region_admin", "club_admin", "team_admin", "event_organizer")))
+                "admin", "region_admin", "club_admin", "team_admin", "competition_organizer")))
             // Scope type travels with the role.
             .andExpect(jsonPath("$[?(@.role=='region_admin')].scopeType").value(contains("region")))
-            .andExpect(jsonPath("$[?(@.role=='event_organizer')].scopeType").value(contains("event")));
+            .andExpect(jsonPath("$[?(@.role=='competition_organizer')].scopeType").value(contains("competition")));
     }
 
     @Test

@@ -2,7 +2,7 @@ package de.dtfb.sportshub.backend.access.auth;
 
 import de.dtfb.sportshub.backend.discipline.Discipline;
 import de.dtfb.sportshub.backend.discipline.DisciplineRepository;
-import de.dtfb.sportshub.backend.event.Event;
+import de.dtfb.sportshub.backend.competition.Competition;
 import de.dtfb.sportshub.backend.match.Match;
 import de.dtfb.sportshub.backend.match.MatchRepository;
 import de.dtfb.sportshub.backend.matchday.MatchDay;
@@ -18,16 +18,16 @@ import de.dtfb.sportshub.backend.stage.StageRepository;
 import org.springframework.stereotype.Component;
 
 /**
- * Resolves any competition entity up to its owning {@link Event}, walking the
- * {@code Discipline → Event} spine (Stage → Discipline, Pool → Stage, Round → Pool, …). Every link
+ * Resolves any competition entity up to its owning {@link Competition}, walking the
+ * {@code Discipline → Competition} spine (Stage → Discipline, Pool → Stage, Round → Pool, …). Every link
  * is a {@code @ManyToOne} (eagerly fetched), so the whole ancestor chain is populated by the single
- * {@code findById} load — the same assumption the EVENT scope check already relies on.
+ * {@code findById} load — the same assumption the COMPETITION scope check already relies on.
  *
  * <p>Returns {@code null} when the entity or any ancestor is missing; callers treat an unresolved
  * event as "deny" (a global admin is short-circuited earlier, before resolution).
  */
 @Component
-public class CompetitionEventResolver {
+public class CompetitionResolver {
 
     private final DisciplineRepository disciplineRepository;
     private final StageRepository stageRepository;
@@ -38,7 +38,7 @@ public class CompetitionEventResolver {
     private final MatchSetRepository matchSetRepository;
     private final MatchEventRepository matchEventRepository;
 
-    public CompetitionEventResolver(DisciplineRepository disciplineRepository,
+    public CompetitionResolver(DisciplineRepository disciplineRepository,
                                     StageRepository stageRepository,
                                     PoolRepository poolRepository,
                                     RoundRepository roundRepository,
@@ -56,63 +56,63 @@ public class CompetitionEventResolver {
         this.matchEventRepository = matchEventRepository;
     }
 
-    public Event ofDiscipline(String id) {
-        return id == null ? null : eventOf(disciplineRepository.findById(id).orElse(null));
+    public Competition ofDiscipline(String id) {
+        return id == null ? null : competitionOf(disciplineRepository.findById(id).orElse(null));
     }
 
-    public Event ofStage(String id) {
-        return id == null ? null : eventOf(stageRepository.findById(id).orElse(null));
+    public Competition ofStage(String id) {
+        return id == null ? null : competitionOf(stageRepository.findById(id).orElse(null));
     }
 
-    public Event ofPool(String id) {
-        return id == null ? null : eventOf(poolRepository.findById(id).orElse(null));
+    public Competition ofPool(String id) {
+        return id == null ? null : competitionOf(poolRepository.findById(id).orElse(null));
     }
 
-    public Event ofRound(String id) {
-        return id == null ? null : eventOf(roundRepository.findById(id).orElse(null));
+    public Competition ofRound(String id) {
+        return id == null ? null : competitionOf(roundRepository.findById(id).orElse(null));
     }
 
-    public Event ofMatchDay(String id) {
-        return id == null ? null : eventOf(matchDayRepository.findById(id).orElse(null));
+    public Competition ofMatchDay(String id) {
+        return id == null ? null : competitionOf(matchDayRepository.findById(id).orElse(null));
     }
 
-    public Event ofMatch(String id) {
-        return id == null ? null : eventOf(matchRepository.findById(id).orElse(null));
+    public Competition ofMatch(String id) {
+        return id == null ? null : competitionOf(matchRepository.findById(id).orElse(null));
     }
 
-    public Event ofMatchSet(String id) {
+    public Competition ofMatchSet(String id) {
         return id == null ? null
-            : matchSetRepository.findById(id).map(ms -> eventOf(ms.getMatch())).orElse(null);
+            : matchSetRepository.findById(id).map(ms -> competitionOf(ms.getMatch())).orElse(null);
     }
 
-    public Event ofMatchEvent(String id) {
+    public Competition ofMatchEvent(String id) {
         return id == null ? null
-            : matchEventRepository.findById(id).map(me -> eventOf(me.getMatch())).orElse(null);
+            : matchEventRepository.findById(id).map(me -> competitionOf(me.getMatch())).orElse(null);
     }
 
     // --- null-safe walk, one overload per spine level ---
 
-    private Event eventOf(Discipline discipline) {
-        return discipline == null ? null : discipline.getEvent();
+    private Competition competitionOf(Discipline discipline) {
+        return discipline == null ? null : discipline.getCompetition();
     }
 
-    private Event eventOf(Stage stage) {
-        return stage == null ? null : eventOf(stage.getDiscipline());
+    private Competition competitionOf(Stage stage) {
+        return stage == null ? null : competitionOf(stage.getDiscipline());
     }
 
-    private Event eventOf(Pool pool) {
-        return pool == null ? null : eventOf(pool.getStage());
+    private Competition competitionOf(Pool pool) {
+        return pool == null ? null : competitionOf(pool.getStage());
     }
 
-    private Event eventOf(Round round) {
-        return round == null ? null : eventOf(round.getPool());
+    private Competition competitionOf(Round round) {
+        return round == null ? null : competitionOf(round.getPool());
     }
 
-    private Event eventOf(MatchDay matchDay) {
-        return matchDay == null ? null : eventOf(matchDay.getRound());
+    private Competition competitionOf(MatchDay matchDay) {
+        return matchDay == null ? null : competitionOf(matchDay.getRound());
     }
 
-    private Event eventOf(Match match) {
-        return match == null ? null : eventOf(match.getMatchDay());
+    private Competition competitionOf(Match match) {
+        return match == null ? null : competitionOf(match.getMatchDay());
     }
 }

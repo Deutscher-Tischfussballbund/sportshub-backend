@@ -53,7 +53,7 @@ class DisciplineControllerTest extends de.dtfb.sportshub.backend.support.Authori
     void createAndGetDiscipline() throws Exception {
         mockMvc.perform(get(url))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.eventId").value(uuid));
+            .andExpect(jsonPath("$.competitionId").value(uuid));
     }
 
     @Test
@@ -63,7 +63,7 @@ class DisciplineControllerTest extends de.dtfb.sportshub.backend.support.Authori
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Replacement",
-                            "eventId": "%s",
+                            "competitionId": "%s",
                             "categoryId": "%s"}
                     """, uuid, categoryId)))
             .andExpect(status().isOk());
@@ -115,7 +115,7 @@ class DisciplineControllerTest extends de.dtfb.sportshub.backend.support.Authori
     }
 
     private MvcResult createEvent(String uuid) throws Exception {
-        return mockMvc.perform(post("/v1/events")
+        return mockMvc.perform(post("/v1/competitions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Turnier",
@@ -130,7 +130,7 @@ class DisciplineControllerTest extends de.dtfb.sportshub.backend.support.Authori
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Offenes Einzel",
-                            "eventId": "%s",
+                            "competitionId": "%s",
                             "categoryId": "%s"}
                     """, uuid, categoryId)))
             .andExpect(status().isCreated())

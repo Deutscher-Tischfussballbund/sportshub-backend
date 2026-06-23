@@ -1,4 +1,4 @@
-package de.dtfb.sportshub.backend.event;
+package de.dtfb.sportshub.backend.competition;
 
 import de.dtfb.sportshub.backend.access.auth.AuthorizationService;
 import org.junit.jupiter.api.Test;
@@ -18,17 +18,17 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Tier A (revised): an event belongs to a region via Event → Season → Federation, so its writes
+ * Tier A (revised): an competition belongs to a region via Competition → Season → Federation, so its writes
  * require admin of that region (or global) — create gated on the target season's region via
- * {@code @authz.canManageSeason(#eventDto.seasonId)}, update/delete on the event's region via
- * {@code @authz.canManageEvent(#id)}. Reads stay open.
+ * {@code @authz.canManageSeason(#competitionDto.seasonId)}, update/delete on the competition's region via
+ * {@code @authz.canManageCompetition(#id)}. Reads stay open.
  *
  * <p>A mock JWT satisfies the {@code authenticated()} baseline; {@code @authz} is mocked so the
  * region verdicts are controlled deterministically (the real scope resolution is unit-level).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-class EventControllerSecurityTest {
+class CompetitionControllerSecurityTest {
 
     @Autowired
     MockMvc mockMvc;
@@ -42,14 +42,14 @@ class EventControllerSecurityTest {
 
     @Test
     void create_withoutToken_isUnauthorized() throws Exception {
-        mockMvc.perform(post("/v1/events").contentType(MediaType.APPLICATION_JSON).content(BODY))
+        mockMvc.perform(post("/v1/competitions").contentType(MediaType.APPLICATION_JSON).content(BODY))
             .andExpect(status().isUnauthorized());
     }
 
     @Test
     void create_whenNotSeasonManager_isForbidden() throws Exception {
         Mockito.when(authz.canManageSeason(any())).thenReturn(false);
-        mockMvc.perform(post("/v1/events").with(jwt())
+        mockMvc.perform(post("/v1/competitions").with(jwt())
                 .contentType(MediaType.APPLICATION_JSON).content(BODY))
             .andExpect(status().isForbidden());
     }
@@ -59,22 +59,22 @@ class EventControllerSecurityTest {
         Mockito.when(authz.canManageSeason(any())).thenReturn(true);
         // Gate passes; the request then fails only because season "season-x" does not exist (404),
         // which confirms authorization let it through (a denied request would be 403).
-        mockMvc.perform(post("/v1/events").with(jwt())
+        mockMvc.perform(post("/v1/competitions").with(jwt())
                 .contentType(MediaType.APPLICATION_JSON).content(BODY))
             .andExpect(status().isNotFound());
     }
 
     @Test
-    void update_whenNotEventManager_isForbidden() throws Exception {
-        Mockito.when(authz.canManageEvent(any())).thenReturn(false);
-        mockMvc.perform(put("/v1/events/event-x").with(jwt())
+    void update_whenNotCompetitionManager_isForbidden() throws Exception {
+        Mockito.when(authz.canManageCompetition(any())).thenReturn(false);
+        mockMvc.perform(put("/v1/competitions/competition-x").with(jwt())
                 .contentType(MediaType.APPLICATION_JSON).content(BODY))
             .andExpect(status().isForbidden());
     }
 
     @Test
     void read_asAnyAuthenticatedUser_isAllowed() throws Exception {
-        mockMvc.perform(get("/v1/events").with(jwt()))
+        mockMvc.perform(get("/v1/competitions").with(jwt()))
             .andExpect(status().isOk());
     }
 }

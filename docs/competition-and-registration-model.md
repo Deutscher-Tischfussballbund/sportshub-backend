@@ -178,7 +178,7 @@ Two enforcement tiers, with a human escape hatch so the rule engine can start sm
 
 ## 6. Authorization mapping (reuses the existing model)
 
-Roles already exist: `ADMIN > REGION_ADMIN > CLUB_ADMIN > TEAM_ADMIN` (+ `EVENT_ORGANIZER`).
+Roles already exist: `ADMIN > REGION_ADMIN > CLUB_ADMIN > TEAM_ADMIN` (+ `COMPETITION_ORGANIZER`, renamed from `EVENT_ORGANIZER` alongside the entity).
 **Captain = `TEAM_ADMIN`** (no separate role, no magic links).
 
 | Action | Gate |

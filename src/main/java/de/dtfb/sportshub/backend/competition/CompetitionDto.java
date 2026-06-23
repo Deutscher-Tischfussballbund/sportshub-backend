@@ -1,11 +1,11 @@
-package de.dtfb.sportshub.backend.event;
+package de.dtfb.sportshub.backend.competition;
 
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class EventDto {
+public class CompetitionDto {
     private String id;
     private String name;
     private String seasonId;

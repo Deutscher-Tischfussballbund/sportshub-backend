@@ -25,11 +25,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Tier C, end-to-end: exercises the REAL authorization stack (no mocked {@code @authz}) to prove an
- * {@code event_organizer} may run the competition under their event, resolving each entity up the
- * spine to its owning Event — and that an outsider, or an organizer of a *different* event, may not.
+ * {@code competition_organizer} may run the competition under their event, resolving each entity up the
+ * spine to its owning Competition — and that an outsider, or an organizer of a *different* event, may not.
  *
  * <p>The chain is built by the bootstrap admin (dev profile seeds {@code dtfb_id="admin"} as global
- * ADMIN); other actors are seeded as players with a single {@code EVENT_ORGANIZER} grant.
+ * ADMIN); other actors are seeded as players with a single {@code COMPETITION_ORGANIZER} grant.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -46,7 +46,7 @@ class CompetitionAuthorizationIntegrationTest {
 
     private static final RequestPostProcessor ADMIN = jwtFor("admin");
 
-    private String eventId;
+    private String competitionId;
     private String disciplineId;
     private String stageId;
     private String poolId;
@@ -56,10 +56,10 @@ class CompetitionAuthorizationIntegrationTest {
     void setup() throws Exception {
         String federationId = createFederation();
         String seasonId = create("/v1/seasons", "{\"name\":\"2025\",\"federationId\":\"" + federationId + "\"}");
-        eventId = create("/v1/events", "{\"name\":\"Bundesliga\",\"seasonId\":\"" + seasonId + "\"}");
+        competitionId = create("/v1/competitions", "{\"name\":\"Bundesliga\",\"seasonId\":\"" + seasonId + "\"}");
         String categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"H\"}");
         disciplineId = create("/v1/disciplines",
-            "{\"name\":\"Einzel\",\"eventId\":\"" + eventId + "\",\"categoryId\":\"" + categoryId + "\"}");
+            "{\"name\":\"Einzel\",\"competitionId\":\"" + competitionId + "\",\"categoryId\":\"" + categoryId + "\"}");
         stageId = create("/v1/stages", "{\"name\":\"Vorrunde\",\"disciplineId\":\"" + disciplineId + "\"}");
         poolId = create("/v1/pools",
             "{\"name\":\"Pool1\",\"tournamentMode\":\"SWISS\",\"poolState\":\"READY\",\"stageId\":\"" + stageId + "\"}");
@@ -68,7 +68,7 @@ class CompetitionAuthorizationIntegrationTest {
 
     @Test
     void eventOrganizer_mayRunTheCompetitionUnderTheirEvent() throws Exception {
-        RequestPostProcessor organizer = grantEventOrganizer("organizer", eventId);
+        RequestPostProcessor organizer = grantEventOrganizer("organizer", competitionId);
 
         // Shallow resolution (Discipline → Event) and progressively deeper walks all resolve to the
         // event the organizer was appointed to.
@@ -97,7 +97,7 @@ class CompetitionAuthorizationIntegrationTest {
 
     @Test
     void organizerOfADifferentEvent_isForbidden() throws Exception {
-        String otherEventId = create("/v1/events",
+        String otherEventId = create("/v1/competitions",
             "{\"name\":\"Other\",\"seasonId\":\"" + create("/v1/seasons",
                 "{\"name\":\"2026\",\"federationId\":\"" + createFederation() + "\"}") + "\"}");
         RequestPostProcessor otherOrganizer = grantEventOrganizer("otherOrganizer", otherEventId);
@@ -126,14 +126,14 @@ class CompetitionAuthorizationIntegrationTest {
         return player;
     }
 
-    /** Seed a player with a single EVENT_ORGANIZER grant on {@code eventId} and return its JWT. */
-    private RequestPostProcessor grantEventOrganizer(String dtfbId, String eventId) {
+    /** Seed a player with a single COMPETITION_ORGANIZER grant on {@code competitionId} and return its JWT. */
+    private RequestPostProcessor grantEventOrganizer(String dtfbId, String competitionId) {
         Player player = playerRepository.save(player(dtfbId));
         RoleAssignment grant = new RoleAssignment();
         grant.setPlayer(player);
-        grant.setRole(Role.EVENT_ORGANIZER);
-        grant.setScopeType(ScopeType.EVENT);
-        grant.setScopeId(eventId);
+        grant.setRole(Role.COMPETITION_ORGANIZER);
+        grant.setScopeType(ScopeType.COMPETITION);
+        grant.setScopeId(competitionId);
         grant.setCreatedAt(Instant.now());
         roleAssignmentRepository.save(grant);
         return jwtFor(dtfbId);

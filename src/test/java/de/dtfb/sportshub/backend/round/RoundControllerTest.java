@@ -27,8 +27,8 @@ class RoundControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCo
         MvcResult season = createSeason();
         String seasonId = JsonPath.read(season.getResponse().getContentAsString(), "$.id");
         MvcResult event = createEvent(seasonId);
-        String eventId = JsonPath.read(event.getResponse().getContentAsString(), "$.id");
-        MvcResult discipline = createDiscipline(eventId);
+        String competitionId = JsonPath.read(event.getResponse().getContentAsString(), "$.id");
+        MvcResult discipline = createDiscipline(competitionId);
         String disciplineId = JsonPath.read(discipline.getResponse().getContentAsString(), "$.id");
         MvcResult stage = createStage(disciplineId);
         String stageId = JsonPath.read(stage.getResponse().getContentAsString(), "$.id");
@@ -120,7 +120,7 @@ class RoundControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCo
     }
 
     private MvcResult createEvent(String uuid) throws Exception {
-        return mockMvc.perform(post("/v1/events")
+        return mockMvc.perform(post("/v1/competitions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Turnier",
@@ -136,7 +136,7 @@ class RoundControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCo
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Offenes Einzel",
-                            "eventId": "%s",
+                            "competitionId": "%s",
                             "categoryId": "%s"}
                     """, uuid, categoryId)))
             .andExpect(status().isCreated())

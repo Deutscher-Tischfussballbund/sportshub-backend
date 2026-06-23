@@ -24,7 +24,7 @@ public class DisciplineController {
     }
 
     @PostMapping
-    @PreAuthorize("@authz.canManageEvent(#disciplineDto.eventId)")
+    @PreAuthorize("@authz.canManageCompetition(#disciplineDto.competitionId)")
     public ResponseEntity<DisciplineDto> create(@RequestBody DisciplineDto disciplineDto) {
         DisciplineDto returnedDto = service.create(disciplineDto);
 

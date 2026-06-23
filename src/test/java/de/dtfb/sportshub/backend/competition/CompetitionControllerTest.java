@@ -1,4 +1,4 @@
-package de.dtfb.sportshub.backend.event;
+package de.dtfb.sportshub.backend.competition;
 
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
 import com.jayway.jsonpath.JsonPath;
@@ -17,7 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
-class EventControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
+class CompetitionControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
 
     String uuid;
     String url;
@@ -30,32 +30,32 @@ class EventControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCo
 
     @BeforeEach
     void setupEach() throws Exception {
-        MvcResult event = createEvent(uuid);
-        url = event.getResponse().getHeader("Location");
+        MvcResult competition = createCompetition(uuid);
+        url = competition.getResponse().getHeader("Location");
         assert url != null;
     }
 
     @Test
-    void getAllEvents() throws Exception {
-        mockMvc.perform(get("/v1/events"))
+    void getAllCompetitions() throws Exception {
+        mockMvc.perform(get("/v1/competitions"))
             .andExpect(status().isOk());
     }
 
     @Test
-    void getEvent_expectException() throws Exception {
-        mockMvc.perform(get("/v1/events/" + NanoIdUtils.randomNanoId()))
+    void getCompetition_expectException() throws Exception {
+        mockMvc.perform(get("/v1/competitions/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
     @Test
-    void createAndGetEvent() throws Exception {
+    void createAndGetCompetition() throws Exception {
         mockMvc.perform(get(url))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.name").value("Turnier"));
     }
 
     @Test
-    void updateEvent() throws Exception {
+    void updateCompetition() throws Exception {
         mockMvc.perform(put(url)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
@@ -70,8 +70,8 @@ class EventControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCo
     }
 
     @Test
-    void updateEvent_expectException() throws Exception {
-        mockMvc.perform(put("/v1/events/" + NanoIdUtils.randomNanoId())
+    void updateCompetition_expectException() throws Exception {
+        mockMvc.perform(put("/v1/competitions/" + NanoIdUtils.randomNanoId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                             {"name": "Replacement"}
@@ -80,7 +80,7 @@ class EventControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCo
     }
 
     @Test
-    void deleteEvent() throws Exception {
+    void deleteCompetition() throws Exception {
         mockMvc.perform(delete(url))
             .andExpect(status().isOk());
 
@@ -89,8 +89,8 @@ class EventControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCo
     }
 
     @Test
-    void deleteEvent_expectException() throws Exception {
-        mockMvc.perform(delete("/v1/events/" + NanoIdUtils.randomNanoId()))
+    void deleteCompetition_expectException() throws Exception {
+        mockMvc.perform(delete("/v1/competitions/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
 
@@ -109,8 +109,8 @@ class EventControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCo
                 """, federationId))).andReturn();
     }
 
-    private MvcResult createEvent(String uuid) throws Exception {
-        return mockMvc.perform(post("/v1/events")
+    private MvcResult createCompetition(String uuid) throws Exception {
+        return mockMvc.perform(post("/v1/competitions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                             {"name": "Turnier",

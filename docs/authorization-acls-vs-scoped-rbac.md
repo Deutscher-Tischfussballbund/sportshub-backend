@@ -15,8 +15,8 @@ What we built is **not** flat RBAC ("you have role X → you can do action X eve
 and a decision is computed by **walking the resource up the domain tree** to a node where the caller
 holds a matching role.
 
-Example (`@authz.canOrganizeMatch`): `match → matchday → round → pool → stage → discipline → event`,
-then check *"region admin of that event's region, or `event_organizer` of that event."*
+Example (`@authz.canOrganizeMatch`): `match → matchday → round → pool → stage → discipline → competition`,
+then check *"region admin of that competition's region, or `competition_organizer` of that competition."*
 
 Structurally this is a **hand-rolled, domain-specific ReBAC** (relationship-based access control):
 a permission is a *function* of `(grant @ node)` and `(the resource's position in the graph)`. It is
@@ -39,13 +39,13 @@ Deciding question: **are permissions derived from structure, or are they per-obj
 Ours are almost entirely *structural*. Given that:
 
 - **Row explosion.** Nobody grants "edit *this* match." They grant "region_admin of Bavaria," which
-  cascades to thousands of teams/events/matches/match-events. As ACLs you would either materialize an
+  cascades to thousands of teams/competitions/matches/match-competitions. As ACLs you would either materialize an
   entry on every descendant object (millions of rows, re-propagated on every insert and every *move*
   in the tree), or implement **ACL inheritance up the parent chain** — which is *exactly the tree walk
   we already do*, only stored in `acl_*` tables instead of computed. Heavy schema, zero gain.
 - **Our grant cardinality is tiny on purpose.** The scope model is the compression: a few
   `role_assignment` rows cover the whole federation. ACLs discard that compression.
-- **`EVENT_ORGANIZER` already gives per-event granularity** without object ACLs — because "event" is a
+- **`COMPETITION_ORGANIZER` already gives per-competition granularity** without object ACLs — because "competition" is a
   first-class scope node.
 
 So for the current requirements, classic ACLs would be a step backwards.
@@ -72,7 +72,7 @@ hierarchy.
 **Keep the current model.** It is the correct shape for *permission = f(role @ scope, resource
 position)*. The real pain points are **not** solved by ACLs:
 
-1. **Per-entity resolver boilerplate** (8 `canOrganize*` + `CompetitionEventResolver`). Cheap,
+1. **Per-entity resolver boilerplate** (8 `canOrganize*` + `CompetitionResolver`). Cheap,
    ACL-orthogonal fix: **denormalize a `regionId`/`eventId` onto competition rows** so resolution is an
    O(1) column read instead of an eager walk (also removes the N+1 risk).
 2. **Auditability** ("explain this decision") — that is the ReBAC argument, not the ACL one.
@@ -91,5 +91,5 @@ position)*. The real pain points are **not** solved by ACLs:
 ### Open input needed
 
 What is driving the question — resolver boilerplate, a looming need for per-object sharing / private
-events, the read/public tier specifically, or multi-service scale? Each points to a different one of
+competitions, the read/public tier specifically, or multi-service scale? Each points to a different one of
 the three options; record the answer here when known.

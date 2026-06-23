@@ -7,6 +7,6 @@ import lombok.Setter;
 @Setter
 public class DisciplineDto {
     private String id;
-    private String eventId;
+    private String competitionId;
     private String categoryId;
 }

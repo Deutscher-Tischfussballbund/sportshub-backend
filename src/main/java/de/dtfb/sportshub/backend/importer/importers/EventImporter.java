@@ -1,7 +1,7 @@
 package de.dtfb.sportshub.backend.importer.importers;
 
-import de.dtfb.sportshub.backend.event.Event;
-import de.dtfb.sportshub.backend.event.EventRepository;
+import de.dtfb.sportshub.backend.competition.Competition;
+import de.dtfb.sportshub.backend.competition.CompetitionRepository;
 import de.dtfb.sportshub.backend.importer.data.ImportDiscipline;
 import de.dtfb.sportshub.backend.importer.data.ImportEvent;
 import de.dtfb.sportshub.backend.season.Season;
@@ -11,31 +11,31 @@ import org.springframework.stereotype.Component;
 @Component
 public class EventImporter {
 
-    private final EventRepository eventRepository;
+    private final CompetitionRepository competitionRepository;
     private final DisciplineImporter disciplineImporter;
     private final EntityManager em;
 
-    public EventImporter(EventRepository eventRepository, DisciplineImporter disciplineImporter, EntityManager em) {
-        this.eventRepository = eventRepository;
+    public EventImporter(CompetitionRepository competitionRepository, DisciplineImporter disciplineImporter, EntityManager em) {
+        this.competitionRepository = competitionRepository;
         this.disciplineImporter = disciplineImporter;
         this.em = em;
     }
 
     public void importEvent(ImportEvent importingEvent, Season season, String importId) {
 
-        Event event = eventRepository
+        Competition competition = competitionRepository
             .findBySeasonAndName(season, importingEvent.getName())
             .orElseGet(() -> {
-                Event e = new Event();
+                Competition e = new Competition();
                 e.setName(importingEvent.getName());
                 e.setSeason(season);
                 e.setImportId(importId);
-                return eventRepository.save(e);
+                return competitionRepository.save(e);
             });
 
         int counter = 0;
         for (ImportDiscipline d : importingEvent.getDisciplines()) {
-            disciplineImporter.importDiscipline(d, event);
+            disciplineImporter.importDiscipline(d, competition);
             counter++;
 
             // batch flush every 50 events
@@ -44,7 +44,7 @@ public class EventImporter {
                 em.clear();
 
                 // reattach parent entity after clearing
-                event = em.merge(event);
+                competition = em.merge(competition);
             }
         }
         em.flush();

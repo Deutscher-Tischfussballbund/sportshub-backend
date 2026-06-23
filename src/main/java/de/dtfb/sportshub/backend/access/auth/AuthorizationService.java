@@ -8,8 +8,8 @@ import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignment;
 import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignmentRepository;
 import de.dtfb.sportshub.backend.club.Club;
 import de.dtfb.sportshub.backend.club.ClubRepository;
-import de.dtfb.sportshub.backend.event.Event;
-import de.dtfb.sportshub.backend.event.EventRepository;
+import de.dtfb.sportshub.backend.competition.Competition;
+import de.dtfb.sportshub.backend.competition.CompetitionRepository;
 import de.dtfb.sportshub.backend.federation.Federation;
 import de.dtfb.sportshub.backend.location.Location;
 import de.dtfb.sportshub.backend.location.LocationRepository;
@@ -51,30 +51,30 @@ public class AuthorizationService {
     private final RoleAssignmentRepository roleAssignmentRepository;
     private final ClubRepository clubRepository;
     private final TeamRepository teamRepository;
-    private final EventRepository eventRepository;
+    private final CompetitionRepository competitionRepository;
     private final SeasonRepository seasonRepository;
     private final LocationRepository locationRepository;
     private final MatchDayRepository matchDayRepository;
-    private final CompetitionEventResolver competitionEventResolver;
+    private final CompetitionResolver competitionResolver;
 
     public AuthorizationService(PlayerRegistryService registry,
                                 RoleAssignmentRepository roleAssignmentRepository,
                                 ClubRepository clubRepository,
                                 TeamRepository teamRepository,
-                                EventRepository eventRepository,
+                                CompetitionRepository competitionRepository,
                                 SeasonRepository seasonRepository,
                                 LocationRepository locationRepository,
                                 MatchDayRepository matchDayRepository,
-                                CompetitionEventResolver competitionEventResolver) {
+                                CompetitionResolver competitionResolver) {
         this.registry = registry;
         this.roleAssignmentRepository = roleAssignmentRepository;
         this.clubRepository = clubRepository;
         this.teamRepository = teamRepository;
-        this.eventRepository = eventRepository;
+        this.competitionRepository = competitionRepository;
         this.seasonRepository = seasonRepository;
         this.locationRepository = locationRepository;
         this.matchDayRepository = matchDayRepository;
-        this.competitionEventResolver = competitionEventResolver;
+        this.competitionResolver = competitionResolver;
     }
 
     /** Global DTFB administrator. */
@@ -112,9 +112,9 @@ public class AuthorizationService {
         return region != null && isRegionAdmin(roles, region.getId());
     }
 
-    /** May administer the given event's meta (its region's admin, or global) — see the EVENT scope. */
-    public boolean canManageEvent(String eventId) {
-        return canManageScope(currentRoles(), ScopeType.EVENT, eventId);
+    /** May administer the given competition's meta (its region's admin, or global) — see the COMPETITION scope. */
+    public boolean canManageCompetition(String competitionId) {
+        return canManageScope(currentRoles(), ScopeType.COMPETITION, competitionId);
     }
 
     /**
@@ -132,73 +132,73 @@ public class AuthorizationService {
     }
 
     /**
-     * May administer the given discipline: a discipline belongs to an event, so it inherits that
-     * event's region scope. (Its {@code Category} is a global classification and does not bear
+     * May administer the given discipline: a discipline belongs to an competition, so it inherits that
+     * competition's region scope. (Its {@code Category} is a global classification and does not bear
      * scope.) This is region-config authority (admins) — for running the competition *under* a
      * discipline, see {@link #canOrganizeDiscipline}.
      */
     public boolean canManageDiscipline(String disciplineId) {
-        Event event = competitionEventResolver.ofDiscipline(disciplineId);
-        return canManageScope(currentRoles(), ScopeType.EVENT, event == null ? null : event.getId());
+        Competition competition = competitionResolver.ofDiscipline(disciplineId);
+        return canManageScope(currentRoles(), ScopeType.COMPETITION, competition == null ? null : competition.getId());
     }
 
     // --- Tier C: competition data. May run the competition the entity belongs to — the region/global
-    // admin above its event, OR an event_organizer appointed to that event. Each entity resolves to
-    // its owning Event via CompetitionEventResolver (Stage→Discipline→Event, Match→MatchDay→…→Event).
+    // admin above its competition, OR an competition_organizer appointed to that competition. Each entity resolves to
+    // its owning Competition via CompetitionResolver (Stage→Discipline→Competition, Match→MatchDay→…→Competition).
 
     public boolean canOrganizeDiscipline(String disciplineId) {
-        return canOrganize(competitionEventResolver.ofDiscipline(disciplineId));
+        return canOrganize(competitionResolver.ofDiscipline(disciplineId));
     }
 
     public boolean canOrganizeStage(String stageId) {
-        return canOrganize(competitionEventResolver.ofStage(stageId));
+        return canOrganize(competitionResolver.ofStage(stageId));
     }
 
     public boolean canOrganizePool(String poolId) {
-        return canOrganize(competitionEventResolver.ofPool(poolId));
+        return canOrganize(competitionResolver.ofPool(poolId));
     }
 
     public boolean canOrganizeRound(String roundId) {
-        return canOrganize(competitionEventResolver.ofRound(roundId));
+        return canOrganize(competitionResolver.ofRound(roundId));
     }
 
     public boolean canOrganizeMatchDay(String matchDayId) {
-        return canOrganize(competitionEventResolver.ofMatchDay(matchDayId));
+        return canOrganize(competitionResolver.ofMatchDay(matchDayId));
     }
 
     public boolean canOrganizeMatch(String matchId) {
-        return canOrganize(competitionEventResolver.ofMatch(matchId));
+        return canOrganize(competitionResolver.ofMatch(matchId));
     }
 
     public boolean canOrganizeMatchSet(String matchSetId) {
-        return canOrganize(competitionEventResolver.ofMatchSet(matchSetId));
+        return canOrganize(competitionResolver.ofMatchSet(matchSetId));
     }
 
     public boolean canOrganizeMatchEvent(String matchEventId) {
-        return canOrganize(competitionEventResolver.ofMatchEvent(matchEventId));
+        return canOrganize(competitionResolver.ofMatchEvent(matchEventId));
     }
 
     /**
-     * Competition-data capability for the given event: the region/global admin above it OR an
-     * {@code event_organizer} appointed to that event. Distinct from {@link #canManageEvent} (event
-     * meta — admins only); an organizer runs the competition, not the event's place in the tree.
+     * Competition-data capability for the given competition: the region/global admin above it OR an
+     * {@code competition_organizer} appointed to that competition. Distinct from {@link #canManageCompetition} (competition
+     * meta — admins only); an organizer runs the competition, not the competition's place in the tree.
      */
-    private boolean canOrganize(Event event) {
+    private boolean canOrganize(Competition competition) {
         List<RoleAssignment> roles = currentRoles();
         if (AccessRoles.isGlobalAdmin(roles)) {
             return true;
         }
-        if (event == null) {
+        if (competition == null) {
             return false;
         }
-        Federation region = event.getSeason() == null ? null : event.getSeason().getFederation();
+        Federation region = competition.getSeason() == null ? null : competition.getSeason().getFederation();
         boolean regionAdmin = region != null && isRegionAdmin(roles, region.getId());
-        return regionAdmin || isEventOrganizer(roles, event.getId());
+        return regionAdmin || isCompetitionOrganizer(roles, competition.getId());
     }
 
-    private boolean isEventOrganizer(List<RoleAssignment> roles, String eventId) {
-        return eventId != null && roles.stream().anyMatch(ra ->
-            ra.getRole() == Role.EVENT_ORGANIZER && Objects.equals(ra.getScopeId(), eventId));
+    private boolean isCompetitionOrganizer(List<RoleAssignment> roles, String competitionId) {
+        return competitionId != null && roles.stream().anyMatch(ra ->
+            ra.getRole() == Role.COMPETITION_ORGANIZER && Objects.equals(ra.getScopeId(), competitionId));
     }
 
     /**
@@ -277,12 +277,12 @@ public class AuthorizationService {
                 yield club != null
                     && (isRegionAdmin(roles, club.getFederationId()) || isClubAdmin(roles, club.getId()));
             }
-            case EVENT -> {
-                // An event belongs to its region via Event -> Season -> Federation; the region
-                // admin of that region administers the event (e.g. to appoint an event organizer).
-                Event event = scopeId == null ? null : eventRepository.findById(scopeId).orElse(null);
-                Federation region = event == null || event.getSeason() == null
-                    ? null : event.getSeason().getFederation();
+            case COMPETITION -> {
+                // An competition belongs to its region via Competition -> Season -> Federation; the region
+                // admin of that region administers the competition (e.g. to appoint an competition organizer).
+                Competition competition = scopeId == null ? null : competitionRepository.findById(scopeId).orElse(null);
+                Federation region = competition == null || competition.getSeason() == null
+                    ? null : competition.getSeason().getFederation();
                 yield region != null && isRegionAdmin(roles, region.getId());
             }
         };

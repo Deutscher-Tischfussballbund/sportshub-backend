@@ -1,4 +1,4 @@
-package de.dtfb.sportshub.backend.event;
+package de.dtfb.sportshub.backend.competition;
 
 import de.dtfb.sportshub.backend.base.BaseEntity;
 import de.dtfb.sportshub.backend.season.Season;
@@ -11,7 +11,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-public class Event extends BaseEntity {
+public class Competition extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "season_id")
     private Season season;

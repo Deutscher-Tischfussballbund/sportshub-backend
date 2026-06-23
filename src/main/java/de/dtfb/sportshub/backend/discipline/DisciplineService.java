@@ -3,9 +3,9 @@ package de.dtfb.sportshub.backend.discipline;
 import de.dtfb.sportshub.backend.category.Category;
 import de.dtfb.sportshub.backend.category.CategoryNotFoundException;
 import de.dtfb.sportshub.backend.category.CategoryRepository;
-import de.dtfb.sportshub.backend.event.Event;
-import de.dtfb.sportshub.backend.event.EventNotFoundException;
-import de.dtfb.sportshub.backend.event.EventRepository;
+import de.dtfb.sportshub.backend.competition.Competition;
+import de.dtfb.sportshub.backend.competition.CompetitionNotFoundException;
+import de.dtfb.sportshub.backend.competition.CompetitionRepository;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,13 +16,13 @@ import java.util.List;
 public class DisciplineService {
     private final DisciplineRepository repository;
     private final DisciplineMapper mapper;
-    private final EventRepository eventRepository;
+    private final CompetitionRepository competitionRepository;
     private final CategoryRepository categoryRepository;
 
-    public DisciplineService(DisciplineRepository repository, DisciplineMapper mapper, EventRepository eventRepository, CategoryRepository categoryRepository) {
+    public DisciplineService(DisciplineRepository repository, DisciplineMapper mapper, CompetitionRepository competitionRepository, CategoryRepository categoryRepository) {
         this.repository = repository;
         this.mapper = mapper;
-        this.eventRepository = eventRepository;
+        this.competitionRepository = competitionRepository;
         this.categoryRepository = categoryRepository;
     }
 
@@ -40,7 +40,7 @@ public class DisciplineService {
     public DisciplineDto create(DisciplineDto disciplineDto) {
         Discipline discipline = mapper.toEntity(disciplineDto);
 
-        discipline.setEvent(getEvent(disciplineDto));
+        discipline.setCompetition(getCompetition(disciplineDto));
         discipline.setCategory(getCategory(disciplineDto));
 
         return mapper.toDto(repository.save(discipline));
@@ -52,7 +52,7 @@ public class DisciplineService {
 
         mapper.updateEntityFromDto(disciplineDto, discipline);
 
-        discipline.setEvent(getEvent(disciplineDto));
+        discipline.setCompetition(getCompetition(disciplineDto));
         discipline.setCategory(getCategory(disciplineDto));
 
         return mapper.toDto(repository.save(discipline));
@@ -74,8 +74,8 @@ public class DisciplineService {
             .orElseThrow(() -> new CategoryNotFoundException(disciplineDto.getCategoryId()));
     }
 
-    private @NonNull Event getEvent(DisciplineDto disciplineDto) {
-        return eventRepository.findById(disciplineDto.getEventId())
-            .orElseThrow(() -> new EventNotFoundException(disciplineDto.getEventId()));
+    private @NonNull Competition getCompetition(DisciplineDto disciplineDto) {
+        return competitionRepository.findById(disciplineDto.getCompetitionId())
+            .orElseThrow(() -> new CompetitionNotFoundException(disciplineDto.getCompetitionId()));
     }
 }

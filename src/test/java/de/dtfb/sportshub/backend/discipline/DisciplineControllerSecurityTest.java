@@ -18,9 +18,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Tier A (revised): a discipline belongs to an event ({@code Discipline.event}), so it inherits that
+ * Tier A (revised): a discipline belongs to an event ({@code Discipline.competition}), so it inherits that
  * event's region scope — create gated on the target event's region via
- * {@code @authz.canManageEvent(#disciplineDto.eventId)}, update/delete on the discipline's event via
+ * {@code @authz.canManageCompetition(#disciplineDto.competitionId)}, update/delete on the discipline's event via
  * {@code @authz.canManageDiscipline(#id)}. Reads stay open. (Its {@code Category} is global config,
  * gated separately.)
  *
@@ -38,7 +38,7 @@ class DisciplineControllerSecurityTest {
     AuthorizationService authz;
 
     private static final String BODY = """
-        {"name": "Offenes Einzel", "eventId": "event-x", "categoryId": "category-x"}
+        {"name": "Offenes Einzel", "competitionId": "competition-x", "categoryId": "category-x"}
         """;
 
     @Test
@@ -49,7 +49,7 @@ class DisciplineControllerSecurityTest {
 
     @Test
     void create_whenNotEventManager_isForbidden() throws Exception {
-        Mockito.when(authz.canManageEvent(any())).thenReturn(false);
+        Mockito.when(authz.canManageCompetition(any())).thenReturn(false);
         mockMvc.perform(post("/v1/disciplines").with(jwt())
                 .contentType(MediaType.APPLICATION_JSON).content(BODY))
             .andExpect(status().isForbidden());
@@ -57,8 +57,8 @@ class DisciplineControllerSecurityTest {
 
     @Test
     void create_whenEventManager_passesGate() throws Exception {
-        Mockito.when(authz.canManageEvent(any())).thenReturn(true);
-        // Gate passes; the request then fails only because event "event-x" does not exist (404),
+        Mockito.when(authz.canManageCompetition(any())).thenReturn(true);
+        // Gate passes; the request then fails only because event "competition-x" does not exist (404),
         // which confirms authorization let it through (a denied request would be 403).
         mockMvc.perform(post("/v1/disciplines").with(jwt())
                 .contentType(MediaType.APPLICATION_JSON).content(BODY))

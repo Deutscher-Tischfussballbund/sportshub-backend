@@ -18,9 +18,9 @@ public enum Role {
 
     // --- Functional roles (scope = the competition) ---
     /** Runs one competition (league or tournament): structure, scheduling, results, standings. */
-    EVENT_ORGANIZER("event_organizer", ScopeType.EVENT),
+    COMPETITION_ORGANIZER("competition_organizer", ScopeType.COMPETITION),
 
-    // --- Deprecated: superseded by EVENT_ORGANIZER (wrong axis — anchored to club/region,
+    // --- Deprecated: superseded by COMPETITION_ORGANIZER (wrong axis — anchored to club/region,
     // not the competition). Kept until removal is coordinated with the @dtfb/api client + i18n. ---
     @Deprecated
     TOURNAMENT_UPLOADER("tournament_uploader", ScopeType.CLUB),

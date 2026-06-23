@@ -1,4 +1,4 @@
-package de.dtfb.sportshub.backend.event;
+package de.dtfb.sportshub.backend.competition;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -7,20 +7,20 @@ import org.mapstruct.MappingTarget;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
-public interface EventMapper {
+public interface CompetitionMapper {
 
     @Mapping(source = "season.id", target = "seasonId")
-    EventDto toDto(Event event);
+    CompetitionDto toDto(Competition event);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "season", ignore = true)
     @Mapping(target = "importId", ignore = true)
-    Event toEntity(EventDto eventDto);
+    Competition toEntity(CompetitionDto competitionDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "season", ignore = true)
     @Mapping(target = "importId", ignore = true)
-    void updateEntityFromDto(EventDto dto, @MappingTarget Event entity);
+    void updateEntityFromDto(CompetitionDto dto, @MappingTarget Competition entity);
 
-    List<EventDto> toDtoList(List<Event> events);
+    List<CompetitionDto> toDtoList(List<Competition> events);
 }
