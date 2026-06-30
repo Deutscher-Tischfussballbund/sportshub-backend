@@ -27,6 +27,9 @@ services:
       # Public issuer (matches the token's iss claim) + internal JWKS over the dtfb net.
       - KEYCLOAK_ISSUER_URI=${KEYCLOAK_ISSUER_URI:?KEYCLOAK_ISSUER_URI required (e.g. https://id.dtfb.de/realms/dtfb)}
       - KEYCLOAK_JWK_SET_URI=${KEYCLOAK_JWK_SET_URI:-http://keycloak:8080/realms/dtfb/protocol/openid-connect/certs}
+      # First-admin bootstrap (dtfb_id / Keycloak username). Set for the first deploy
+      # so someone can administer; idempotent, so it can stay across restarts.
+      - SPORTSHUB_BOOTSTRAP_ADMIN_DTFB_ID=${SPORTSHUB_BOOTSTRAP_ADMIN_DTFB_ID:-}
     ports:
       # Bind to localhost only — the host reverse-proxy forwards the public API here.
       - "127.0.0.1:8082:8082"

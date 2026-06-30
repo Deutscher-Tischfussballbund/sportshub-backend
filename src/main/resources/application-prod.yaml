@@ -44,3 +44,9 @@ server:
     port: 8082
 external-api:
     base-url: ${EXTERNAL_API_BASE_URL:http://localhost:3000}
+sportshub:
+    bootstrap:
+        # dtfb_id granted GLOBAL ADMIN on startup so a fresh prod DB has a first
+        # admin (the dev seed is dev-only). Idempotent; unset = no-op. Set it for
+        # the first deploy, then it can stay (or be cleared) safely.
+        admin-dtfb-id: ${SPORTSHUB_BOOTSTRAP_ADMIN_DTFB_ID:}
