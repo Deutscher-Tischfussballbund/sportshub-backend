@@ -1,0 +1,25 @@
+# Runs the test suite on every PR and on pushes to main, so a change that breaks
+# compilation or tests is caught here (the release build runs with -x test).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+      - name: Run tests
+        run: ./gradlew test --no-daemon
