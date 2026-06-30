@@ -25,10 +25,8 @@ public class Season extends BaseEntity {
     private LocalDate startDate;
     private LocalDate endDate;
 
-    // Team-registration (roster-management) window.
-    private boolean registrationOpen;            // manual master switch
-    private Instant registrationOpensAt;
-    private Instant registrationClosesAt;
+    /** Whether team registration (roster management) is open for this season. */
+    private boolean registrationOpen;
 
     /** Soft-delete marker: null = active; set = archived (hidden from active views, data kept). */
     private Instant archivedAt;

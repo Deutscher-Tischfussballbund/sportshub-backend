@@ -27,12 +27,12 @@ The existing competition tree is kept; only `Event` is renamed to `Competition`.
 Season ─ Competition ─ Discipline ─ Stage ─ Pool ─ Round ─ MatchDay(teamHome/teamAway)
    │         (was Event)   │
    │                   (Category)
-   └─ duration (start/end) + registration window
+   └─ duration (start/end) + registration open/closed
 ```
 
 | Term | Entity | Meaning |
 |---|---|---|
-| **Season** | `Season` | time container: **duration** (start/end) + **registration window** |
+| **Season** | `Season` | time container: **duration** (start/end) + a **registrationOpen** flag |
 | **Competition** | `Competition` *(renamed from `Event`)* | a **league or a single tournament**; carries deadlines + rule overrides |
 | Discipline | `Discipline` → `Category` | a category split within a competition (e.g. Herren/Damen); a competition may run several |
 | Stage | `Stage` | a phase, e.g. *Hauptrunde* / **Playoffs**; anchors relative deadlines |
@@ -75,13 +75,13 @@ plain admin editing whose first-class operation is **copy-forward**.
 Season {
   name, federation,                       // existing
   startDate, endDate,                     // general duration
-  registrationOpen: boolean,             // manual master switch
-  registrationOpensAt, registrationClosesAt,   // scheduled window
-  // isOpen is DERIVED (not stored): registrationOpen && now ∈ [opensAt, closesAt]
+  registrationOpen: boolean,             // is roster registration open?
+  archivedAt,                             // soft-delete (see season-archiving-and-deletion.md)
 }
 ```
-The registration window is the **roster-management window** (when team admins may edit
-rosters); deadlines that gate finer actions come from the `RuleSet` (§4).
+`registrationOpen` is the **roster-management switch** (when team admins may edit rosters).
+A scheduled open/close *window* was considered and dropped — a single boolean was enough;
+deadlines that gate finer actions come from the `RuleSet` (§4).
 
 ### 3.3 `Competition` — gains deadlines + optional rule override
 
@@ -193,11 +193,12 @@ Roles already exist: `ADMIN > REGION_ADMIN > CLUB_ADMIN > TEAM_ADMIN` (+ `COMPET
 
 Each layer ships value on its own. Start with the rename so all later naming is final.
 
-- **L0 — Rename + Season CRUD + window**
-  - Backend: `Event → Competition` rename; add `Season` duration + window fields (+ derived
-    `isOpen`); migration.
+- **L0 — Rename + Season CRUD** ✅ done
+  - Backend: `Event → Competition` rename; `Season` duration + a `registrationOpen` boolean
+    (a scheduled open/close window was tried then dropped — see
+    [`season-archiving-and-deletion.md`](./season-archiving-and-deletion.md)); migration.
   - Frontend: regenerate client; **Season CRUD view** (region-scoped) modeled on the player
-    view + edit dialog (name, duration, window). *This is the first migrated module.*
+    view + edit dialog (name, duration, registration toggle). *This is the first migrated module.*
 - **L1 — Placement (admin-driven)**
   - Backend: `TeamParticipation`; **copy-forward** operation (clone divisions + placements
     from previous season); promote/relegate/add/drop endpoints; authz.

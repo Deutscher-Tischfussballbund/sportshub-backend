@@ -1,6 +1,5 @@
 package de.dtfb.sportshub.backend.season;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,14 +17,8 @@ public class SeasonDto {
     private LocalDate startDate;
     private LocalDate endDate;
 
-    // Registration window.
+    /** Whether team registration is open for this season. */
     private boolean registrationOpen;
-    private Instant registrationOpensAt;
-    private Instant registrationClosesAt;
-
-    /** Derived (not stored): the effective registration state right now. Read-only. */
-    @JsonProperty("isOpen")
-    private boolean open;
 
     /** Set when the season is archived (soft-deleted); null while active. Read-only. */
     private Instant archivedAt;
