@@ -1,9 +1,5 @@
 package de.dtfb.sportshub.backend.exception;
 
-import de.dtfb.sportshub.backend.externalApi.ApiError;
-import de.dtfb.sportshub.backend.externalApi.ExternalApiException;
-import de.dtfb.sportshub.backend.externalApi.ExternalApiUnavailableException;
-import de.dtfb.sportshub.backend.externalApi.ExternalResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -21,27 +17,6 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiError handleNotFound(NotFoundExceptionMarker ex) {
         return new ApiError(ex.getErrorCode(), ex.getMessage());
-    }
-
-    @ExceptionHandler(ExternalApiUnavailableException.class)
-    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
-    public ApiError handleExternalUnavailable() {
-        return new ApiError("SERVICE_UNAVAILABLE",
-            "Required external api is currently unavailable");
-    }
-
-    @ExceptionHandler(ExternalResourceNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ApiError handleExternalNotFound() {
-        return new ApiError("NOT_FOUND",
-            "Request to external api failed, resource not found");
-    }
-
-    @ExceptionHandler(ExternalApiException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiError handleExternalBadRequest() {
-        return new ApiError("BAD_REQUEST",
-            "Request to external api is faulty");
     }
 
     // Failsafe

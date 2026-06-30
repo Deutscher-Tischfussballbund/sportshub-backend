@@ -39,8 +39,6 @@ springdoc:
             use-pkce-with-authorization-code-grant: true
 server:
     port: 8082
-external-api:
-    base-url: http://localhost:3000
 logging:
     level:
         org.springframework.web: DEBUG

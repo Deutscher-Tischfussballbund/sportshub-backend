@@ -42,8 +42,6 @@ springdoc:
             use-pkce-with-authorization-code-grant: true
 server:
     port: 8082
-external-api:
-    base-url: ${EXTERNAL_API_BASE_URL:http://localhost:3000}
 sportshub:
     bootstrap:
         # dtfb_id granted GLOBAL ADMIN on startup so a fresh prod DB has a first
