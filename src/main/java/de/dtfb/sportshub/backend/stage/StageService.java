@@ -22,12 +22,12 @@ public class StageService {
 
     @Transactional(readOnly = true)
     public List<StageDto> getAll() {
-        return mapper.toDtoList(repository.findAll());
+        return mapper.toDtoList(repository.findAllVisible());
     }
 
     @Transactional(readOnly = true)
     public StageDto get(String id) {
-        Stage stage = repository.findById(id).orElseThrow(
+        Stage stage = repository.findVisibleById(id).orElseThrow(
             () -> new StageNotFoundException(id));
         return mapper.toDto(stage);
     }

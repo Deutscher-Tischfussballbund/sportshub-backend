@@ -130,6 +130,19 @@ class SeasonControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
         mockMvc.perform(get("/v1/competitions/" + competitionId)).andExpect(status().isNotFound());
     }
 
+    @Test
+    void archivedSeason_hidesDeeperEntities() throws Exception {
+        // A discipline lives below competition → season; archiving the season must hide it too.
+        String competitionId = createCompetition(seasonId());
+        String disciplineId = createDiscipline(competitionId, createCategory());
+
+        mockMvc.perform(post(url + "/archive")).andExpect(status().isOk());
+
+        mockMvc.perform(get("/v1/disciplines"))
+            .andExpect(jsonPath("$[?(@.id=='" + disciplineId + "')]").value(empty()));
+        mockMvc.perform(get("/v1/disciplines/" + disciplineId)).andExpect(status().isNotFound());
+    }
+
     /**
      * =========================================================
      * helper operations
@@ -151,6 +164,17 @@ class SeasonControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
     /** Id of the season created in {@link #setupEach()} (last path segment of its Location). */
     private String seasonId() {
         return url.substring(url.lastIndexOf('/') + 1);
+    }
+
+    private String createDiscipline(String competitionId, String categoryId) throws Exception {
+        MvcResult result = mockMvc.perform(post("/v1/disciplines")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"competitionId": "%s", "categoryId": "%s"}
+                    """, competitionId, categoryId)))
+            .andExpect(status().isCreated())
+            .andReturn();
+        return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
     }
 
     private String createCompetition(String seasonId) throws Exception {

@@ -22,12 +22,12 @@ public class MatchService {
 
     @Transactional(readOnly = true)
     public List<MatchDto> getAll() {
-        return mapper.toDtoList(repository.findAll());
+        return mapper.toDtoList(repository.findAllVisible());
     }
 
     @Transactional(readOnly = true)
     public MatchDto get(String id) {
-        Match match = repository.findById(id).orElseThrow(
+        Match match = repository.findVisibleById(id).orElseThrow(
             () -> new MatchNotFoundException(id));
         return mapper.toDto(match);
     }

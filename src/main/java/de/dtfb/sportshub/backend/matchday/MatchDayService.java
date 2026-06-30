@@ -46,12 +46,12 @@ public class MatchDayService {
 
     @Transactional(readOnly = true)
     public List<MatchDayDto> getAll() {
-        return mapper.toDtoList(repository.findAll());
+        return mapper.toDtoList(repository.findAllVisible());
     }
 
     @Transactional(readOnly = true)
     public MatchDayDto get(String id) {
-        MatchDay matchDay = repository.findById(id).orElseThrow(
+        MatchDay matchDay = repository.findVisibleById(id).orElseThrow(
             () -> new MatchDayNotFoundException(id));
         return mapper.toDto(matchDay);
     }

@@ -22,12 +22,12 @@ public class MatchSetService {
 
     @Transactional(readOnly = true)
     public List<MatchSetDto> getAll() {
-        return mapper.toDtoList(repository.findAll());
+        return mapper.toDtoList(repository.findAllVisible());
     }
 
     @Transactional(readOnly = true)
     public MatchSetDto get(String id) {
-        MatchSet matchSet = repository.findById(id).orElseThrow(
+        MatchSet matchSet = repository.findVisibleById(id).orElseThrow(
             () -> new MatchSetNotFoundException(id));
         return mapper.toDto(matchSet);
     }
