@@ -28,4 +28,6 @@ COPY --from=layers /app/extracted/snapshot-dependencies/ ./
 COPY --from=layers /app/extracted/application/ ./
 USER spring
 EXPOSE 8082
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "org.springframework.boot.loader.launch.JarLauncher"]
+# Spring Boot 4 `tools` jarmode extracts a thin launcher (app.jar) + lib/ — run it
+# with `java -jar`, NOT the old layertools JarLauncher class.
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
