@@ -1,5 +1,7 @@
 package de.dtfb.sportshub.backend.exception;
 
+import de.dtfb.sportshub.backend.season.SeasonDeletionBlockedError;
+import de.dtfb.sportshub.backend.season.SeasonDeletionBlockedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,14 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiError handleNotFound(NotFoundExceptionMarker ex) {
         return new ApiError(ex.getErrorCode(), ex.getMessage());
+    }
+
+    // Season delete refused because results exist → 409 with a structured body (what's attached).
+    @ExceptionHandler(SeasonDeletionBlockedException.class)
+    public ResponseEntity<SeasonDeletionBlockedError> handleSeasonDeletionBlocked(
+        SeasonDeletionBlockedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new SeasonDeletionBlockedError("SEASON_HAS_RESULTS", ex.getMessage(), ex.getContents()));
     }
 
     // Failsafe

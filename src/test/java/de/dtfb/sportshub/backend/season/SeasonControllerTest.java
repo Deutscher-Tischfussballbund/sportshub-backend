@@ -1,15 +1,14 @@
 package de.dtfb.sportshub.backend.season;
 
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -73,7 +72,7 @@ class SeasonControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
     @Test
     void deleteSeason() throws Exception {
         mockMvc.perform(delete(url))
-            .andExpect(status().isOk());
+            .andExpect(status().isNoContent());
 
         mockMvc.perform(get(url))
             .andExpect(status().isNotFound());
@@ -83,6 +82,52 @@ class SeasonControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
     void deleteSeason_expectException() throws Exception {
         mockMvc.perform(delete("/v1/seasons/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void archive_hidesFromActiveList_showsInArchived() throws Exception {
+        mockMvc.perform(post(url + "/archive"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.archivedAt").isNotEmpty());
+
+        mockMvc.perform(get("/v1/seasons"))
+            .andExpect(jsonPath("$[?(@.id=='" + seasonId() + "')]").value(empty()));
+        mockMvc.perform(get("/v1/seasons/archived"))
+            .andExpect(jsonPath("$[?(@.id=='" + seasonId() + "')].name").value(hasItem("2000")));
+    }
+
+    @Test
+    void unarchive_restoresToActiveList() throws Exception {
+        mockMvc.perform(post(url + "/archive")).andExpect(status().isOk());
+
+        mockMvc.perform(post(url + "/unarchive"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.archivedAt").isEmpty());
+
+        mockMvc.perform(get("/v1/seasons"))
+            .andExpect(jsonPath("$[?(@.id=='" + seasonId() + "')].name").value(hasItem("2000")));
+    }
+
+    @Test
+    void deleteSeason_withResultFreeStructure_cascades() throws Exception {
+        String competitionId = createCompetition(seasonId());
+
+        // No results yet → delete is allowed and wipes the structure (exercises SeasonStructure JPQL).
+        mockMvc.perform(delete(url)).andExpect(status().isNoContent());
+
+        mockMvc.perform(get(url)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/v1/competitions/" + competitionId)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void archivedSeason_hidesItsCompetitions() throws Exception {
+        String competitionId = createCompetition(seasonId());
+
+        mockMvc.perform(post(url + "/archive")).andExpect(status().isOk());
+
+        mockMvc.perform(get("/v1/competitions"))
+            .andExpect(jsonPath("$[?(@.id=='" + competitionId + "')]").value(empty()));
+        mockMvc.perform(get("/v1/competitions/" + competitionId)).andExpect(status().isNotFound());
     }
 
     /**
@@ -101,6 +146,22 @@ class SeasonControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
                     """, federationId)))
             .andExpect(status().isCreated())
             .andReturn();
+    }
+
+    /** Id of the season created in {@link #setupEach()} (last path segment of its Location). */
+    private String seasonId() {
+        return url.substring(url.lastIndexOf('/') + 1);
+    }
+
+    private String createCompetition(String seasonId) throws Exception {
+        MvcResult result = mockMvc.perform(post("/v1/competitions")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "Liga", "seasonId": "%s"}
+                    """, seasonId)))
+            .andExpect(status().isCreated())
+            .andReturn();
+        return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
     }
     //endregion
 }

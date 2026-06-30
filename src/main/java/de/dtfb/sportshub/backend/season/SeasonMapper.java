@@ -17,10 +17,12 @@ public interface SeasonMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "federation", ignore = true)
+    @Mapping(target = "archivedAt", ignore = true) // server-managed via archive/unarchive
     Season toEntity(SeasonDto seasonDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "federation", ignore = true)
+    @Mapping(target = "archivedAt", ignore = true) // never set/cleared through a normal update
     void updateEntityFromDto(SeasonDto dto, @MappingTarget Season entity);
 
     List<SeasonDto> toDtoList(List<Season> seasons);

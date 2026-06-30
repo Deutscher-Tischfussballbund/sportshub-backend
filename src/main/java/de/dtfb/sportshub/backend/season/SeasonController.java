@@ -23,6 +23,11 @@ public class SeasonController {
         return service.getAll();
     }
 
+    @GetMapping("/archived")
+    public List<SeasonDto> getArchived() {
+        return service.getArchived();
+    }
+
     @PostMapping
     @PreAuthorize("@authz.canManageRegion(#seasonDto.federationId)")
     public ResponseEntity<SeasonDto> create(@RequestBody SeasonDto seasonDto) {
@@ -46,7 +51,20 @@ public class SeasonController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("@authz.canManageSeason(#id)")
-    public void delete(@PathVariable String id) {
+    public ResponseEntity<Void> delete(@PathVariable String id) {
         service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/archive")
+    @PreAuthorize("@authz.canManageSeason(#id)")
+    public SeasonDto archive(@PathVariable String id) {
+        return service.archive(id);
+    }
+
+    @PostMapping("/{id}/unarchive")
+    @PreAuthorize("@authz.canManageSeason(#id)")
+    public SeasonDto unarchive(@PathVariable String id) {
+        return service.unarchive(id);
     }
 }

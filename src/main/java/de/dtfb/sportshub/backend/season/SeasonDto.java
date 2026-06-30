@@ -26,4 +26,7 @@ public class SeasonDto {
     /** Derived (not stored): the effective registration state right now. Read-only. */
     @JsonProperty("isOpen")
     private boolean open;
+
+    /** Set when the season is archived (soft-deleted); null while active. Read-only. */
+    private Instant archivedAt;
 }
