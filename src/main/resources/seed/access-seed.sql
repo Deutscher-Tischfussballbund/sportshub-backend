@@ -37,7 +37,8 @@ VALUES ('club-tfcm', 'TFC München', 'TFCM', 'München', TRUE, 'fed-by'),
 -- Demo team. team_admin below needs a TEAM to scope to, and it gives the
 -- nested-scope chain a leaf: fed-by (REGION) → club-tfcm (CLUB) → this team (TEAM).
 INSERT INTO team (id, name, club_id)
-VALUES ('team-tfcm-1', 'TFC München 1', 'club-tfcm');
+VALUES ('team-tfcm-1', 'TFC München 1', 'club-tfcm'),
+       ('team-tfcm-2', 'TFC München 2', 'club-tfcm');
 
 -- Players. dtfb_id matches the Keycloak username (the dev login maps username → dtfb_id).
 INSERT INTO player (id, dtfb_id, first_name, last_name, nationality, national_license, active)
@@ -54,3 +55,38 @@ VALUES ('ra-admin-glob', 'player-admin', 'ADMIN', 'GLOBAL', NULL, TIMESTAMP '202
        ('ra-region', 'player-region', 'REGION_ADMIN', 'REGION', 'fed-by', TIMESTAMP '2024-01-01 00:00:00'),
        ('ra-club', 'player-club', 'CLUB_ADMIN', 'CLUB', 'club-tfcm', TIMESTAMP '2024-01-01 00:00:00'),
        ('ra-team', 'player-team', 'TEAM_ADMIN', 'TEAM', 'team-tfcm-1', TIMESTAMP '2024-01-01 00:00:00');
+
+-- ---------------------------------------------------------------------------
+-- Demo season WITH recorded results — to exercise the guarded-delete flow in the UI:
+-- deleting it must be refused (409 SEASON_HAS_RESULTS) and offer "archive instead".
+-- Full spine under fed-by (Bayern): season → competition → discipline → stage → pool
+-- → round → match_day, with one CONFIRMED match-day and two standings.
+-- Expected 409 counts: competitions=1, matchDays=2, matchDaysWithResults=1, standings=2.
+-- ---------------------------------------------------------------------------
+INSERT INTO season (id, name, federation_id, start_date, end_date, registration_open)
+VALUES ('season-res', 'Saison 2023 (mit Ergebnissen)', 'fed-by', DATE '2023-09-01', DATE '2024-05-31', FALSE);
+
+INSERT INTO competition (id, season_id, name)
+VALUES ('comp-res', 'season-res', 'Bayernliga 2023');
+
+INSERT INTO discipline (id, competition_id)
+VALUES ('disc-res', 'comp-res');
+
+INSERT INTO stage (id, discipline_id, name)
+VALUES ('stage-res', 'disc-res', 'Hauptrunde');
+
+INSERT INTO pool (id, stage_id, name, pool_state, tournament_mode)
+VALUES ('pool-res', 'stage-res', 'Gruppe A', 'FINISHED', 'ROUND_ROBIN');
+
+INSERT INTO round (id, pool_id, name)
+VALUES ('round-res', 'pool-res', 'Runde 1');
+
+-- One match-day with a confirmed result (→ matchDaysWithResults = 1), one still open.
+INSERT INTO match_day (id, round_id, name, start_date, result_state)
+VALUES ('md-res-1', 'round-res', 'Spieltag 1', TIMESTAMP '2023-10-01 10:00:00', 'CONFIRMED'),
+       ('md-res-2', 'round-res', 'Spieltag 2', TIMESTAMP '2023-10-08 10:00:00', 'OPEN');
+
+-- Standings (→ standings = 2) — recorded results that block a hard delete.
+INSERT INTO standing (id, pool_id, team_id, played, wins, draws, losses, points, sets_won, sets_lost)
+VALUES ('st-res-1', 'pool-res', 'team-tfcm-1', 2, 2, 0, 0, 6, 6, 1),
+       ('st-res-2', 'pool-res', 'team-tfcm-2', 2, 0, 0, 2, 0, 1, 6);
