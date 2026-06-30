@@ -39,3 +39,8 @@ out/
 
 ### Sportshub ###
 /data
+
+# Local deployment secrets (compose reads this for ${...} interpolation).
+# Commit .env.example instead.
+.env
+!.env.example

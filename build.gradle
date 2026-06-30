@@ -55,3 +55,10 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// App, not a library: only the executable bootJar is wanted. Disabling the plain
+// `jar` task avoids a second build/libs/*-plain.jar (no Spring Boot loader), which
+// otherwise makes the Docker image's `COPY *.jar` ambiguous → JarLauncher not found.
+tasks.named('jar') {
+    enabled = false
+}

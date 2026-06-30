@@ -135,15 +135,30 @@ requests you can also import the OpenAPI URL into [Bruno](https://www.usebruno.c
 The backend ships as a container and runs as its **own** compose stack, separate from Keycloak. The
 two stacks share an external `dtfb` Docker network so the backend can reach Keycloak by service name.
 
-```shell
-docker network create dtfb        # one-time, shared with the Keycloak stack
+Configuration is supplied via a **`.env` file** next to `docker-compose.yaml` — Compose loads it
+automatically for the `${...}` placeholders in the compose file. Copy the committed template and
+fill it in (`.env` itself is git-ignored, so secrets never get committed):
 
+```shell
+cp .env.example .env              # then edit: set SPORTSHUB_DB_PASSWORD, KEYCLOAK_ISSUER_URI, …
+docker network create dtfb        # one-time, shared with the Keycloak stack
 docker compose build              # build the image locally, or `docker compose pull` a release
-SPORTSHUB_DB_PASSWORD=… \
-KEYCLOAK_ISSUER_URI=https://id.dtfb.de/realms/dtfb \
-SPORTSHUB_BOOTSTRAP_ADMIN_DTFB_ID=your.keycloak.username \
 docker compose up -d
 ```
+
+`.env` variables (see [`.env.example`](.env.example) for the full template):
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `SPORTSHUB_DB_PASSWORD` | **yes** | password for the `sportshub-db` MySQL (app + db container) |
+| `KEYCLOAK_ISSUER_URI` | **yes** | public Keycloak issuer; must match the token `iss` claim |
+| `SPORTSHUB_BOOTSTRAP_ADMIN_DTFB_ID` | first deploy | `dtfb_id` granted global admin on startup (idempotent) |
+| `SPORTSHUB_DB_USER` | no (`sportshub`) | DB username |
+| `KEYCLOAK_JWK_SET_URI` | no (internal default) | JWKS endpoint over the `dtfb` network |
+| `SPORTSHUB_TAG` | no (`latest`) | image tag to run; pin a release in prod |
+
+> The two **required** vars use `${VAR:?}` in the compose file, so `docker compose up` fails fast
+> with a clear message if they're missing.
 
 - [`Dockerfile`](Dockerfile) — multi-stage, Java 25, layered-jar extraction, non-root user.
 - [`docker-compose.yaml`](docker-compose.yaml) — `sportshub-backend` + a dedicated `sportshub-db`
