@@ -1,3 +1,8 @@
 spring:
     profiles:
         active: dev
+springdoc:
+    # Document every operation's response as application/json (springdoc otherwise
+    # defaults to `*/*`, which makes the generated typescript-angular client read
+    # bodies as Blobs → every parsed body is `{}`). Applies to all profiles.
+    default-produces-media-type: application/json
