@@ -22,11 +22,11 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    /** Allowed CORS origins for the API. Comma-separated; defaults to the local admin console. */
+    /** Allowed CORS origins for the API. Comma-separated; set per profile (see application-*.yaml). */
     private final List<String> allowedOrigins;
 
     public SecurityConfig(
-        @Value("${sportshub.cors.allowed-origins:http://localhost:4200}") List<String> allowedOrigins) {
+        @Value("${sportshub.cors.allowed-origins}") List<String> allowedOrigins) {
         this.allowedOrigins = allowedOrigins;
     }
 

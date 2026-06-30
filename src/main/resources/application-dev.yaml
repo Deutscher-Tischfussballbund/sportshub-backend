@@ -39,6 +39,10 @@ springdoc:
             use-pkce-with-authorization-code-grant: true
 server:
     port: 8082
+sportshub:
+    cors:
+        # Origin of the local admin console (the Angular dev server).
+        allowed-origins: http://localhost:4200
 logging:
     level:
         org.springframework.web: DEBUG
