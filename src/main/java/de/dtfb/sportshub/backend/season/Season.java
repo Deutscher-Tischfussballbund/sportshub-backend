@@ -29,4 +29,7 @@ public class Season extends BaseEntity {
     private boolean registrationOpen;            // manual master switch
     private Instant registrationOpensAt;
     private Instant registrationClosesAt;
+
+    /** Soft-delete marker: null = active; set = archived (hidden from active views, data kept). */
+    private Instant archivedAt;
 }

@@ -22,13 +22,15 @@ public class CompetitionService {
 
     @Transactional(readOnly = true)
     public List<CompetitionDto> getAll() {
-        return mapper.toDtoList(repository.findAll());
+        // Hide competitions whose season is archived (gateway into the archived subtree).
+        return mapper.toDtoList(repository.findBySeason_ArchivedAtIsNull());
     }
 
     @Transactional(readOnly = true)
     public CompetitionDto get(String id) {
-        Competition event = repository.findById(id).orElseThrow(
-            () -> new CompetitionNotFoundException(id));
+        Competition event = repository.findById(id)
+            .filter(c -> c.getSeason() == null || c.getSeason().getArchivedAt() == null)
+            .orElseThrow(() -> new CompetitionNotFoundException(id));
         return mapper.toDto(event);
     }
 
