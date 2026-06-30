@@ -87,6 +87,7 @@ Environment variables (prod):
 | `KEYCLOAK_ISSUER_URI` | `https://id.dtfb.de/realms/dtfb` | **public** issuer (validates the token `iss` claim) |
 | `KEYCLOAK_JWK_SET_URI` | `http://keycloak:8080/realms/dtfb/protocol/openid-connect/certs` | **internal** JWKS endpoint (key fetch) |
 | `SPORTSHUB_BOOTSTRAP_ADMIN_DTFB_ID` | *(unset)* | grants this `dtfb_id` global admin on startup — see below |
+| `SPORTSHUB_CORS_ALLOWED_ORIGINS` | `https://admin.dtfb.de` | allowed CORS origin(s) for the admin console (comma-separated) |
 
 ## Authentication & authorization
 
