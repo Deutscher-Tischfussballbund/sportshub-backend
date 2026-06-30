@@ -54,6 +54,22 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    // Tests run with dev (seed + schema) PLUS a `test` overlay that swaps in an isolated
+    // in-memory DB (src/test/resources/application-test.yaml) — keeps them off the file-based
+    // dev datasource (no ./data writes, no shutdown noise, no cross-context clobbering).
+    systemProperty 'spring.profiles.active', 'dev,test'
+    testLogging {
+        events 'failed', 'skipped'
+        exceptionFormat 'short'
+    }
+    // Make execution visible in CI: print a one-line summary of the whole run.
+    afterSuite { desc, result ->
+        if (desc.parent == null) {
+            println "Test result: ${result.resultType} — ${result.testCount} tests, " +
+                "${result.successfulTestCount} passed, ${result.failedTestCount} failed, " +
+                "${result.skippedTestCount} skipped"
+        }
+    }
 }
 
 // App, not a library: only the executable bootJar is wanted. Disabling the plain
