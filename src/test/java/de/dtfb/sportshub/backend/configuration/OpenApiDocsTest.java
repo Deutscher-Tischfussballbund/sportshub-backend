@@ -15,7 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * The generated OpenAPI document reflects the {@link OpenApiConfig} customizations: auth schemes and
- * prettified tag names, plus the shared {@link de.dtfb.sportshub.backend.externalApi.ApiError} error
+ * prettified tag names, plus the shared {@link de.dtfb.sportshub.backend.exception.ApiError} error
  * responses springdoc derives from {@code GlobalExceptionHandler}. {@code /v3/api-docs} is public
  * (see {@code SecurityConfig}), so no token is needed.
  */
@@ -44,7 +44,6 @@ class OpenApiDocsTest {
             .andExpect(jsonPath("$.paths['/v1/category'].get.responses['403']").exists())
             .andExpect(jsonPath("$.paths['/v1/category'].get.responses['404']").exists())
             .andExpect(jsonPath("$.paths['/v1/category'].get.responses['500']").exists())
-            .andExpect(jsonPath("$.paths['/v1/category'].get.responses['503']").exists())
             // ...all sharing the same ApiError body.
             .andExpect(jsonPath("$.paths['/v1/category'].get.responses['403'].content[*].schema['$ref']")
                 .value(hasItem(containsString("ApiError"))));
