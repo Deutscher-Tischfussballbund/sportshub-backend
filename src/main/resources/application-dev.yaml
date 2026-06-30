@@ -1,0 +1,46 @@
+spring:
+    application:
+        name: sportshub-backend
+    datasource:
+        url: jdbc:h2:file:./data/testdb;AUTO_SERVER=TRUE
+        driver-class-name: org.h2.Driver
+        username: sa
+        password:
+    h2:
+        console:
+            enabled: true
+    flyway:
+        # Dev uses H2 + Hibernate create-drop for a fast, throwaway schema each boot.
+        # Flyway's migrations are MySQL-specific (prod only), so keep it off here.
+        enabled: false
+    jpa:
+        hibernate:
+            ddl-auto: create-drop
+        defer-datasource-initialization: true
+    sql:
+        init:
+            mode: always
+            # Seed the access domain (federations, clubs, bootstrap admin) after schema creation.
+            data-locations: classpath:seed/access-seed.sql
+    servlet:
+        multipart:
+            max-file-size: 150MB
+            max-request-size: 180MB
+    security:
+        oauth2:
+            resourceserver:
+                jwt:
+                    issuer-uri: http://localhost:8084/realms/dtfb
+springdoc:
+    swagger-ui:
+        # Keycloak login from the "Authorize" dialog (public SPA client, PKCE).
+        oauth:
+            client-id: dtfb-admin-web
+            use-pkce-with-authorization-code-grant: true
+server:
+    port: 8082
+logging:
+    level:
+        org.springframework.web: DEBUG
+        org.springframework.web.multipart: DEBUG
+        org.springframework.security: DEBUG

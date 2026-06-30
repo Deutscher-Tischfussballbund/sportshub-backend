@@ -1,0 +1,50 @@
+spring:
+    application:
+        name: sportshub-backend
+    datasource:
+        # MySQL in its own container (see docker-compose.yaml). All values env-driven
+        # so the same image runs in any environment.
+        url: ${SPRING_DATASOURCE_URL:jdbc:mysql://sportshub-db:3306/sportshub}
+        username: ${SPRING_DATASOURCE_USERNAME:sportshub}
+        password: ${SPRING_DATASOURCE_PASSWORD}
+    flyway:
+        # Flyway owns the schema in prod. Runs db/migration/*.sql before Hibernate,
+        # then `validate` (below) asserts the entities match the migrated schema.
+        enabled: true
+    jpa:
+        hibernate:
+            # Flyway creates/evolves the schema; Hibernate only validates it matches
+            # the entities. Never let Hibernate mutate a Flyway-managed prod schema.
+            ddl-auto: validate
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.MySQLDialect
+    servlet:
+        multipart:
+            max-file-size: 150MB
+            max-request-size: 180MB
+    security:
+        oauth2:
+            resourceserver:
+                jwt:
+                    # PUBLIC issuer — must equal the `iss` claim Keycloak stamps
+                    # (its KC_HOSTNAME). Used as a string for claim validation; no
+                    # network call, so it does not couple startup to Keycloak.
+                    issuer-uri: ${KEYCLOAK_ISSUER_URI:https://id.dtfb.de/realms/dtfb}
+                    # INTERNAL JWKS endpoint, reached over the shared docker network.
+                    # Setting jwk-set-uri makes the decoder fetch keys lazily (on the
+                    # first token), so the backend boots even if Keycloak is not up yet.
+                    jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://keycloak:8080/realms/dtfb/protocol/openid-connect/certs}
+springdoc:
+    swagger-ui:
+        oauth:
+            client-id: dtfb-admin-web
+            use-pkce-with-authorization-code-grant: true
+server:
+    port: 8082
+sportshub:
+    bootstrap:
+        # dtfb_id granted GLOBAL ADMIN on startup so a fresh prod DB has a first
+        # admin (the dev seed is dev-only). Idempotent; unset = no-op. Set it for
+        # the first deploy, then it can stay (or be cleared) safely.
+        admin-dtfb-id: ${SPORTSHUB_BOOTSTRAP_ADMIN_DTFB_ID:}

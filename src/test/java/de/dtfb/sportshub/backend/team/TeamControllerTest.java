@@ -1,0 +1,115 @@
+package de.dtfb.sportshub.backend.team;
+
+import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+
+class TeamControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
+
+    String url;
+
+    @BeforeEach
+    void setupEach() throws Exception {
+        MvcResult team = createTeam();
+        url = team.getResponse().getHeader("Location");
+        assert url != null;
+    }
+
+    @Test
+    void getAllTeams() throws Exception {
+        mockMvc.perform(get("/v1/teams"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void getTeam_expectException() throws Exception {
+        mockMvc.perform(get("/v1/teams/" + NanoIdUtils.randomNanoId()))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void createAndGetTeam() throws Exception {
+        mockMvc.perform(get(url))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("Hand und Foos"));
+    }
+
+    @Test
+    void updateTeam() throws Exception {
+        mockMvc.perform(put(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                            {"name": "Jetlag"}
+                    """))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(get(url))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("Jetlag"));
+    }
+
+    @Test
+    void updateTeam_expectException() throws Exception {
+        mockMvc.perform(put("/v1/teams/" + NanoIdUtils.randomNanoId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                            {"name": "Tabledancers"}
+                    """))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteTeam() throws Exception {
+        mockMvc.perform(delete(url))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(get(url))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteTeam_expectException() throws Exception {
+        mockMvc.perform(delete("/v1/teams/" + NanoIdUtils.randomNanoId()))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void createTeam_withoutClub_isBadRequest() throws Exception {
+        mockMvc.perform(post("/v1/teams")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                            {"name": "Clubless"}
+                    """))
+            .andExpect(status().isBadRequest());
+    }
+
+    /**
+     * =========================================================
+     * helper operations
+     * =========================================================
+     */
+
+    //region helpers
+    private MvcResult createTeam() throws Exception {
+        String clubId = createClub();
+        return mockMvc.perform(post("/v1/teams")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "Hand und Foos", "clubId": "%s"}
+                    """, clubId)))
+            .andExpect(status().isCreated())
+            .andReturn();
+    }
+    //endregion
+}

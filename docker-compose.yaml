@@ -1,0 +1,74 @@
+# Backend deployment stack — intentionally separate from the Keycloak stack
+# (dtfb-keycloak/docker-compose.prod.yaml). The two share the external `dtfb`
+# network so the backend can reach Keycloak by service name.
+#
+# One-time, before first `up`:
+#   docker network create dtfb        # the shared network both stacks attach to
+#
+# `depends_on` only orders services WITHIN this file, so it gates the backend on
+# its own DB. The cross-stack dependency on Keycloak is handled by config, not
+# depends_on: jwk-set-uri makes JWKS fetch lazy, so the backend boots regardless
+# of Keycloak's state and `restart: unless-stopped` keeps both self-healing.
+#
+# Start:
+#   docker compose build                  # build the image locally, or:
+#   docker compose pull                   # pull the released tag from GHCR
+#   docker compose up -d
+
+services:
+  sportshub-backend:
+    image: ghcr.io/deutscher-tischfussballbund/sportshub-backend:${SPORTSHUB_TAG:-latest}
+    build: .
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://sportshub-db:3306/sportshub
+      - SPRING_DATASOURCE_USERNAME=${SPORTSHUB_DB_USER:-sportshub}
+      - SPRING_DATASOURCE_PASSWORD=${SPORTSHUB_DB_PASSWORD:?SPORTSHUB_DB_PASSWORD required}
+      # Public issuer (matches the token's iss claim) + internal JWKS over the dtfb net.
+      - KEYCLOAK_ISSUER_URI=${KEYCLOAK_ISSUER_URI:?KEYCLOAK_ISSUER_URI required (e.g. https://id.dtfb.de/realms/dtfb)}
+      - KEYCLOAK_JWK_SET_URI=${KEYCLOAK_JWK_SET_URI:-http://keycloak:8080/realms/dtfb/protocol/openid-connect/certs}
+      # First-admin bootstrap (dtfb_id / Keycloak username). Set for the first deploy
+      # so someone can administer; idempotent, so it can stay across restarts.
+      - SPORTSHUB_BOOTSTRAP_ADMIN_DTFB_ID=${SPORTSHUB_BOOTSTRAP_ADMIN_DTFB_ID:-}
+    ports:
+      # Bind to localhost only — the host reverse-proxy forwards the public API here.
+      - "127.0.0.1:8082:8082"
+    depends_on:
+      sportshub-db:
+        condition: service_healthy
+    networks:
+      - default   # backend ↔ its own DB
+      - dtfb       # backend ↔ Keycloak (shared external network)
+    healthcheck:
+      # temurin (debian) ships bash; /dev/tcp is a bash builtin TCP probe. A proper
+      # actuator /health endpoint would be better — add spring-boot-starter-actuator.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/8082"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  sportshub-db:
+    image: mysql:8.4
+    environment:
+      - MYSQL_DATABASE=sportshub
+      - MYSQL_USER=${SPORTSHUB_DB_USER:-sportshub}
+      - MYSQL_PASSWORD=${SPORTSHUB_DB_PASSWORD:?SPORTSHUB_DB_PASSWORD required}
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+    volumes:
+      - sportshub-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u $$MYSQL_USER -p$$MYSQL_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+networks:
+  dtfb:
+    external: true
+
+volumes:
+  sportshub-db-data:

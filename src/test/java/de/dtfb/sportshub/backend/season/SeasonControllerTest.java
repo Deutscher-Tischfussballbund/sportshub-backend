@@ -1,0 +1,106 @@
+package de.dtfb.sportshub.backend.season;
+
+import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+
+class SeasonControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
+
+    String url;
+
+    @BeforeEach
+    void setupEach() throws Exception {
+        MvcResult season = createSeason();
+        url = season.getResponse().getHeader("Location");
+        assert url != null;
+    }
+
+    @Test
+    void getAllSeasons() throws Exception {
+        mockMvc.perform(get("/v1/seasons"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void getSeason_expectException() throws Exception {
+        mockMvc.perform(get("/v1/seasons/" + NanoIdUtils.randomNanoId()))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void createAndGetSeason() throws Exception {
+        mockMvc.perform(get(url))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("2000"));
+    }
+
+    @Test
+    void updateSeason() throws Exception {
+        String federationId = createFederation();
+        mockMvc.perform(put(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "2024", "federationId": "%s"}
+                    """, federationId)))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(get(url))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("2024"));
+    }
+
+    @Test
+    void updateSeason_expectException() throws Exception {
+        mockMvc.perform(put("/v1/seasons/" + NanoIdUtils.randomNanoId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                            {"name": "2024"}
+                    """))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteSeason() throws Exception {
+        mockMvc.perform(delete(url))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(get(url))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteSeason_expectException() throws Exception {
+        mockMvc.perform(delete("/v1/seasons/" + NanoIdUtils.randomNanoId()))
+            .andExpect(status().isNotFound());
+    }
+
+    /**
+     * =========================================================
+     * helper operations
+     * =========================================================
+     */
+
+    //region helpers
+    private MvcResult createSeason() throws Exception {
+        String federationId = createFederation();
+        return mockMvc.perform(post("/v1/seasons")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "2000", "federationId": "%s"}
+                    """, federationId)))
+            .andExpect(status().isCreated())
+            .andReturn();
+    }
+    //endregion
+}
