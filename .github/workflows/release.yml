@@ -41,6 +41,9 @@ jobs:
         with:
           context: .
           push: true
+          # GHCR chokes on buildx's default SLSA provenance/attestation manifest for a new
+          # package ("error writing layer blob: not_found"). Push a plain image instead.
+          provenance: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
