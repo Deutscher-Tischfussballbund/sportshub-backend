@@ -3,8 +3,9 @@
 > Single source of truth for the **season → competition → division** structure, the
 > **federation-configurable rule system**, and **team registration** (placement + roster).
 > The backend owns and enforces this model; frontends only *consume* it.
-> Companion to [`authorization-model.md`](./authorization-model.md) (roles & scope) and
-> [`role-concept.md`](./role-concept.md).
+> Companion to [`authorization-model.md`](./authorization-model.md) (roles & scope),
+> [`role-concept.md`](./role-concept.md), and
+> [`season-archiving-and-deletion.md`](./season-archiving-and-deletion.md) (delete/archive policy).
 
 ## 0. Context & goal
 

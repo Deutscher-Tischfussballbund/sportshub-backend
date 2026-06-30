@@ -22,12 +22,12 @@ public class RoundService {
 
     @Transactional(readOnly = true)
     public List<RoundDto> getAll() {
-        return mapper.toDtoList(repository.findAll());
+        return mapper.toDtoList(repository.findAllVisible());
     }
 
     @Transactional(readOnly = true)
     public RoundDto get(String id) {
-        Round round = repository.findById(id).orElseThrow(
+        Round round = repository.findVisibleById(id).orElseThrow(
             () -> new RoundNotFoundException(id));
         return mapper.toDto(round);
     }

@@ -31,7 +31,7 @@ public class StandingService {
 
     @Transactional(readOnly = true)
     public List<StandingDto> getByPool(String poolId) {
-        Pool pool = poolRepository.findById(poolId)
+        Pool pool = poolRepository.findVisibleById(poolId)
             .orElseThrow(() -> new PoolNotFoundException(poolId));
         return standingRepository.findByPoolOrderByPointsDescSetsWonDesc(pool).stream()
             .map(this::toDto)

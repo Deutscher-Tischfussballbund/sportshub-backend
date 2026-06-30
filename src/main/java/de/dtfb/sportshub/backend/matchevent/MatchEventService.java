@@ -27,12 +27,12 @@ public class MatchEventService {
 
     @Transactional(readOnly = true)
     public List<MatchEventDto> getAll() {
-        return mapper.toDtoList(repository.findAll());
+        return mapper.toDtoList(repository.findAllVisible());
     }
 
     @Transactional(readOnly = true)
     public MatchEventDto get(String id) {
-        MatchEvent matchEvent = repository.findById(id).orElseThrow(
+        MatchEvent matchEvent = repository.findVisibleById(id).orElseThrow(
             () -> new MatchEventNotFoundException(id));
         return mapper.toDto(matchEvent);
     }

@@ -28,12 +28,13 @@ public class DisciplineService {
 
     @Transactional(readOnly = true)
     public List<DisciplineDto> getAll() {
-        return mapper.toDtoList(repository.findAll());
+        return mapper.toDtoList(repository.findAllVisible());
     }
 
     @Transactional(readOnly = true)
     public DisciplineDto get(String id) {
-        return mapper.toDto(getDiscipline(id));
+        return mapper.toDto(repository.findVisibleById(id).orElseThrow(
+            () -> new DisciplineNotFoundException(id)));
     }
 
     @Transactional

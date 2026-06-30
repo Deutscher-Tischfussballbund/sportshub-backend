@@ -22,12 +22,12 @@ public class PoolService {
 
     @Transactional(readOnly = true)
     public List<PoolDto> getAll() {
-        return mapper.toDtoList(repository.findAll());
+        return mapper.toDtoList(repository.findAllVisible());
     }
 
     @Transactional(readOnly = true)
     public PoolDto get(String id) {
-        Pool pool = repository.findById(id).orElseThrow(
+        Pool pool = repository.findVisibleById(id).orElseThrow(
             () -> new PoolNotFoundException(id));
         return mapper.toDto(pool);
     }
