@@ -34,10 +34,23 @@ VALUES ('club-tfcm', 'TFC München', 'TFCM', 'München', TRUE, 'fed-by'),
        ('club-lek', 'Leipzig Kickers', 'LEK', 'Leipzig', FALSE, 'fed-sn'),
        ('club-mtfv', 'Mannheimer TFV', 'MTFV', 'Mannheim', TRUE, 'fed-bw');
 
--- Bootstrap global admin (dtfb_id "admin" matches the Keycloak dev user).
+-- Demo team. team_admin below needs a TEAM to scope to, and it gives the
+-- nested-scope chain a leaf: fed-by (REGION) → club-tfcm (CLUB) → this team (TEAM).
+INSERT INTO team (id, name, club_id)
+VALUES ('team-tfcm-1', 'TFC München 1', 'club-tfcm');
+
+-- Players. dtfb_id matches the Keycloak username (the dev login maps username → dtfb_id).
 INSERT INTO player (id, dtfb_id, first_name, last_name, nationality, national_license, active)
 VALUES ('player-admin', 'admin', 'DTFB', 'Administrator', 'DE', 'A', TRUE),
-       ('player-test', 'test', 'Test', 'Player', 'DE', 'A', TRUE);
+       ('player-test', 'test', 'Test', 'Player', 'DE', 'A', TRUE),
+       ('player-region', 'region', 'Regina', 'Region', 'DE', 'A', TRUE),
+       ('player-club', 'club', 'Claus', 'Club', 'DE', 'A', TRUE),
+       ('player-team', 'team', 'Tom', 'Team', 'DE', 'A', TRUE);
 
+-- Role grants. Bootstrap global admin plus one admin per scope tier of the
+-- fed-by → club-tfcm → team-tfcm-1 chain, so each scope level is testable.
 INSERT INTO role_assignment (id, player_id, role, scope_type, scope_id, created_at)
-VALUES ('ra-admin-glob', 'player-admin', 'ADMIN', 'GLOBAL', NULL, TIMESTAMP '2024-01-01 00:00:00');
+VALUES ('ra-admin-glob', 'player-admin', 'ADMIN', 'GLOBAL', NULL, TIMESTAMP '2024-01-01 00:00:00'),
+       ('ra-region', 'player-region', 'REGION_ADMIN', 'REGION', 'fed-by', TIMESTAMP '2024-01-01 00:00:00'),
+       ('ra-club', 'player-club', 'CLUB_ADMIN', 'CLUB', 'club-tfcm', TIMESTAMP '2024-01-01 00:00:00'),
+       ('ra-team', 'player-team', 'TEAM_ADMIN', 'TEAM', 'team-tfcm-1', TIMESTAMP '2024-01-01 00:00:00');
