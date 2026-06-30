@@ -1,0 +1,20 @@
+# Build output / local state — never belongs in the image context.
+build/
+.gradle/
+data/
+out/
+
+# VCS / IDE / OS noise
+.git/
+.github/
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Docs / compose — not needed to build the jar
+docker-compose*.yaml
+Dockerfile
+.dockerignore
+README*.md
+docs/

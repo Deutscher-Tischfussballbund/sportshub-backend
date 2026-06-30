@@ -29,6 +29,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.flywaydb:flyway-core'
+    // Spring Boot 4 split Flyway auto-configuration into its own module (like h2console).
+    implementation 'org.springframework.boot:spring-boot-flyway'
+    runtimeOnly 'org.flywaydb:flyway-mysql' // prod schema migrations (dev uses H2 + ddl-auto)
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation "org.mapstruct:mapstruct:1.6.3"

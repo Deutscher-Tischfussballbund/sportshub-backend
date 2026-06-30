@@ -9,6 +9,10 @@ spring:
     h2:
         console:
             enabled: true
+    flyway:
+        # Dev uses H2 + Hibernate create-drop for a fast, throwaway schema each boot.
+        # Flyway's migrations are MySQL-specific (prod only), so keep it off here.
+        enabled: false
     jpa:
         hibernate:
             ddl-auto: create-drop
