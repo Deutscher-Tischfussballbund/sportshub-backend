@@ -19,13 +19,13 @@ public class FederationController {
     }
 
     @GetMapping
-    public List<FederationDto> getAll() {
+    public List<FederationDto> getAllFederations() {
         return service.getAll();
     }
 
     @PostMapping
     @PreAuthorize("@authz.isAdmin()")
-    public ResponseEntity<FederationDto> create(@RequestBody FederationDto federationDto) {
+    public ResponseEntity<FederationDto> createFederation(@RequestBody FederationDto federationDto) {
         FederationDto returnedDto = service.create(federationDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId()).build().toUri();
@@ -34,19 +34,19 @@ public class FederationController {
     }
 
     @GetMapping("/{id}")
-    public FederationDto get(@PathVariable String id) {
+    public FederationDto getFederation(@PathVariable String id) {
         return service.get(id);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("@authz.isAdmin()")
-    public FederationDto update(@PathVariable String id, @RequestBody FederationDto federationDto) {
+    public FederationDto updateFederation(@PathVariable String id, @RequestBody FederationDto federationDto) {
         return service.update(id, federationDto);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("@authz.isAdmin()")
-    public void delete(@PathVariable String id) {
+    public void deleteFederation(@PathVariable String id) {
         service.delete(id);
     }
 }

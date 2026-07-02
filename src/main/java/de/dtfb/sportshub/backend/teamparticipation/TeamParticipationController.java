@@ -19,14 +19,14 @@ public class TeamParticipationController {
     }
 
     @GetMapping
-    public List<TeamParticipationDto> getAll(@RequestParam(required = false) String seasonId,
+    public List<TeamParticipationDto> getAllTeamParticipations(@RequestParam(required = false) String seasonId,
                                              @RequestParam(required = false) String competitionId) {
         return service.getAll(seasonId, competitionId);
     }
 
     @PostMapping
     @PreAuthorize("@authz.canManageCompetition(#teamParticipationDto.competitionId)")
-    public ResponseEntity<TeamParticipationDto> create(@RequestBody TeamParticipationDto teamParticipationDto) {
+    public ResponseEntity<TeamParticipationDto> createTeamParticipation(@RequestBody TeamParticipationDto teamParticipationDto) {
         TeamParticipationDto returnedDto = service.create(teamParticipationDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId()).build().toUri();
@@ -35,19 +35,19 @@ public class TeamParticipationController {
     }
 
     @GetMapping("/{id}")
-    public TeamParticipationDto get(@PathVariable String id) {
+    public TeamParticipationDto getTeamParticipation(@PathVariable String id) {
         return service.get(id);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("@authz.canManageParticipation(#id)")
-    public TeamParticipationDto update(@PathVariable String id, @RequestBody TeamParticipationDto teamParticipationDto) {
+    public TeamParticipationDto updateTeamParticipation(@PathVariable String id, @RequestBody TeamParticipationDto teamParticipationDto) {
         return service.update(id, teamParticipationDto);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("@authz.canManageParticipation(#id)")
-    public void delete(@PathVariable String id) {
+    public void deleteTeamParticipation(@PathVariable String id) {
         service.delete(id);
     }
 }

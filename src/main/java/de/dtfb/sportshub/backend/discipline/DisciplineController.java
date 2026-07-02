@@ -19,13 +19,13 @@ public class DisciplineController {
     }
 
     @GetMapping
-    public List<DisciplineDto> getAll() {
+    public List<DisciplineDto> getAllDisciplines() {
         return service.getAll();
     }
 
     @PostMapping
     @PreAuthorize("@authz.canManageCompetition(#disciplineDto.competitionId)")
-    public ResponseEntity<DisciplineDto> create(@RequestBody DisciplineDto disciplineDto) {
+    public ResponseEntity<DisciplineDto> createDiscipline(@RequestBody DisciplineDto disciplineDto) {
         DisciplineDto returnedDto = service.create(disciplineDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId()).build().toUri();
@@ -34,19 +34,19 @@ public class DisciplineController {
     }
 
     @GetMapping("/{id}")
-    public DisciplineDto get(@PathVariable String id) {
+    public DisciplineDto getDiscipline(@PathVariable String id) {
         return service.get(id);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("@authz.canManageDiscipline(#id)")
-    public DisciplineDto update(@PathVariable String id, @RequestBody DisciplineDto eventDto) {
+    public DisciplineDto updateDiscipline(@PathVariable String id, @RequestBody DisciplineDto eventDto) {
         return service.update(id, eventDto);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("@authz.canManageDiscipline(#id)")
-    public void delete(@PathVariable String id) {
+    public void deleteDiscipline(@PathVariable String id) {
         service.delete(id);
     }
 }

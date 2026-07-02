@@ -19,13 +19,13 @@ public class MatchSetController {
     }
 
     @GetMapping
-    public List<MatchSetDto> getAll() {
+    public List<MatchSetDto> getAllMatchSets() {
         return service.getAll();
     }
 
     @PostMapping
     @PreAuthorize("@authz.canOrganizeMatch(#matchSetDto.matchId)")
-    public ResponseEntity<MatchSetDto> create(@RequestBody MatchSetDto matchSetDto) {
+    public ResponseEntity<MatchSetDto> createMatchSet(@RequestBody MatchSetDto matchSetDto) {
         MatchSetDto returnedDto = service.create(matchSetDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId()).build().toUri();
@@ -34,19 +34,19 @@ public class MatchSetController {
     }
 
     @GetMapping("/{id}")
-    public MatchSetDto get(@PathVariable String id) {
+    public MatchSetDto getMatchSet(@PathVariable String id) {
         return service.get(id);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("@authz.canOrganizeMatchSet(#id)")
-    public MatchSetDto update(@PathVariable String id, @RequestBody MatchSetDto matchSetDto) {
+    public MatchSetDto updateMatchSet(@PathVariable String id, @RequestBody MatchSetDto matchSetDto) {
         return service.update(id, matchSetDto);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("@authz.canOrganizeMatchSet(#id)")
-    public void delete(@PathVariable String id) {
+    public void deleteMatchSet(@PathVariable String id) {
         service.delete(id);
     }
 }

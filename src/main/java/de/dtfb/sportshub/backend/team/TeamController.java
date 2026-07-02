@@ -19,7 +19,7 @@ public class TeamController {
     }
 
     @GetMapping
-    public List<TeamDto> getAll() {
+    public List<TeamDto> getAllTeams() {
         return service.getAll();
     }
 
@@ -27,7 +27,7 @@ public class TeamController {
     // Admin of the target club (or its region / global). Every team belongs to a club
     // (the service rejects a missing clubId), so there is no clubless path here.
     @PreAuthorize("@authz.canManageClub(#teamDto.clubId)")
-    public ResponseEntity<TeamDto> create(@RequestBody TeamDto teamDto) {
+    public ResponseEntity<TeamDto> createTeam(@RequestBody TeamDto teamDto) {
         TeamDto returnedDto = service.create(teamDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId()).build().toUri();
@@ -36,19 +36,19 @@ public class TeamController {
     }
 
     @GetMapping("/{id}")
-    public TeamDto get(@PathVariable String id) {
+    public TeamDto getTeam(@PathVariable String id) {
         return service.get(id);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("@authz.canManageTeam(#id)")
-    public TeamDto update(@PathVariable String id, @RequestBody TeamDto teamDto) {
+    public TeamDto updateTeam(@PathVariable String id, @RequestBody TeamDto teamDto) {
         return service.update(id, teamDto);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("@authz.canManageTeam(#id)")
-    public void delete(@PathVariable String id) {
+    public void deleteTeam(@PathVariable String id) {
         service.delete(id);
     }
 }

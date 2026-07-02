@@ -19,13 +19,13 @@ public class LocationController {
     }
 
     @GetMapping
-    public List<LocationDto> getAll() {
+    public List<LocationDto> getAllLocations() {
         return service.getAll();
     }
 
     @PostMapping
     @PreAuthorize("@authz.canManageRegion(#locationDto.federationId)")
-    public ResponseEntity<LocationDto> create(@RequestBody LocationDto locationDto) {
+    public ResponseEntity<LocationDto> createLocation(@RequestBody LocationDto locationDto) {
         LocationDto returnedDto = service.create(locationDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId()).build().toUri();
@@ -34,19 +34,19 @@ public class LocationController {
     }
 
     @GetMapping("/{id}")
-    public LocationDto get(@PathVariable String id) {
+    public LocationDto getLocation(@PathVariable String id) {
         return service.get(id);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("@authz.canManageLocation(#id)")
-    public LocationDto update(@PathVariable String id, @RequestBody LocationDto locationDto) {
+    public LocationDto updateLocation(@PathVariable String id, @RequestBody LocationDto locationDto) {
         return service.update(id, locationDto);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("@authz.canManageLocation(#id)")
-    public void delete(@PathVariable String id) {
+    public void deleteLocation(@PathVariable String id) {
         service.delete(id);
     }
 }

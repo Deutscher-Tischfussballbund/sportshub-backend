@@ -22,7 +22,7 @@ public class SeasonController {
     }
 
     @GetMapping
-    public List<SeasonDto> getAll() {
+    public List<SeasonDto> getAllSeasons() {
         return service.getAll();
     }
 
@@ -33,7 +33,7 @@ public class SeasonController {
 
     @PostMapping
     @PreAuthorize("@authz.canManageRegion(#seasonDto.federationId)")
-    public ResponseEntity<SeasonDto> create(@RequestBody SeasonDto seasonDto) {
+    public ResponseEntity<SeasonDto> createSeason(@RequestBody SeasonDto seasonDto) {
         SeasonDto returnedDto = service.create(seasonDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId()).build().toUri();
@@ -42,13 +42,13 @@ public class SeasonController {
     }
 
     @GetMapping("/{id}")
-    public SeasonDto get(@PathVariable String id) {
+    public SeasonDto getSeason(@PathVariable String id) {
         return service.get(id);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("@authz.canManageSeason(#id)")
-    public SeasonDto update(@PathVariable String id, @RequestBody SeasonDto seasonDto) {
+    public SeasonDto updateSeason(@PathVariable String id, @RequestBody SeasonDto seasonDto) {
         return service.update(id, seasonDto);
     }
 
@@ -57,7 +57,7 @@ public class SeasonController {
     @ApiResponse(responseCode = "204", description = "Season deleted")
     @ApiResponse(responseCode = "409", description = "Season has recorded results — archive it instead",
         content = @Content(schema = @Schema(implementation = SeasonDeletionBlockedError.class)))
-    public ResponseEntity<Void> delete(@PathVariable String id) {
+    public ResponseEntity<Void> deleteSeason(@PathVariable String id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }

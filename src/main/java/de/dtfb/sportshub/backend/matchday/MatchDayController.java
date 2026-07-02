@@ -21,13 +21,13 @@ public class MatchDayController {
     }
 
     @GetMapping
-    public List<MatchDayDto> getAll() {
+    public List<MatchDayDto> getAllMatchDays() {
         return service.getAll();
     }
 
     @PostMapping
     @PreAuthorize("@authz.canOrganizeRound(#matchDayDto.roundId)")
-    public ResponseEntity<MatchDayDto> create(@RequestBody MatchDayDto matchDayDto) {
+    public ResponseEntity<MatchDayDto> createMatchDay(@RequestBody MatchDayDto matchDayDto) {
         MatchDayDto returnedDto = service.create(matchDayDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId()).build().toUri();
@@ -36,19 +36,19 @@ public class MatchDayController {
     }
 
     @GetMapping("/{id}")
-    public MatchDayDto get(@PathVariable String id) {
+    public MatchDayDto getMatchDay(@PathVariable String id) {
         return service.get(id);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("@authz.canOrganizeMatchDay(#id)")
-    public MatchDayDto update(@PathVariable String id, @RequestBody MatchDayDto matchDayDto) {
+    public MatchDayDto updateMatchDay(@PathVariable String id, @RequestBody MatchDayDto matchDayDto) {
         return service.update(id, matchDayDto);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("@authz.canOrganizeMatchDay(#id)")
-    public void delete(@PathVariable String id) {
+    public void deleteMatchDay(@PathVariable String id) {
         service.delete(id);
     }
 

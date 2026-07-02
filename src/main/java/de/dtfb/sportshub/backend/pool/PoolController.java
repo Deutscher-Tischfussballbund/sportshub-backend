@@ -20,13 +20,13 @@ public class PoolController {
     }
 
     @GetMapping
-    public List<PoolDto> getAll() {
+    public List<PoolDto> getAllPools() {
         return service.getAll();
     }
 
     @PostMapping
     @PreAuthorize("@authz.canOrganizeStage(#poolDto.stageId)")
-    public ResponseEntity<PoolDto> create(@Valid @RequestBody PoolDto poolDto) {
+    public ResponseEntity<PoolDto> createPool(@Valid @RequestBody PoolDto poolDto) {
         PoolDto returnedDto = service.create(poolDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId()).build().toUri();
@@ -35,19 +35,19 @@ public class PoolController {
     }
 
     @GetMapping("/{id}")
-    public PoolDto get(@PathVariable String id) {
+    public PoolDto getPool(@PathVariable String id) {
         return service.get(id);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("@authz.canOrganizePool(#id)")
-    public PoolDto update(@PathVariable String id, @RequestBody PoolDto poolDto) {
+    public PoolDto updatePool(@PathVariable String id, @RequestBody PoolDto poolDto) {
         return service.update(id, poolDto);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("@authz.canOrganizePool(#id)")
-    public void delete(@PathVariable String id) {
+    public void deletePool(@PathVariable String id) {
         service.delete(id);
     }
 }
