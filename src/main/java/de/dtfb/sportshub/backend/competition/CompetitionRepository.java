@@ -11,4 +11,7 @@ public interface CompetitionRepository extends JpaRepository<Competition, String
 
     /** Competitions of active (non-archived) seasons — hides an archived season's subtree. */
     List<Competition> findBySeason_ArchivedAtIsNull();
+
+    /** Competitions of one season (used by copy-forward to walk the source subtree). */
+    List<Competition> findBySeasonId(String seasonId);
 }

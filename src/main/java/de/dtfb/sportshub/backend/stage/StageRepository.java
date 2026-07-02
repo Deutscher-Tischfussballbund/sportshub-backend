@@ -10,6 +10,9 @@ import java.util.Optional;
 public interface StageRepository extends JpaRepository<Stage, String> {
     Optional<Stage> findByDisciplineAndName(Discipline discipline, String name);
 
+    /** Stages of one discipline (copy-forward source walk). */
+    List<Stage> findByDisciplineId(String disciplineId);
+
     @Query("select e from Stage e where e.discipline.competition.season.archivedAt is null")
     List<Stage> findAllVisible();
 

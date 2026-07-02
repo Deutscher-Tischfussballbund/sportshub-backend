@@ -19,4 +19,10 @@ public interface TeamParticipationRepository extends JpaRepository<TeamParticipa
 
     @Query("select p from TeamParticipation p where p.competition.season.id = :seasonId and p.competition.season.archivedAt is null")
     List<TeamParticipation> findVisibleBySeasonId(String seasonId);
+
+    /** All participations of a season (copy-forward source walk — ignores archived filtering). */
+    List<TeamParticipation> findByCompetition_Season_Id(String seasonId);
+
+    /** Whether any participation already exists in a season (copy-forward target guard). */
+    boolean existsByCompetition_Season_Id(String seasonId);
 }
