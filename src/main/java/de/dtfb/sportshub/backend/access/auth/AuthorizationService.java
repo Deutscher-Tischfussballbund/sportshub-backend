@@ -141,6 +141,34 @@ public class AuthorizationService {
     }
 
     /**
+     * May edit/submit the roster of the given participation (L2): the {@code team_admin} of the
+     * participation's team, or an admin above it (club/region/global). Same authority as representing
+     * the team in the result flow — see {@link #canReportMatchDay}.
+     */
+    public boolean canEditRoster(String participationId) {
+        List<RoleAssignment> roles = currentRoles();
+        if (AccessRoles.isGlobalAdmin(roles)) {
+            return true;
+        }
+        TeamParticipation participation = participationId == null
+            ? null : teamParticipationRepository.findById(participationId).orElse(null);
+        Team team = participation == null ? null : participation.getTeam();
+        return canRepresent(roles, team);
+    }
+
+    /**
+     * May confirm/reopen the roster of the given participation (L2): an admin ABOVE the team
+     * (club/region/global) — deliberately NOT the {@code team_admin} who submits, so the final say is
+     * separate from the submission.
+     */
+    public boolean canConfirmRoster(String participationId) {
+        TeamParticipation participation = participationId == null
+            ? null : teamParticipationRepository.findById(participationId).orElse(null);
+        Team team = participation == null ? null : participation.getTeam();
+        return team != null && canManageScope(currentRoles(), ScopeType.TEAM, team.getId());
+    }
+
+    /**
      * May administer the given location: a venue belongs to a region via
      * {@link Location#getFederation()} (or is global if region-less, then admin-only).
      */
