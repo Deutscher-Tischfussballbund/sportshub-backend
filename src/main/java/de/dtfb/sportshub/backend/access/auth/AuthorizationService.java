@@ -21,6 +21,8 @@ import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.season.SeasonRepository;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamRepository;
+import de.dtfb.sportshub.backend.teamparticipation.TeamParticipation;
+import de.dtfb.sportshub.backend.teamparticipation.TeamParticipationRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -55,6 +57,7 @@ public class AuthorizationService {
     private final SeasonRepository seasonRepository;
     private final LocationRepository locationRepository;
     private final MatchDayRepository matchDayRepository;
+    private final TeamParticipationRepository teamParticipationRepository;
     private final CompetitionResolver competitionResolver;
 
     public AuthorizationService(PlayerRegistryService registry,
@@ -65,6 +68,7 @@ public class AuthorizationService {
                                 SeasonRepository seasonRepository,
                                 LocationRepository locationRepository,
                                 MatchDayRepository matchDayRepository,
+                                TeamParticipationRepository teamParticipationRepository,
                                 CompetitionResolver competitionResolver) {
         this.registry = registry;
         this.roleAssignmentRepository = roleAssignmentRepository;
@@ -74,6 +78,7 @@ public class AuthorizationService {
         this.seasonRepository = seasonRepository;
         this.locationRepository = locationRepository;
         this.matchDayRepository = matchDayRepository;
+        this.teamParticipationRepository = teamParticipationRepository;
         this.competitionResolver = competitionResolver;
     }
 
@@ -115,6 +120,24 @@ public class AuthorizationService {
     /** May administer the given competition's meta (its region's admin, or global) — see the COMPETITION scope. */
     public boolean canManageCompetition(String competitionId) {
         return canManageScope(currentRoles(), ScopeType.COMPETITION, competitionId);
+    }
+
+    /**
+     * May administer the given team participation (placement): it belongs to a competition and thus to
+     * that competition's season → region, so the region's admin (or a global admin) manages it. This is
+     * region placement authority — the same scope as editing the season itself (§6 of the model).
+     */
+    public boolean canManageParticipation(String participationId) {
+        List<RoleAssignment> roles = currentRoles();
+        if (AccessRoles.isGlobalAdmin(roles)) {
+            return true;
+        }
+        TeamParticipation participation = participationId == null
+            ? null : teamParticipationRepository.findById(participationId).orElse(null);
+        Competition competition = participation == null ? null : participation.getCompetition();
+        Season season = competition == null ? null : competition.getSeason();
+        Federation region = season == null ? null : season.getFederation();
+        return region != null && isRegionAdmin(roles, region.getId());
     }
 
     /**
