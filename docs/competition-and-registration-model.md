@@ -93,89 +93,76 @@ Competition {
 }
 ```
 
-### 3.4 `TeamParticipation` — placement (NEW)
+### 3.4 `TeamParticipation` — placement (NEW) ✅ L1 built
 
 ```
 TeamParticipation {
-  team, competition, season,             // a team's entry in one competition+season
-  pool,                                  // the Division it is placed into
+  team, competition,                     // a team's entry in one competition
+  pool?,                                 // the Division it is placed into (null = registered, unplaced)
   copiedFromParticipationId?,            // carry-over chain (promotion/relegation history)
+  rosterStatus,                          // roster lifecycle (§3.6): DRAFT → SUBMITTED → CONFIRMED
 }
 ```
 - Owned by `REGION_ADMIN`. Created en masse by **copy-forward**, then edited
   (promote/relegate = move to another `Pool`; add/drop teams).
 - A team may have several participations in one season (league + cup).
+- **The season is derived from the competition** (a competition belongs to exactly one season), so
+  it is not stored on the participation — avoids any season↔competition mismatch.
 
-### 3.5 `RosterEntry` — roster, first-class & auditable (NEW)
+### 3.5 `RosterEntry` — roster, first-class & auditable (NEW) ✅ L2 built
 
 ```
 RosterEntry {
   participation,                         // belongs to a TeamParticipation
   player,                                // existing Player
-  addedAt, removedAt?,                   // timestamps → rule evaluation ("cast after deadline?")
-  status,
+  addedAt, removedAt?,                   // membership over time; removal is a SOFT-DELETE (row kept)
 }
 ```
-First-class (not a `playerIds[]` blob) so rules like *"no new members X days before
-playoffs"* and transfer history are answerable and auditable.
+First-class (not a `playerIds[]` blob) so transfer history is answerable and auditable. The active
+roster = entries with `removedAt == null`. There is **no per-entry status** — the lifecycle is a
+property of the *whole* roster (§3.6), a player is simply present or removed.
 
-### 3.6 Roster lifecycle (on the participation)
+### 3.6 Roster lifecycle (on the participation) ✅ L2 built
 
 ```
 DRAFT ──submit──▶ SUBMITTED ──confirm──▶ CONFIRMED
   ▲                   │                       │
   └──── reopen ───────┴───────── reopen ──────┘   (by an admin with final say)
 ```
-Team admin edits in `DRAFT`; **submit** locks the roster; an admin **confirms** (or reopens).
-The `Season` window + `RuleSet` deadlines gate who may do what, when.
+The status is `TeamParticipation.rosterStatus` — one lifecycle per team's roster (whole-roster
+completeness/approval, not per player). Team admin edits in `DRAFT`; **submit** locks the roster; an
+admin **confirms** (or reopens). Editing (add/remove/submit) is a hard rule gated by
+`Season.registrationOpen` + the `DRAFT` state; confirm/reopen are admin lifecycle moves.
 
-## 4. RuleSet — federation-configurable rules
+## 4. Rules as distributed settings (RuleSet dropped)
 
-Rules are **configuration**, not code. Stored **hybrid**: typed columns for known rules +
-a JSON blob for federation-specific extras.
+> **Decision update:** the configurable `RuleSet` engine (typed+JSON storage, federation→competition
+> resolution hierarchy, relative deadlines) is **dropped**. It was over-engineered for current needs.
 
-```
-RuleSet {
-  // typed (known) ──────────────────────────────
-  pointSystem: { win, draw, loss, ... },         // also feeds StandingController
-  rosterRules: { minSize, maxSize, ... },
-  deadlines: [ Deadline ],
-  // extensible ─────────────────────────────────
-  extra: JSON,                                    // federation-specific knobs
-}
+Instead, **each rule is a plain setting on whichever entity it naturally belongs to**, enforced by
+hardwired checks in the services (and surfaced in the frontend). This is simpler, discoverable, and
+type-safe — at the cost of a schema change to add a new rule (acceptable; rules are added rarely).
 
-Deadline {
-  key,                                            // e.g. "ROSTER_LOCK", "TRANSFER", "WITHDRAWAL"
-  // EITHER absolute OR relative to a competition-tree milestone:
-  absoluteAt?: Instant,
-  relativeToStageId?, offsetDays?,                // e.g. playoff Stage.startDate − 14d
-}
-```
-
-**Resolution hierarchy** (most specific wins):
+Rules live where they fit, e.g.:
 
 ```
-Federation.ruleSet        // DEFAULTS — each region/LV configures its own
-    └─ Competition.ruleSet // OPTIONAL OVERRIDE — null ⇒ inherit federation defaults
+Season.registrationOpen          // roster editing window (already exists; enforced in L2)
+Competition.maxRosterSize?       // (future) roster-size limit, checked on submit
+Stage.<lockDate>?                // (future) a deadline anchored to a phase
 ```
 
-`Federation` == the region/LV (see `authorization-model.md`); `canManageRegion(federationId)`
-already gates editing it.
+Add rules incrementally as fields on the relevant element; there is no central rule store, no
+override layer, and no resolution hierarchy. (Point system for standings likewise becomes a setting
+where it fits, not a `RuleSet` field.)
 
-## 5. Governance: rules + final say
+## 5. Governance: final say
 
-Two enforcement tiers, with a human escape hatch so the rule engine can start small:
-
-1. **Hard rules** — auto-enforced from config (window open? past a deadline? roster size
-   legal?). Violations are rejected by the backend.
-2. **Manual authority** — anything not codified falls back to a human with **final say**.
-   Two forms, both supported:
-   - **Blanket override** — an admin with authority acts ignoring (overridable) rules.
-   - **Change-request approval** — a team submits a request; it escalates
-     `CLUB_ADMIN → REGION_ADMIN` (whoever exists, walking *up* the hierarchy).
-
-> The manual hatch means we ship a couple of hard rules + override first, then codify more
-> rules over time without ever being blocked.
+Rules are enforced as **hard rules** from the settings above (e.g. edits rejected when
+`registrationOpen == false` or the roster is not `DRAFT`). The **final say** over a roster is a role
+split, not an override engine: the team submits (`TEAM_ADMIN`), an admin **confirms/reopens**
+(`CLUB_ADMIN → REGION_ADMIN`, walking *up* the hierarchy) — deliberately a different authority than
+the submitter, so no one approves their own submission. A blanket admin override and change-request
+escalation are **deferred** (see §8) — add them only if a real need appears.
 
 ## 6. Authorization mapping (reuses the existing model)
 
@@ -184,10 +171,10 @@ Roles already exist: `ADMIN > REGION_ADMIN > CLUB_ADMIN > TEAM_ADMIN` (+ `COMPET
 
 | Action | Gate |
 |---|---|
-| Edit `Season` window/duration, `Competition`, `RuleSet` | `canManageSeason` / `canManageRegion(federationId)` |
-| Copy-forward, placement, promote/relegate (`TeamParticipation`) | `REGION_ADMIN` (`canManageRegion` / `canManageSeason`) |
-| Edit own team's roster / submit | `TEAM_ADMIN` via `canRepresent(team)` (already exists), gated by window + deadlines |
-| Confirm/reopen, override, approve change-requests | `CLUB_ADMIN` → `REGION_ADMIN` (final say) |
+| Edit `Season` window/duration, `Competition` | `canManageSeason` / `canManageRegion(federationId)` |
+| Copy-forward (`canManageSeason(#targetSeasonId)`), placement create (`canManageCompetition`), promote/relegate/drop (`canManageParticipation`) | `REGION_ADMIN` |
+| Edit own team's roster / submit (`canEditRoster`) | `TEAM_ADMIN` via `canRepresent(team)` (or admin above), gated by `Season.registrationOpen` + `DRAFT` |
+| Confirm/reopen the roster (`canConfirmRoster`) | admin above the team (`CLUB_ADMIN` → `REGION_ADMIN`) — not the submitting team admin |
 
 ## 7. Build plan (L0 → L3)
 
@@ -199,18 +186,22 @@ Each layer ships value on its own. Start with the rename so all later naming is 
     [`season-archiving-and-deletion.md`](./season-archiving-and-deletion.md)); migration.
   - Frontend: regenerate client; **Season CRUD view** (region-scoped) modeled on the player
     view + edit dialog (name, duration, registration toggle). *This is the first migrated module.*
-- **L1 — Placement (admin-driven)**
-  - Backend: `TeamParticipation`; **copy-forward** operation (clone divisions + placements
-    from previous season); promote/relegate/add/drop endpoints; authz.
-  - Frontend: region division/placement view (copy-forward + drag/move teams between pools).
-- **L2 — Roster + hard rules**
-  - Backend: `RosterEntry`; roster edit/submit/confirm lifecycle; `RuleSet` (Federation
-    defaults → Competition override, hybrid storage); enforce window + deadlines as **hard
-    rules**; blanket admin override.
-  - Frontend: team roster editor (`TEAM_ADMIN`), open/closed + deadline indicators.
-- **L3 — Approvals + richer rules**
-  - Backend: change-request entity + escalation (`CLUB_ADMIN → REGION_ADMIN`); more codified
-    rules from config.
+- **L1 — Placement (admin-driven)** ✅ backend done
+  - Backend: `TeamParticipation` CRUD (add/drop = create/delete, promote/relegate = move `pool`);
+    **copy-forward** operation (clone `Competition→Discipline→Stage→Pool` + placements from a source
+    season; pools reset to `PLANNED`; fixtures/results not carried); authz. *Done.*
+  - Frontend: region placements view + copy-forward *(done)*; manual add/move/remove UI *(pending —
+    needs pool↔competition exposure in the DTOs)*.
+- **L2 — Roster + hard rules** ✅ backend done
+  - Backend: `RosterEntry` (soft-delete history); whole-roster lifecycle
+    `DRAFT→SUBMITTED→CONFIRMED` on `TeamParticipation.rosterStatus`; edit/submit/confirm/reopen
+    endpoints; hard rule = `Season.registrationOpen` + `DRAFT` (no `RuleSet` — see §4); authz split
+    (`canEditRoster` vs `canConfirmRoster`). *Done.* Further rule-settings (roster size, deadlines)
+    added per-element as needed.
+  - Frontend: team roster editor (`TEAM_ADMIN`), open/closed indicator *(pending)*.
+- **L3 — Approvals + richer rules** *(deferred; see §5/§8)*
+  - Optional change-request entity + escalation (`CLUB_ADMIN → REGION_ADMIN`) if a real need appears;
+    more rule-settings on the relevant elements.
   - Frontend: approval queue; request flow for team admins.
 
 ## 8. Deferred / out of scope (for now)

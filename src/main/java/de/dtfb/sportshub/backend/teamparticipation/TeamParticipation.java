@@ -4,7 +4,10 @@ import de.dtfb.sportshub.backend.base.BaseEntity;
 import de.dtfb.sportshub.backend.competition.Competition;
 import de.dtfb.sportshub.backend.pool.Pool;
 import de.dtfb.sportshub.backend.team.Team;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.Getter;
@@ -35,4 +38,9 @@ public class TeamParticipation extends BaseEntity {
 
     /** The participation this was cloned from by copy-forward (promotion/relegation history). */
     private String copiedFromParticipationId;
+
+    /** Lifecycle of this team's roster (L2): DRAFT until the team submits, then admin-confirmed. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private RosterStatus rosterStatus = RosterStatus.DRAFT;
 }

@@ -13,4 +13,6 @@ public class TeamParticipationDto {
     private String seasonId;
     private String poolId;
     private String copiedFromParticipationId;
+    /** Read-only: the roster lifecycle state; changed via the roster submit/confirm/reopen endpoints. */
+    private RosterStatus rosterStatus;
 }

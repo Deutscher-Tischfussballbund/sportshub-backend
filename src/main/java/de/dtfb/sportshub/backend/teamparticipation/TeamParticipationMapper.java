@@ -19,12 +19,14 @@ public interface TeamParticipationMapper {
     @Mapping(target = "team", ignore = true)
     @Mapping(target = "competition", ignore = true)
     @Mapping(target = "pool", ignore = true)
+    @Mapping(target = "rosterStatus", ignore = true) // starts DRAFT; changed only via roster lifecycle
     TeamParticipation toEntity(TeamParticipationDto dto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "team", ignore = true)
     @Mapping(target = "competition", ignore = true)
     @Mapping(target = "pool", ignore = true)
+    @Mapping(target = "rosterStatus", ignore = true) // placement edits never change roster status
     void updateEntityFromDto(TeamParticipationDto dto, @MappingTarget TeamParticipation entity);
 
     List<TeamParticipationDto> toDtoList(List<TeamParticipation> participations);
