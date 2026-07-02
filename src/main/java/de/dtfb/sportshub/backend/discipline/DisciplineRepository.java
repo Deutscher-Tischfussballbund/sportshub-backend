@@ -11,6 +11,9 @@ import java.util.Optional;
 public interface DisciplineRepository extends JpaRepository<Discipline, String> {
     Optional<Discipline> findByCompetitionAndCategory(Competition competition, Category category);
 
+    /** Disciplines of one competition (copy-forward source walk). */
+    List<Discipline> findByCompetitionId(String competitionId);
+
     @Query("select e from Discipline e where e.competition.season.archivedAt is null")
     List<Discipline> findAllVisible();
 

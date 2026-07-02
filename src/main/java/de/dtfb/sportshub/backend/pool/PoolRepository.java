@@ -10,6 +10,9 @@ import java.util.Optional;
 public interface PoolRepository extends JpaRepository<Pool, String> {
     Optional<Pool> findByStageAndName(Stage stage, String name);
 
+    /** Pools of one stage (copy-forward source walk). */
+    List<Pool> findByStageId(String stageId);
+
     @Query("select e from Pool e where e.stage.discipline.competition.season.archivedAt is null")
     List<Pool> findAllVisible();
 
