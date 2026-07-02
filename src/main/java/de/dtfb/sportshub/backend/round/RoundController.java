@@ -19,13 +19,13 @@ public class RoundController {
     }
 
     @GetMapping
-    public List<RoundDto> getAll() {
+    public List<RoundDto> getAllRounds() {
         return service.getAll();
     }
 
     @PostMapping
     @PreAuthorize("@authz.canOrganizePool(#roundDto.poolId)")
-    public ResponseEntity<RoundDto> create(@RequestBody RoundDto roundDto) {
+    public ResponseEntity<RoundDto> createRound(@RequestBody RoundDto roundDto) {
         RoundDto returnedDto = service.create(roundDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId()).build().toUri();
@@ -34,19 +34,19 @@ public class RoundController {
     }
 
     @GetMapping("/{id}")
-    public RoundDto get(@PathVariable String id) {
+    public RoundDto getRound(@PathVariable String id) {
         return service.get(id);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("@authz.canOrganizeRound(#id)")
-    public RoundDto update(@PathVariable String id, @RequestBody RoundDto roundDto) {
+    public RoundDto updateRound(@PathVariable String id, @RequestBody RoundDto roundDto) {
         return service.update(id, roundDto);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("@authz.canOrganizeRound(#id)")
-    public void delete(@PathVariable String id) {
+    public void deleteRound(@PathVariable String id) {
         service.delete(id);
     }
 }

@@ -19,13 +19,13 @@ public class CompetitionController {
     }
 
     @GetMapping
-    public List<CompetitionDto> getAll() {
+    public List<CompetitionDto> getAllCompetitions() {
         return service.getAll();
     }
 
     @PostMapping
     @PreAuthorize("@authz.canManageSeason(#competitionDto.seasonId)")
-    public ResponseEntity<CompetitionDto> create(@RequestBody CompetitionDto competitionDto) {
+    public ResponseEntity<CompetitionDto> createCompetition(@RequestBody CompetitionDto competitionDto) {
         CompetitionDto returnedDto = service.create(competitionDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId()).build().toUri();
@@ -34,19 +34,19 @@ public class CompetitionController {
     }
 
     @GetMapping("/{id}")
-    public CompetitionDto get(@PathVariable String id) {
+    public CompetitionDto getCompetition(@PathVariable String id) {
         return service.get(id);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("@authz.canManageCompetition(#id)")
-    public CompetitionDto update(@PathVariable String id, @RequestBody CompetitionDto competitionDto) {
+    public CompetitionDto updateCompetition(@PathVariable String id, @RequestBody CompetitionDto competitionDto) {
         return service.update(id, competitionDto);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("@authz.canManageCompetition(#id)")
-    public void delete(@PathVariable String id) {
+    public void deleteCompetition(@PathVariable String id) {
         service.delete(id);
     }
 }

@@ -19,13 +19,13 @@ public class CategoryController {
     }
 
     @GetMapping
-    public List<CategoryDto> getAll() {
+    public List<CategoryDto> getAllCategories() {
         return service.getAll();
     }
 
     @PostMapping
     @PreAuthorize("@authz.isAdmin()")
-    public ResponseEntity<CategoryDto> create(@RequestBody CategoryDto categoryDto) {
+    public ResponseEntity<CategoryDto> createCategory(@RequestBody CategoryDto categoryDto) {
         CategoryDto returnedDto = service.create(categoryDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId()).build().toUri();
@@ -34,19 +34,19 @@ public class CategoryController {
     }
 
     @GetMapping("/{id}")
-    public CategoryDto get(@PathVariable String id) {
+    public CategoryDto getCategory(@PathVariable String id) {
         return service.get(id);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("@authz.isAdmin()")
-    public CategoryDto update(@PathVariable String id, @RequestBody CategoryDto categoryDto) {
+    public CategoryDto updateCategory(@PathVariable String id, @RequestBody CategoryDto categoryDto) {
         return service.update(id, categoryDto);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("@authz.isAdmin()")
-    public void delete(@PathVariable String id) {
+    public void deleteCategory(@PathVariable String id) {
         service.delete(id);
     }
 }

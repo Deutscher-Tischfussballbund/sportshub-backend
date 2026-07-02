@@ -19,13 +19,13 @@ public class StageController {
     }
 
     @GetMapping
-    public List<StageDto> getAll() {
+    public List<StageDto> getAllStages() {
         return service.getAll();
     }
 
     @PostMapping
     @PreAuthorize("@authz.canOrganizeDiscipline(#stageDto.disciplineId)")
-    public ResponseEntity<StageDto> create(@RequestBody StageDto stageDto) {
+    public ResponseEntity<StageDto> createStage(@RequestBody StageDto stageDto) {
         StageDto returnedDto = service.create(stageDto);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/" + returnedDto.getId()).build().toUri();
@@ -34,19 +34,19 @@ public class StageController {
     }
 
     @GetMapping("/{id}")
-    public StageDto get(@PathVariable String id) {
+    public StageDto getStage(@PathVariable String id) {
         return service.get(id);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("@authz.canOrganizeStage(#id)")
-    public StageDto update(@PathVariable String id, @RequestBody StageDto stageDto) {
+    public StageDto updateStage(@PathVariable String id, @RequestBody StageDto stageDto) {
         return service.update(id, stageDto);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("@authz.canOrganizeStage(#id)")
-    public void delete(@PathVariable String id) {
+    public void deleteStage(@PathVariable String id) {
         service.delete(id);
     }
 }
