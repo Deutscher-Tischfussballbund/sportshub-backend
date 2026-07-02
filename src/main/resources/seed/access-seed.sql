@@ -90,3 +90,18 @@ VALUES ('md-res-1', 'round-res', 'Spieltag 1', TIMESTAMP '2023-10-01 10:00:00', 
 INSERT INTO standing (id, pool_id, team_id, played, wins, draws, losses, points, sets_won, sets_lost)
 VALUES ('st-res-1', 'pool-res', 'team-tfcm-1', 2, 2, 0, 0, 6, 6, 1),
        ('st-res-2', 'pool-res', 'team-tfcm-2', 2, 0, 0, 2, 0, 1, 6);
+
+-- Team placements (TeamParticipation, L1) in the source season: both TFC München teams
+-- placed in Gruppe A. Gives the placements view real rows AND gives copy-forward
+-- something to clone into the empty target season below.
+INSERT INTO team_participation (id, team_id, competition_id, pool_id, roster_status)
+VALUES ('tp-res-1', 'team-tfcm-1', 'comp-res', 'pool-res', 'CONFIRMED'),
+       ('tp-res-2', 'team-tfcm-2', 'comp-res', 'pool-res', 'CONFIRMED');
+
+-- ---------------------------------------------------------------------------
+-- Empty target season under fed-by (Bayern) — the copy-forward destination:
+-- on the placements page pick "Saison 2024" and copy-forward from "Saison 2023"
+-- to clone the division + both placements into here.
+-- ---------------------------------------------------------------------------
+INSERT INTO season (id, name, federation_id, start_date, end_date, registration_open)
+VALUES ('season-2024', 'Saison 2024', 'fed-by', DATE '2024-09-01', DATE '2025-05-31', TRUE);
