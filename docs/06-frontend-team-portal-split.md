@@ -2,8 +2,8 @@
 
 > Status: **decision / discussion** (no code change). Records *where the team-facing roster &
 > results surface lives*. Companion to
-> [`competition-and-registration-model.md`](./competition-and-registration-model.md) (the roster
-> lifecycle this surface drives) and [`authorization-model.md`](./authorization-model.md) (the
+> [`01-competition-and-registration-model.md`](./01-competition-and-registration-model.md) (the roster
+> lifecycle this surface drives) and [`03-authorization-model.md`](./03-authorization-model.md) (the
 > tier model that makes the boundary non-obvious).
 >
 > Question raised: *should team editing (roster + result reporting) be split into its own frontend,

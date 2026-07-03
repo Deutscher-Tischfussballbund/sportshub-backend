@@ -1,7 +1,7 @@
 # Authorization: ACLs vs. scoped RBAC — design discussion
 
 > Status: **discussion / decision record** (no code change). Companion to
-> [`authorization-model.md`](./authorization-model.md), which is the source of truth for the
+> [`03-authorization-model.md`](./03-authorization-model.md), which is the source of truth for the
 > model we actually run.
 >
 > Question raised: *would per-object ACLs be a better approach than what we have?*

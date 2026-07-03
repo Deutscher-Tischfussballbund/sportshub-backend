@@ -3,8 +3,8 @@
 > Single source of truth for **what happens when a season is deleted**, the **archive**
 > (soft-delete) alternative, and how an archived season's data is **hidden**. The backend owns
 > and enforces this; frontends only *consume* it (the admin delete dialog reflects this policy).
-> Companion to [`competition-and-registration-model.md`](./competition-and-registration-model.md)
-> (the season → competition → … tree) and [`authorization-model.md`](./authorization-model.md).
+> Companion to [`01-competition-and-registration-model.md`](./01-competition-and-registration-model.md)
+> (the season → competition → … tree) and [`03-authorization-model.md`](./03-authorization-model.md).
 
 ## 1. Problem
 

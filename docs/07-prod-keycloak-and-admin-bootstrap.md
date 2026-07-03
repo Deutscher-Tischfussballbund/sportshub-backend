@@ -2,7 +2,7 @@
 
 > How the prod backend container authenticates against Keycloak, and how the **first
 > administrator** gets access on a fresh deployment. Companion to
-> [`authorization-model.md`](./authorization-model.md) (the DB-backed role/scope model).
+> [`03-authorization-model.md`](./03-authorization-model.md) (the DB-backed role/scope model).
 > Grounded in `application-prod.yaml`, `docker-compose.yaml`, `SecurityConfig`,
 > `BootstrapAdminInitializer`, and `PlayerRegistryService`.
 
@@ -38,7 +38,7 @@ There is intentionally **no cross-stack `depends_on`** — the lazy JWKS fetch p
 Stateless; everything is `authenticated()` except `OPTIONS` (CORS preflight),
 `/swagger-ui/**`, `/v3/api-docs/**`, and `/h2-console/**`. CORS origins come from
 `SPORTSHUB_CORS_ALLOWED_ORIGINS`. **Roles are NOT read from the JWT** — the token only establishes
-*identity*; all authority comes from DB-backed `RoleAssignment`s (see `authorization-model.md`).
+*identity*; all authority comes from DB-backed `RoleAssignment`s (see `03-authorization-model.md`).
 
 ## 2. The identity link: the `dtfb_id` claim
 

@@ -6,7 +6,7 @@ and is the **single source of authorization** for every DTFB frontend (admin con
 portal, public results, tournament manager).
 
 Authentication is delegated to Keycloak (OIDC); this service answers *"what may you do?"* via a
-DB-backed, scope-aware role model. See [`docs/authorization-model.md`](docs/authorization-model.md).
+DB-backed, scope-aware role model. See [`docs/03-authorization-model.md`](docs/03-authorization-model.md).
 
 ## Tech stack
 
@@ -99,9 +99,9 @@ Environment variables (prod):
 - Scope hierarchy: `GLOBAL → REGION (federation) → CLUB → TEAM`, plus `COMPETITION`.
 
 Read the model docs before changing access rules:
-- [`docs/authorization-model.md`](docs/authorization-model.md) — the canonical model
-- [`docs/role-concept.md`](docs/role-concept.md) · [`docs/authorization-acls-vs-scoped-rbac.md`](docs/authorization-acls-vs-scoped-rbac.md)
-- [`docs/competition-and-registration-model.md`](docs/competition-and-registration-model.md)
+- [`docs/03-authorization-model.md`](docs/03-authorization-model.md) — the canonical model
+- [`docs/02-role-concept.md`](docs/02-role-concept.md) · [`docs/04-authorization-acls-vs-scoped-rbac.md`](docs/04-authorization-acls-vs-scoped-rbac.md)
+- [`docs/01-competition-and-registration-model.md`](docs/01-competition-and-registration-model.md)
 
 ### Bootstrap admin
 

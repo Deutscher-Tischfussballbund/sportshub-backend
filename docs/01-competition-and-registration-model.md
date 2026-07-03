@@ -3,9 +3,9 @@
 > Single source of truth for the **season → competition → division** structure, the
 > **federation-configurable rule system**, and **team registration** (placement + roster).
 > The backend owns and enforces this model; frontends only *consume* it.
-> Companion to [`authorization-model.md`](./authorization-model.md) (roles & scope),
-> [`role-concept.md`](./role-concept.md), and
-> [`season-archiving-and-deletion.md`](./season-archiving-and-deletion.md) (delete/archive policy).
+> Companion to [`03-authorization-model.md`](./03-authorization-model.md) (roles & scope),
+> [`02-role-concept.md`](./02-role-concept.md), and
+> [`05-season-archiving-and-deletion.md`](./05-season-archiving-and-deletion.md) (delete/archive policy).
 
 ## 0. Context & goal
 
@@ -76,7 +76,7 @@ Season {
   name, federation,                       // existing
   startDate, endDate,                     // general duration
   registrationOpen: boolean,             // is roster registration open?
-  archivedAt,                             // soft-delete (see season-archiving-and-deletion.md)
+  archivedAt,                             // soft-delete (see 05-season-archiving-and-deletion.md)
 }
 ```
 `registrationOpen` is the **roster-management switch** (when team admins may edit rosters).
@@ -183,7 +183,7 @@ Each layer ships value on its own. Start with the rename so all later naming is 
 - **L0 — Rename + Season CRUD** ✅ done
   - Backend: `Event → Competition` rename; `Season` duration + a `registrationOpen` boolean
     (a scheduled open/close window was tried then dropped — see
-    [`season-archiving-and-deletion.md`](./season-archiving-and-deletion.md)); migration.
+    [`05-season-archiving-and-deletion.md`](./05-season-archiving-and-deletion.md)); migration.
   - Frontend: regenerate client; **Season CRUD view** (region-scoped) modeled on the player
     view + edit dialog (name, duration, registration toggle). *This is the first migrated module.*
 - **L1 — Placement (admin-driven)** ✅ backend done
