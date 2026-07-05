@@ -46,6 +46,36 @@ Season ─ Competition ─ Discipline ─ Stage ─ Pool ─ Round ─ MatchDay(
 - `Pool` is **not** renamed to `Division`: it is the generic structural unit (division in a
   league, group/bracket in a tournament). The league label lives in `Pool.name`.
 
+### 1.1 Worked example — how a league maps onto the tree (decided)
+
+**Decision (2026-07-05): leagues map onto the tree with no dedicated "tier" level — "Option A".**
+The tier ("1. Bayernliga") is a label inside `Pool.name`; each round-robin group is its own `Pool`;
+`Stage` stays a temporal phase; `Discipline` is the category split. Example — Bayernliga, men's,
+Saison 2024/25:
+
+```
+Season        Saison 2024/25
+ Competition  Bayernliga
+  Discipline  Herren                       (→ Category Herren; a Damen league would be a 2nd Discipline)
+   Stage      Hauptrunde                   (a phase; Playoffs/Relegation would be sibling Stages)
+    Pool      1. Bayernliga – Gruppe A     (5 teams, one round-robin table)
+    Pool      1. Bayernliga – Gruppe B
+    Pool      2. Bayernliga
+    Pool      3. Bayernliga – Gruppe A …
+```
+
+- **Discipline** = category (Herren/Damen/…). A single-category league has exactly **one**, and it is
+  where the `Category` classification attaches. Tournaments reuse the same slot for game formats
+  (Open Singles/Doubles/…), so keeping it lets one model serve both.
+- **Stage** = a phase *in time* (Hauptrunde/Playoffs/Relegation), **not** a tier — kept consistent with
+  tournament usage (group stage → knockout).
+- **Pool** = one table of teams that actually play each other. A **tier is not a first-class entity** —
+  it lives in `Pool.name`; a tier with several groups is just several sibling Pools. Promotion/relegation
+  = move a `TeamParticipation` to a Pool in the tier above/below.
+- **Rejected — "Option B"** (tier = `Stage`, group = `Pool`): makes the tier first-class but steals the
+  phase slot and diverges from tournaments. Revisit only if a tier ever needs aggregated standings or
+  tier-level rules across its groups.
+
 ## 2. The placement ≠ roster split (core principle)
 
 Two **different ownership domains**, deliberately separated:

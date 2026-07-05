@@ -13,6 +13,9 @@ public interface PoolRepository extends JpaRepository<Pool, String> {
     /** Pools of one stage (copy-forward source walk). */
     List<Pool> findByStageId(String stageId);
 
+    /** All pools under a competition, across its stages/disciplines (competition structure read). */
+    List<Pool> findByStage_Discipline_CompetitionId(String competitionId);
+
     @Query("select e from Pool e where e.stage.discipline.competition.season.archivedAt is null")
     List<Pool> findAllVisible();
 

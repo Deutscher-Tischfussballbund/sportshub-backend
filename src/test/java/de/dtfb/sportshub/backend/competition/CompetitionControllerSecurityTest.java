@@ -77,4 +77,26 @@ class CompetitionControllerSecurityTest {
         mockMvc.perform(get("/v1/competitions").with(jwt()))
             .andExpect(status().isOk());
     }
+
+    @Test
+    void structure_withoutToken_isUnauthorized() throws Exception {
+        mockMvc.perform(get("/v1/competitions/competition-x/structure"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void structure_whenNotCompetitionManager_isForbidden() throws Exception {
+        Mockito.when(authz.canManageCompetition(any())).thenReturn(false);
+        mockMvc.perform(get("/v1/competitions/competition-x/structure").with(jwt()))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void structure_whenCompetitionManager_passesGate() throws Exception {
+        Mockito.when(authz.canManageCompetition(any())).thenReturn(true);
+        // Gate passes; the request then fails only because competition "competition-x" does not exist
+        // (404), which confirms authorization let it through (a denied request would be 403).
+        mockMvc.perform(get("/v1/competitions/competition-x/structure").with(jwt()))
+            .andExpect(status().isNotFound());
+    }
 }

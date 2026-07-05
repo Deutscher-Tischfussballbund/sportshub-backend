@@ -13,9 +13,11 @@ import java.util.List;
 public class CompetitionController {
 
     private final CompetitionService service;
+    private final CompetitionStructureService structureService;
 
-    public CompetitionController(CompetitionService service) {
+    public CompetitionController(CompetitionService service, CompetitionStructureService structureService) {
         this.service = service;
+        this.structureService = structureService;
     }
 
     @GetMapping
@@ -36,6 +38,17 @@ public class CompetitionController {
     @GetMapping("/{id}")
     public CompetitionDto getCompetition(@PathVariable String id) {
         return service.get(id);
+    }
+
+    /**
+     * The competition's Discipline→Stage→Pool subtree with a participation count per pool — the read
+     * behind the placement board. Gated like competition management (region admin above it): this feeds
+     * add/move/remove of placements, not public viewing.
+     */
+    @GetMapping("/{id}/structure")
+    @PreAuthorize("@authz.canManageCompetition(#id)")
+    public CompetitionStructureDto getCompetitionStructure(@PathVariable String id) {
+        return structureService.get(id);
     }
 
     @PutMapping("/{id}")
