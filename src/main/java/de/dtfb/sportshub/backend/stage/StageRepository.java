@@ -13,6 +13,9 @@ public interface StageRepository extends JpaRepository<Stage, String> {
     /** Stages of one discipline (copy-forward source walk). */
     List<Stage> findByDisciplineId(String disciplineId);
 
+    /** All stages under a competition, across its disciplines (competition structure read). */
+    List<Stage> findByDiscipline_CompetitionId(String competitionId);
+
     @Query("select e from Stage e where e.discipline.competition.season.archivedAt is null")
     List<Stage> findAllVisible();
 
