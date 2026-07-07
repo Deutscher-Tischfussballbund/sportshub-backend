@@ -14,5 +14,6 @@ source of truth for what the code does; **decision** docs record why a choice wa
 | 06 | [Frontend topology: team portal vs. admin app](./06-frontend-team-portal-split.md) | decision | Build the team roster/results surface in the admin app now (extraction-ready), not as a separate portal yet; the clean seam for a future split. |
 | 07 | [Prod Keycloak & admin bootstrap](./07-prod-keycloak-and-admin-bootstrap.md) | ops | Keycloak wiring and the config-driven bootstrap admin for production. |
 | 08 | [Member self-service registration](./08-member-registration.md) | decision | Deferred DTFB-ID account-claim flow: the "inverted seam" (backend attests, Keycloak creates the user), the invite variant, and the blocking directory-vs-Keycloak question. |
+| 09 | [League model (split from tournaments)](./09-league-model.md) | model + decision | **Proposed** direction: separate the league and tournament concerns instead of one overloaded tree. First-class `Tier`, a reusable typed `LeagueRuleSet` (points/game-plan/scoring), tournaments parked behind a seam. Supersedes doc 01 §1.1. |
 
 Numbers are a reading/topic order, not a chronology — renumber on the rare insert.

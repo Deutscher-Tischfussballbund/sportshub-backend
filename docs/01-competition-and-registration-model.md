@@ -48,6 +48,11 @@ Season ─ Competition ─ Discipline ─ Stage ─ Pool ─ Round ─ MatchDay(
 
 ### 1.1 Worked example — how a league maps onto the tree (decided)
 
+> **⚠️ Superseded in plan (2026-07-07):** "Option A" (single tree, tier baked into `Pool.name`)
+> is being replaced — see [`09-league-model.md`](./09-league-model.md), which separates the
+> league and tournament concerns, makes `Tier` first-class, and adds a reusable `LeagueRuleSet`.
+> The section below describes the tree the code implements **today**.
+
 **Decision (2026-07-05): leagues map onto the tree with no dedicated "tier" level — "Option A".**
 The tier ("1. Bayernliga") is a label inside `Pool.name`; each round-robin group is its own `Pool`;
 `Stage` stays a temporal phase; `Discipline` is the category split. Example — Bayernliga, men's,
