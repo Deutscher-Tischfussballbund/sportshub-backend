@@ -11,8 +11,12 @@ import de.dtfb.sportshub.backend.club.ClubRepository;
 import de.dtfb.sportshub.backend.competition.Competition;
 import de.dtfb.sportshub.backend.competition.CompetitionRepository;
 import de.dtfb.sportshub.backend.federation.Federation;
+import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
+import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSetRepository;
 import de.dtfb.sportshub.backend.location.Location;
 import de.dtfb.sportshub.backend.location.LocationRepository;
+import de.dtfb.sportshub.backend.tier.Tier;
+import de.dtfb.sportshub.backend.tier.TierRepository;
 import de.dtfb.sportshub.backend.matchday.MatchDay;
 import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
 import de.dtfb.sportshub.backend.player.Player;
@@ -58,6 +62,8 @@ public class AuthorizationService {
     private final LocationRepository locationRepository;
     private final MatchDayRepository matchDayRepository;
     private final TeamParticipationRepository teamParticipationRepository;
+    private final TierRepository tierRepository;
+    private final LeagueRuleSetRepository leagueRuleSetRepository;
     private final CompetitionResolver competitionResolver;
 
     public AuthorizationService(PlayerRegistryService registry,
@@ -69,6 +75,8 @@ public class AuthorizationService {
                                 LocationRepository locationRepository,
                                 MatchDayRepository matchDayRepository,
                                 TeamParticipationRepository teamParticipationRepository,
+                                TierRepository tierRepository,
+                                LeagueRuleSetRepository leagueRuleSetRepository,
                                 CompetitionResolver competitionResolver) {
         this.registry = registry;
         this.roleAssignmentRepository = roleAssignmentRepository;
@@ -79,6 +87,8 @@ public class AuthorizationService {
         this.locationRepository = locationRepository;
         this.matchDayRepository = matchDayRepository;
         this.teamParticipationRepository = teamParticipationRepository;
+        this.tierRepository = tierRepository;
+        this.leagueRuleSetRepository = leagueRuleSetRepository;
         this.competitionResolver = competitionResolver;
     }
 
@@ -120,6 +130,46 @@ public class AuthorizationService {
     /** May administer the given competition's meta (its region's admin, or global) — see the COMPETITION scope. */
     public boolean canManageCompetition(String competitionId) {
         return canManageScope(currentRoles(), ScopeType.COMPETITION, competitionId);
+    }
+
+    /**
+     * May administer the given tier: a tier belongs to a competition and thus to that competition's
+     * season → region, so the region's admin (or a global admin) manages it — the same authority as
+     * editing the competition it hangs off.
+     */
+    public boolean canManageTier(String tierId) {
+        List<RoleAssignment> roles = currentRoles();
+        if (AccessRoles.isGlobalAdmin(roles)) {
+            return true;
+        }
+        Tier tier = tierId == null ? null : tierRepository.findById(tierId).orElse(null);
+        Competition competition = tier == null ? null : tier.getCompetition();
+        Season season = competition == null ? null : competition.getSeason();
+        Federation region = season == null ? null : season.getFederation();
+        return region != null && isRegionAdmin(roles, region.getId());
+    }
+
+    /**
+     * May create/edit a league rule set owned by the given region. A {@code null} federation means a
+     * DTFB-global template — only a global admin may manage it (handled by the admin short-circuit).
+     */
+    public boolean canManageRuleSet(String federationId) {
+        List<RoleAssignment> roles = currentRoles();
+        if (AccessRoles.isGlobalAdmin(roles)) {
+            return true;
+        }
+        return federationId != null && isRegionAdmin(roles, federationId);
+    }
+
+    /** May edit/delete the given rule set: the admin of its owning region (or global). */
+    public boolean canManageRuleSetById(String ruleSetId) {
+        List<RoleAssignment> roles = currentRoles();
+        if (AccessRoles.isGlobalAdmin(roles)) {
+            return true;
+        }
+        LeagueRuleSet ruleSet = ruleSetId == null ? null : leagueRuleSetRepository.findById(ruleSetId).orElse(null);
+        Federation federation = ruleSet == null ? null : ruleSet.getFederation();
+        return federation != null && isRegionAdmin(roles, federation.getId());
     }
 
     /**
