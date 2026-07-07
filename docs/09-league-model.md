@@ -211,10 +211,16 @@ Compile-coupled, so it lands as one coordinated change. Work order:
 | 13 | Importer | **park** (disable) — do not re-path (§5, decision 4) |
 | 14 | Tests | rename/rewrite ~30 files; the two integration tests post to `/v1/disciplines`+`/v1/stages` in `setup()` → rewire to `/v1/tiers`+`/v1/groups`; add Tier/ruleset/resolution tests |
 
-### Phase 2 — rule enforcement (separate additive PR)
-Standings points from the effective `LeagueRuleSet` (not hardcoded); matchday validation against
-the game plan (count/type/order of `Match` rows), `setsPerGame`, `pointsToWinSet`,
-`matchdayDecision`. Defer-able.
+### Phase 2 — rule enforcement (additive)
+- **Done:** standings points come from the group's effective `LeagueRuleSet` — resolved by
+  `LeagueRuleResolver` as `group.tier.ruleSet ?? tier.league.ruleSet`, falling back to the
+  historical 2/1/0 when none is configured. `StandingService.onMatchDayConfirmed` awards
+  `pointsWin`/`pointsDraw`/`pointsLoss` from it.
+- **Deferred:** matchday validation against the game plan (count/type/order of `Match` rows),
+  `setsPerGame`, `pointsToWinSet`, `matchdayDecision`. These need a modeled link between a
+  `MatchDay` and its rule set's game plan (auto-generating a matchday's `Match` rows from the
+  plan, or validating submitted results against it) — a distinct feature; today matches are
+  created ad hoc with no plan linkage. Revisit when the matchday-composition flow is designed.
 
 ### Phase 3 — frontend catch-up (`feature/sportshub-backend-migration`)
 Regenerate `@dtfb/api` (one churn, here); sweep call sites; rework the region **placements**

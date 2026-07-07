@@ -3,6 +3,8 @@ package de.dtfb.sportshub.backend.standing;
 import de.dtfb.sportshub.backend.group.Group;
 import de.dtfb.sportshub.backend.group.GroupNotFoundException;
 import de.dtfb.sportshub.backend.group.GroupRepository;
+import de.dtfb.sportshub.backend.leaguerules.LeagueRuleResolver;
+import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
 import de.dtfb.sportshub.backend.match.Match;
 import de.dtfb.sportshub.backend.match.MatchRepository;
 import de.dtfb.sportshub.backend.matchday.MatchDay;
@@ -21,12 +23,14 @@ public class StandingService {
     private final StandingRepository standingRepository;
     private final GroupRepository groupRepository;
     private final MatchRepository matchRepository;
+    private final LeagueRuleResolver ruleResolver;
 
     public StandingService(StandingRepository standingRepository, GroupRepository groupRepository,
-                           MatchRepository matchRepository) {
+                           MatchRepository matchRepository, LeagueRuleResolver ruleResolver) {
         this.standingRepository = standingRepository;
         this.groupRepository = groupRepository;
         this.matchRepository = matchRepository;
+        this.ruleResolver = ruleResolver;
     }
 
     @Transactional(readOnly = true)
@@ -65,17 +69,26 @@ public class StandingService {
         Team homeTeam = matchDay.getTeamHome();
         Team awayTeam = matchDay.getTeamAway();
 
-        // 2 points for win, 1 for draw
+        // Points come from the group's effective LeagueRuleSet (tier's own, else the league's),
+        // falling back to 2/1/0 when no rule set is configured.
+        LeagueRuleSet rules = ruleResolver.effectiveFor(group);
+        int pointsWin = ruleResolver.pointsWin(rules);
+        int pointsDraw = ruleResolver.pointsDraw(rules);
+        int pointsLoss = ruleResolver.pointsLoss(rules);
+
         boolean homeWon = homeWins > awayWins;
         boolean awayWon = awayWins > homeWins;
         boolean isDraw = homeWins == awayWins;
 
-        updateStanding(group, homeTeam, homeWon, isDraw, awayWon, homeSets, awaySets);
-        updateStanding(group, awayTeam, awayWon, isDraw, homeWon, awaySets, homeSets);
+        updateStanding(group, homeTeam, homeWon, isDraw, awayWon, homeSets, awaySets,
+            pointsWin, pointsDraw, pointsLoss);
+        updateStanding(group, awayTeam, awayWon, isDraw, homeWon, awaySets, homeSets,
+            pointsWin, pointsDraw, pointsLoss);
     }
 
     private void updateStanding(Group group, Team team, boolean won, boolean draw, boolean lost,
-                                 int setsFor, int setsAgainst) {
+                                 int setsFor, int setsAgainst,
+                                 int pointsWin, int pointsDraw, int pointsLoss) {
         Standing standing = standingRepository.findByGroupAndTeam(group, team).orElseGet(() -> {
             Standing s = new Standing();
             s.setGroup(group);
@@ -89,12 +102,13 @@ public class StandingService {
 
         if (won) {
             standing.setWins(standing.getWins() + 1);
-            standing.setPoints(standing.getPoints() + 2);
+            standing.setPoints(standing.getPoints() + pointsWin);
         } else if (draw) {
             standing.setDraws(standing.getDraws() + 1);
-            standing.setPoints(standing.getPoints() + 1);
+            standing.setPoints(standing.getPoints() + pointsDraw);
         } else {
             standing.setLosses(standing.getLosses() + 1);
+            standing.setPoints(standing.getPoints() + pointsLoss);
         }
 
         standingRepository.save(standing);
