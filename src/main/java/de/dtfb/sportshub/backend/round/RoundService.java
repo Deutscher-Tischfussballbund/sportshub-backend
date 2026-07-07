@@ -1,8 +1,8 @@
 package de.dtfb.sportshub.backend.round;
 
-import de.dtfb.sportshub.backend.pool.Pool;
-import de.dtfb.sportshub.backend.pool.PoolNotFoundException;
-import de.dtfb.sportshub.backend.pool.PoolRepository;
+import de.dtfb.sportshub.backend.group.Group;
+import de.dtfb.sportshub.backend.group.GroupNotFoundException;
+import de.dtfb.sportshub.backend.group.GroupRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,12 +12,12 @@ import java.util.List;
 public class RoundService {
     private final RoundRepository repository;
     private final RoundMapper mapper;
-    private final PoolRepository poolRepository;
+    private final GroupRepository groupRepository;
 
-    public RoundService(RoundRepository repository, RoundMapper mapper, PoolRepository poolRepository) {
+    public RoundService(RoundRepository repository, RoundMapper mapper, GroupRepository groupRepository) {
         this.repository = repository;
         this.mapper = mapper;
-        this.poolRepository = poolRepository;
+        this.groupRepository = groupRepository;
     }
 
     @Transactional(readOnly = true)
@@ -36,9 +36,9 @@ public class RoundService {
     public RoundDto create(RoundDto roundDto) {
         Round round = mapper.toEntity(roundDto);
 
-        Pool pool = poolRepository.findById(roundDto.getPoolId())
-            .orElseThrow(() -> new PoolNotFoundException(roundDto.getPoolId()));
-        round.setPool(pool);
+        Group group = groupRepository.findById(roundDto.getGroupId())
+            .orElseThrow(() -> new GroupNotFoundException(roundDto.getGroupId()));
+        round.setGroup(group);
 
         Round savedRound = repository.save(round);
         return mapper.toDto(savedRound);
@@ -51,9 +51,9 @@ public class RoundService {
 
         mapper.updateEntityFromDto(roundDto, round);
 
-        Pool pool = poolRepository.findById(roundDto.getPoolId())
-            .orElseThrow(() -> new PoolNotFoundException(roundDto.getPoolId()));
-        round.setPool(pool);
+        Group group = groupRepository.findById(roundDto.getGroupId())
+            .orElseThrow(() -> new GroupNotFoundException(roundDto.getGroupId()));
+        round.setGroup(group);
 
         Round savedRound = repository.save(round);
         return mapper.toDto(savedRound);

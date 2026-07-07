@@ -5,11 +5,7 @@ import com.jayway.jsonpath.JsonPath;
 import jakarta.annotation.PostConstruct;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -19,34 +15,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class RoundControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
 
-    String uuid;
-    String url;
+    private String groupId;
+    private String url;
 
     @PostConstruct
     void setup() throws Exception {
-        MvcResult season = createSeason();
-        String seasonId = JsonPath.read(season.getResponse().getContentAsString(), "$.id");
-        MvcResult event = createEvent(seasonId);
-        String competitionId = JsonPath.read(event.getResponse().getContentAsString(), "$.id");
-        MvcResult discipline = createDiscipline(competitionId);
-        String disciplineId = JsonPath.read(discipline.getResponse().getContentAsString(), "$.id");
-        MvcResult stage = createStage(disciplineId);
-        String stageId = JsonPath.read(stage.getResponse().getContentAsString(), "$.id");
-        MvcResult pool = createPool(stageId);
-        uuid = JsonPath.read(pool.getResponse().getContentAsString(), "$.id");
+        String seasonId = id(createSeason());
+        String leagueId = id(createLeague(seasonId));
+        String tierId = id(createTier(leagueId));
+        groupId = id(createGroup(tierId));
     }
 
     @BeforeEach
     void setupEach() throws Exception {
-        MvcResult round = createRound(uuid);
-        url = round.getResponse().getHeader("Location");
+        url = createRound(groupId).getResponse().getHeader("Location");
         assert url != null;
     }
 
     @Test
     void getAllRounds() throws Exception {
-        mockMvc.perform(get("/v1/rounds"))
-            .andExpect(status().isOk());
+        mockMvc.perform(get("/v1/rounds")).andExpect(status().isOk());
     }
 
     @Test
@@ -60,7 +48,7 @@ class RoundControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCo
         mockMvc.perform(get(url))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.name").value("Runde1"))
-            .andExpect(jsonPath("$.index").value(1));
+            .andExpect(jsonPath("$.groupId").value(groupId));
     }
 
     @Test
@@ -68,15 +56,13 @@ class RoundControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCo
         mockMvc.perform(put(url)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "Round1",
-                            "poolId": "%s"}
-                    """, uuid)))
+                            {"name": "Runde2", "index": 2, "groupId": "%s"}
+                    """, groupId)))
             .andExpect(status().isOk());
 
         mockMvc.perform(get(url))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.name").value("Round1"))
-            .andExpect(jsonPath("$.index").value(1));
+            .andExpect(jsonPath("$.name").value("Runde2"));
     }
 
     @Test
@@ -84,18 +70,15 @@ class RoundControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCo
         mockMvc.perform(put("/v1/rounds/" + NanoIdUtils.randomNanoId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                            {"name": "Round1"}
+                            {"name": "Runde2"}
                     """))
             .andExpect(status().isNotFound());
     }
 
     @Test
     void deleteRound() throws Exception {
-        mockMvc.perform(delete(url))
-            .andExpect(status().isOk());
-
-        mockMvc.perform(get(url))
-            .andExpect(status().isNotFound());
+        mockMvc.perform(delete(url)).andExpect(status().isOk());
+        mockMvc.perform(get(url)).andExpect(status().isNotFound());
     }
 
     @Test
@@ -104,13 +87,11 @@ class RoundControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCo
             .andExpect(status().isNotFound());
     }
 
-    /**
-     * =========================================================
-     * helper operations
-     * =========================================================
-     */
-
     //region helpers
+    private String id(MvcResult result) throws Exception {
+        return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+    }
+
     private MvcResult createSeason() throws Exception {
         String federationId = createFederation();
         return mockMvc.perform(post("/v1/seasons")
@@ -119,65 +100,41 @@ class RoundControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCo
                 """, federationId))).andReturn();
     }
 
-    private MvcResult createEvent(String uuid) throws Exception {
-        return mockMvc.perform(post("/v1/competitions")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(String.format("""
-                            {"name": "Turnier",
-                            "seasonId": "%s"}
-                    """, uuid)))
-            .andExpect(status().isCreated())
-            .andReturn();
-    }
-
-    private MvcResult createDiscipline(String uuid) throws Exception {
+    private MvcResult createLeague(String seasonId) throws Exception {
         String categoryId = createCategory();
-        return mockMvc.perform(post("/v1/disciplines")
+        return mockMvc.perform(post("/v1/leagues")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "Offenes Einzel",
-                            "competitionId": "%s",
-                            "categoryId": "%s"}
-                    """, uuid, categoryId)))
-            .andExpect(status().isCreated())
-            .andReturn();
+                            {"name": "Bayernliga", "seasonId": "%s", "categoryId": "%s"}
+                    """, seasonId, categoryId)))
+            .andExpect(status().isCreated()).andReturn();
     }
 
-    private MvcResult createStage(String uuid) throws Exception {
-        return mockMvc.perform(post("/v1/stages")
+    private MvcResult createTier(String leagueId) throws Exception {
+        return mockMvc.perform(post("/v1/tiers")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "Vorrunde",
-                            "disciplineId": "%s"}
-                    """, uuid)))
-            .andExpect(status().isCreated())
-            .andReturn();
+                            {"name": "1. Bayernliga", "leagueId": "%s"}
+                    """, leagueId)))
+            .andExpect(status().isCreated()).andReturn();
     }
 
-    private MvcResult createPool(String uuid) throws Exception {
-        return mockMvc.perform(post("/v1/pools")
+    private MvcResult createGroup(String tierId) throws Exception {
+        return mockMvc.perform(post("/v1/groups")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "Pool1",
-                            "tournamentMode": "SWISS",
-                            "stageId": "%s",
-                            "poolState": "READY"
-                            }
-                    """, uuid)))
-            .andExpect(status().isCreated())
-            .andReturn();
+                            {"name": "Gruppe A", "tierId": "%s", "groupState": "READY"}
+                    """, tierId)))
+            .andExpect(status().isCreated()).andReturn();
     }
 
-    private MvcResult createRound(String uuid) throws Exception {
+    private MvcResult createRound(String groupId) throws Exception {
         return mockMvc.perform(post("/v1/rounds")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "Runde1",
-                            "index": 1,
-                            "poolId": "%s"}
-                    """, uuid)))
-            .andExpect(status().isCreated())
-            .andReturn();
+                            {"name": "Runde1", "index": 1, "groupId": "%s"}
+                    """, groupId)))
+            .andExpect(status().isCreated()).andReturn();
     }
     //endregion
 }

@@ -8,6 +8,6 @@ import lombok.Setter;
 public class RoundDto {
     private String id;
     private String name;
-    private String poolId;
+    private String groupId;
     private Integer index;
 }

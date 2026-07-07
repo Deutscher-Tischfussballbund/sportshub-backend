@@ -14,28 +14,24 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class TierControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
 
-    String competitionId;
-    String url;
+    private String leagueId;
+    private String url;
 
     @PostConstruct
     void setup() throws Exception {
-        MvcResult season = createSeason();
-        String seasonId = JsonPath.read(season.getResponse().getContentAsString(), "$.id");
-        MvcResult competition = createCompetition(seasonId);
-        competitionId = JsonPath.read(competition.getResponse().getContentAsString(), "$.id");
+        String seasonId = JsonPath.read(createSeason().getResponse().getContentAsString(), "$.id");
+        leagueId = JsonPath.read(createLeague(seasonId).getResponse().getContentAsString(), "$.id");
     }
 
     @BeforeEach
     void setupEach() throws Exception {
-        MvcResult tier = createTier(competitionId);
-        url = tier.getResponse().getHeader("Location");
+        url = createTier(leagueId).getResponse().getHeader("Location");
         assert url != null;
     }
 
     @Test
     void getAllTiers() throws Exception {
-        mockMvc.perform(get("/v1/tiers"))
-            .andExpect(status().isOk());
+        mockMvc.perform(get("/v1/tiers")).andExpect(status().isOk());
     }
 
     @Test
@@ -49,7 +45,7 @@ class TierControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCon
         mockMvc.perform(get(url))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.name").value("1. Bayernliga"))
-            .andExpect(jsonPath("$.competitionId").value(competitionId));
+            .andExpect(jsonPath("$.leagueId").value(leagueId));
     }
 
     @Test
@@ -57,9 +53,8 @@ class TierControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCon
         mockMvc.perform(put(url)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "2. Bayernliga",
-                            "competitionId": "%s"}
-                    """, competitionId)))
+                            {"name": "2. Bayernliga", "leagueId": "%s"}
+                    """, leagueId)))
             .andExpect(status().isOk());
 
         mockMvc.perform(get(url))
@@ -79,11 +74,8 @@ class TierControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCon
 
     @Test
     void deleteTier() throws Exception {
-        mockMvc.perform(delete(url))
-            .andExpect(status().isOk());
-
-        mockMvc.perform(get(url))
-            .andExpect(status().isNotFound());
+        mockMvc.perform(delete(url)).andExpect(status().isOk());
+        mockMvc.perform(get(url)).andExpect(status().isNotFound());
     }
 
     @Test
@@ -91,12 +83,6 @@ class TierControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCon
         mockMvc.perform(delete("/v1/tiers/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());
     }
-
-    /**
-     * =========================================================
-     * helper operations
-     * =========================================================
-     */
 
     //region helpers
     private MvcResult createSeason() throws Exception {
@@ -107,26 +93,23 @@ class TierControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCon
                 """, federationId))).andReturn();
     }
 
-    private MvcResult createCompetition(String seasonId) throws Exception {
-        return mockMvc.perform(post("/v1/competitions")
+    private MvcResult createLeague(String seasonId) throws Exception {
+        String categoryId = createCategory();
+        return mockMvc.perform(post("/v1/leagues")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "Bayernliga",
-                            "seasonId": "%s"}
-                    """, seasonId)))
-            .andExpect(status().isCreated())
-            .andReturn();
+                            {"name": "Bayernliga", "seasonId": "%s", "categoryId": "%s"}
+                    """, seasonId, categoryId)))
+            .andExpect(status().isCreated()).andReturn();
     }
 
-    private MvcResult createTier(String competitionId) throws Exception {
+    private MvcResult createTier(String leagueId) throws Exception {
         return mockMvc.perform(post("/v1/tiers")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "1. Bayernliga",
-                            "competitionId": "%s"}
-                    """, competitionId)))
-            .andExpect(status().isCreated())
-            .andReturn();
+                            {"name": "1. Bayernliga", "leagueId": "%s"}
+                    """, leagueId)))
+            .andExpect(status().isCreated()).andReturn();
     }
     //endregion
 }

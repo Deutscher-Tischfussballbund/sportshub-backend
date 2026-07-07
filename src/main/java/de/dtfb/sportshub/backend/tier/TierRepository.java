@@ -8,12 +8,12 @@ import java.util.Optional;
 
 public interface TierRepository extends JpaRepository<Tier, String> {
 
-    /** Tiers of one competition (copy-forward source walk / structure read). */
-    List<Tier> findByCompetitionId(String competitionId);
+    /** Tiers of one league (copy-forward source walk / structure read). */
+    List<Tier> findByLeagueId(String leagueId);
 
-    @Query("select e from Tier e where e.competition.season.archivedAt is null")
+    @Query("select e from Tier e where e.league.season.archivedAt is null")
     List<Tier> findAllVisible();
 
-    @Query("select e from Tier e where e.id = :id and e.competition.season.archivedAt is null")
+    @Query("select e from Tier e where e.id = :id and e.league.season.archivedAt is null")
     Optional<Tier> findVisibleById(String id);
 }

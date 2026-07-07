@@ -6,13 +6,14 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Component;
 
 /**
- * Season-scoped queries over the competition subtree (Competition → Discipline → Stage → Pool →
- * Round → MatchDay → Match → Set/Event, plus Standing). Centralizes the spine-walking JPQL in one
- * place instead of spreading it across ten repositories.
+ * Season-scoped queries over the league subtree (League -> Tier -> Group -> Round -> MatchDay ->
+ * Match -> Set/Event, plus Standing). Centralizes the spine-walking JPQL in one place instead of
+ * spreading it across ten repositories. The group entity is {@code LeagueGroup} in JPQL (the Java
+ * class is {@code Group}, but {@code GROUP} is reserved).
  *
  * <p>Bulk deletes use {@code IN (subquery)} form: the deep association navigation lives in the
  * subquery's SELECT (where Hibernate's implicit joins are supported), while each DELETE's own WHERE
- * only tests a single-valued path — keeping the HQL bulk-delete valid.
+ * only tests a single-valued path - keeping the HQL bulk-delete valid.
  */
 @Component
 public class SeasonStructure {
@@ -22,44 +23,42 @@ public class SeasonStructure {
 
     public SeasonContents contentsOf(String seasonId) {
         return new SeasonContents(
-            count("select count(c) from Competition c where c.season.id = :s", seasonId),
+            count("select count(l) from League l where l.season.id = :s", seasonId),
             count("select count(md) from MatchDay md"
-                + " where md.round.pool.stage.discipline.competition.season.id = :s", seasonId),
+                + " where md.round.group.tier.league.season.id = :s", seasonId),
             countMatchDaysWithResults(seasonId),
             count("select count(st) from Standing st"
-                + " where st.pool.stage.discipline.competition.season.id = :s", seasonId));
+                + " where st.group.tier.league.season.id = :s", seasonId));
     }
 
-    /** Delete the whole (assumed result-free) structure under the season, leaf → root. */
+    /** Delete the whole (assumed result-free) structure under the season, leaf -> root. */
     public void deleteStructure(String seasonId) {
         bulkDelete("delete from MatchEvent e where e.match in"
-            + " (select m from Match m where m.matchDay.round.pool.stage.discipline.competition.season.id = :s)",
+            + " (select m from Match m where m.matchDay.round.group.tier.league.season.id = :s)",
             seasonId);
         bulkDelete("delete from MatchSet x where x.match in"
-            + " (select m from Match m where m.matchDay.round.pool.stage.discipline.competition.season.id = :s)",
+            + " (select m from Match m where m.matchDay.round.group.tier.league.season.id = :s)",
             seasonId);
         bulkDelete("delete from Match m where m.matchDay in"
-            + " (select md from MatchDay md where md.round.pool.stage.discipline.competition.season.id = :s)",
+            + " (select md from MatchDay md where md.round.group.tier.league.season.id = :s)",
             seasonId);
         bulkDelete("delete from MatchDay md where md.round in"
-            + " (select r from Round r where r.pool.stage.discipline.competition.season.id = :s)", seasonId);
-        bulkDelete("delete from Standing st where st.pool in"
-            + " (select p from Pool p where p.stage.discipline.competition.season.id = :s)", seasonId);
-        bulkDelete("delete from Round r where r.pool in"
-            + " (select p from Pool p where p.stage.discipline.competition.season.id = :s)", seasonId);
-        bulkDelete("delete from Pool p where p.stage in"
-            + " (select sg from Stage sg where sg.discipline.competition.season.id = :s)", seasonId);
-        bulkDelete("delete from Stage sg where sg.discipline in"
-            + " (select d from Discipline d where d.competition.season.id = :s)", seasonId);
-        bulkDelete("delete from Discipline d where d.competition in"
-            + " (select c from Competition c where c.season.id = :s)", seasonId);
-        bulkDelete("delete from Competition c where c.season.id = :s", seasonId);
+            + " (select r from Round r where r.group.tier.league.season.id = :s)", seasonId);
+        bulkDelete("delete from Standing st where st.group in"
+            + " (select g from LeagueGroup g where g.tier.league.season.id = :s)", seasonId);
+        bulkDelete("delete from Round r where r.group in"
+            + " (select g from LeagueGroup g where g.tier.league.season.id = :s)", seasonId);
+        bulkDelete("delete from LeagueGroup g where g.tier in"
+            + " (select t from Tier t where t.league.season.id = :s)", seasonId);
+        bulkDelete("delete from Tier t where t.league in"
+            + " (select l from League l where l.season.id = :s)", seasonId);
+        bulkDelete("delete from League l where l.season.id = :s", seasonId);
     }
 
     private long countMatchDaysWithResults(String seasonId) {
         return em.createQuery("select count(md) from MatchDay md"
                 + " where md.resultState <> :open"
-                + " and md.round.pool.stage.discipline.competition.season.id = :s", Long.class)
+                + " and md.round.group.tier.league.season.id = :s", Long.class)
             .setParameter("open", ResultState.OPEN)
             .setParameter("s", seasonId)
             .getSingleResult();

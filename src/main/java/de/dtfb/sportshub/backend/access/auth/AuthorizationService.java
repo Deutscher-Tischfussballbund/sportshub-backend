@@ -8,15 +8,13 @@ import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignment;
 import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignmentRepository;
 import de.dtfb.sportshub.backend.club.Club;
 import de.dtfb.sportshub.backend.club.ClubRepository;
-import de.dtfb.sportshub.backend.competition.Competition;
-import de.dtfb.sportshub.backend.competition.CompetitionRepository;
 import de.dtfb.sportshub.backend.federation.Federation;
+import de.dtfb.sportshub.backend.league.League;
+import de.dtfb.sportshub.backend.league.LeagueRepository;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSetRepository;
 import de.dtfb.sportshub.backend.location.Location;
 import de.dtfb.sportshub.backend.location.LocationRepository;
-import de.dtfb.sportshub.backend.tier.Tier;
-import de.dtfb.sportshub.backend.tier.TierRepository;
 import de.dtfb.sportshub.backend.matchday.MatchDay;
 import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
 import de.dtfb.sportshub.backend.player.Player;
@@ -27,6 +25,8 @@ import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamRepository;
 import de.dtfb.sportshub.backend.teamparticipation.TeamParticipation;
 import de.dtfb.sportshub.backend.teamparticipation.TeamParticipationRepository;
+import de.dtfb.sportshub.backend.tier.Tier;
+import de.dtfb.sportshub.backend.tier.TierRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -41,7 +41,7 @@ import java.util.Objects;
  * (e.g. {@code @PreAuthorize("@authz.canGrant(#dto)")}).
  *
  * <p>Bridges Spring Security to this app's authoritative role model: DB-backed, scoped
- * {@link RoleAssignment}s — NOT JWT roles, which are not mapped here. Each method resolves the
+ * {@link RoleAssignment}s - NOT JWT roles, which are not mapped here. Each method resolves the
  * current player from the bearer token; callers are reached only after the filter chain has
  * already authenticated the request (chain baseline is {@code anyRequest().authenticated()}).
  *
@@ -49,6 +49,9 @@ import java.util.Objects;
  * {@link Club#getFederationId()}; teams belong to a club via {@link Team#getClub()} (and thus to
  * that club's region). A region admin therefore administers every club and team within that region,
  * and a club admin administers the teams within that club.
+ *
+ * <p>Note: the {@code COMPETITION} scope / {@code COMPETITION_ORGANIZER} role gate a {@link League}
+ * (the scope's {@code scopeId} is a league id); the scope/role keep their generic names.
  */
 @Component("authz")
 public class AuthorizationService {
@@ -57,7 +60,7 @@ public class AuthorizationService {
     private final RoleAssignmentRepository roleAssignmentRepository;
     private final ClubRepository clubRepository;
     private final TeamRepository teamRepository;
-    private final CompetitionRepository competitionRepository;
+    private final LeagueRepository leagueRepository;
     private final SeasonRepository seasonRepository;
     private final LocationRepository locationRepository;
     private final MatchDayRepository matchDayRepository;
@@ -70,7 +73,7 @@ public class AuthorizationService {
                                 RoleAssignmentRepository roleAssignmentRepository,
                                 ClubRepository clubRepository,
                                 TeamRepository teamRepository,
-                                CompetitionRepository competitionRepository,
+                                LeagueRepository leagueRepository,
                                 SeasonRepository seasonRepository,
                                 LocationRepository locationRepository,
                                 MatchDayRepository matchDayRepository,
@@ -82,7 +85,7 @@ public class AuthorizationService {
         this.roleAssignmentRepository = roleAssignmentRepository;
         this.clubRepository = clubRepository;
         this.teamRepository = teamRepository;
-        this.competitionRepository = competitionRepository;
+        this.leagueRepository = leagueRepository;
         this.seasonRepository = seasonRepository;
         this.locationRepository = locationRepository;
         this.matchDayRepository = matchDayRepository;
@@ -114,7 +117,7 @@ public class AuthorizationService {
 
     /**
      * May administer the given season: a season belongs to a region via {@link Season#getFederation()},
-     * so its region's admin (or a global admin) manages it. A season with no federation is global —
+     * so its region's admin (or a global admin) manages it. A season with no federation is global -
      * only a global admin may manage it.
      */
     public boolean canManageSeason(String seasonId) {
@@ -127,15 +130,15 @@ public class AuthorizationService {
         return region != null && isRegionAdmin(roles, region.getId());
     }
 
-    /** May administer the given competition's meta (its region's admin, or global) — see the COMPETITION scope. */
-    public boolean canManageCompetition(String competitionId) {
-        return canManageScope(currentRoles(), ScopeType.COMPETITION, competitionId);
+    /** May administer the given league's meta (its region's admin, or global) - see the COMPETITION scope. */
+    public boolean canManageLeague(String leagueId) {
+        return canManageScope(currentRoles(), ScopeType.COMPETITION, leagueId);
     }
 
     /**
-     * May administer the given tier: a tier belongs to a competition and thus to that competition's
-     * season → region, so the region's admin (or a global admin) manages it — the same authority as
-     * editing the competition it hangs off.
+     * May administer the given tier: a tier belongs to a league and thus to that league's season and
+     * region, so the region's admin (or a global admin) manages it - the same authority as editing
+     * the league it hangs off.
      */
     public boolean canManageTier(String tierId) {
         List<RoleAssignment> roles = currentRoles();
@@ -143,15 +146,15 @@ public class AuthorizationService {
             return true;
         }
         Tier tier = tierId == null ? null : tierRepository.findById(tierId).orElse(null);
-        Competition competition = tier == null ? null : tier.getCompetition();
-        Season season = competition == null ? null : competition.getSeason();
+        League league = tier == null ? null : tier.getLeague();
+        Season season = league == null ? null : league.getSeason();
         Federation region = season == null ? null : season.getFederation();
         return region != null && isRegionAdmin(roles, region.getId());
     }
 
     /**
      * May create/edit a league rule set owned by the given region. A {@code null} federation means a
-     * DTFB-global template — only a global admin may manage it (handled by the admin short-circuit).
+     * DTFB-global template - only a global admin may manage it (handled by the admin short-circuit).
      */
     public boolean canManageRuleSet(String federationId) {
         List<RoleAssignment> roles = currentRoles();
@@ -173,9 +176,9 @@ public class AuthorizationService {
     }
 
     /**
-     * May administer the given team participation (placement): it belongs to a competition and thus to
-     * that competition's season → region, so the region's admin (or a global admin) manages it. This is
-     * region placement authority — the same scope as editing the season itself (§6 of the model).
+     * May administer the given team participation (placement): it belongs to a league and thus to
+     * that league's season and region, so the region's admin (or a global admin) manages it. This is
+     * region placement authority - the same scope as editing the season itself (section 6 of the model).
      */
     public boolean canManageParticipation(String participationId) {
         List<RoleAssignment> roles = currentRoles();
@@ -184,8 +187,8 @@ public class AuthorizationService {
         }
         TeamParticipation participation = participationId == null
             ? null : teamParticipationRepository.findById(participationId).orElse(null);
-        Competition competition = participation == null ? null : participation.getCompetition();
-        Season season = competition == null ? null : competition.getSeason();
+        League league = participation == null ? null : participation.getLeague();
+        Season season = league == null ? null : league.getSeason();
         Federation region = season == null ? null : season.getFederation();
         return region != null && isRegionAdmin(roles, region.getId());
     }
@@ -193,7 +196,7 @@ public class AuthorizationService {
     /**
      * May edit/submit the roster of the given participation (L2): the {@code team_admin} of the
      * participation's team, or an admin above it (club/region/global). Same authority as representing
-     * the team in the result flow — see {@link #canReportMatchDay}.
+     * the team in the result flow - see {@link #canReportMatchDay}.
      */
     public boolean canEditRoster(String participationId) {
         List<RoleAssignment> roles = currentRoles();
@@ -208,7 +211,7 @@ public class AuthorizationService {
 
     /**
      * May confirm/reopen the roster of the given participation (L2): an admin ABOVE the team
-     * (club/region/global) — deliberately NOT the {@code team_admin} who submits, so the final say is
+     * (club/region/global) - deliberately NOT the {@code team_admin} who submits, so the final say is
      * separate from the submission.
      */
     public boolean canConfirmRoster(String participationId) {
@@ -232,31 +235,16 @@ public class AuthorizationService {
         return region != null && isRegionAdmin(roles, region.getId());
     }
 
-    /**
-     * May administer the given discipline: a discipline belongs to an competition, so it inherits that
-     * competition's region scope. (Its {@code Category} is a global classification and does not bear
-     * scope.) This is region-config authority (admins) — for running the competition *under* a
-     * discipline, see {@link #canOrganizeDiscipline}.
-     */
-    public boolean canManageDiscipline(String disciplineId) {
-        Competition competition = competitionResolver.ofDiscipline(disciplineId);
-        return canManageScope(currentRoles(), ScopeType.COMPETITION, competition == null ? null : competition.getId());
+    // --- Tier C: competition data. May run the league the entity belongs to - the region/global
+    // admin above its league, OR a competition_organizer appointed to that league. Each entity resolves
+    // to its owning League via CompetitionResolver (Group -> Tier -> League, Match -> MatchDay -> ... -> League).
+
+    public boolean canOrganizeTier(String tierId) {
+        return canOrganize(competitionResolver.ofTier(tierId));
     }
 
-    // --- Tier C: competition data. May run the competition the entity belongs to — the region/global
-    // admin above its competition, OR an competition_organizer appointed to that competition. Each entity resolves to
-    // its owning Competition via CompetitionResolver (Stage→Discipline→Competition, Match→MatchDay→…→Competition).
-
-    public boolean canOrganizeDiscipline(String disciplineId) {
-        return canOrganize(competitionResolver.ofDiscipline(disciplineId));
-    }
-
-    public boolean canOrganizeStage(String stageId) {
-        return canOrganize(competitionResolver.ofStage(stageId));
-    }
-
-    public boolean canOrganizePool(String poolId) {
-        return canOrganize(competitionResolver.ofPool(poolId));
+    public boolean canOrganizeGroup(String groupId) {
+        return canOrganize(competitionResolver.ofGroup(groupId));
     }
 
     public boolean canOrganizeRound(String roundId) {
@@ -280,31 +268,31 @@ public class AuthorizationService {
     }
 
     /**
-     * Competition-data capability for the given competition: the region/global admin above it OR an
-     * {@code competition_organizer} appointed to that competition. Distinct from {@link #canManageCompetition} (competition
-     * meta — admins only); an organizer runs the competition, not the competition's place in the tree.
+     * Competition-data capability for the given league: the region/global admin above it OR a
+     * {@code competition_organizer} appointed to that league. Distinct from {@link #canManageLeague}
+     * (league meta - admins only); an organizer runs the league, not the league's place in the tree.
      */
-    private boolean canOrganize(Competition competition) {
+    private boolean canOrganize(League league) {
         List<RoleAssignment> roles = currentRoles();
         if (AccessRoles.isGlobalAdmin(roles)) {
             return true;
         }
-        if (competition == null) {
+        if (league == null) {
             return false;
         }
-        Federation region = competition.getSeason() == null ? null : competition.getSeason().getFederation();
+        Federation region = league.getSeason() == null ? null : league.getSeason().getFederation();
         boolean regionAdmin = region != null && isRegionAdmin(roles, region.getId());
-        return regionAdmin || isCompetitionOrganizer(roles, competition.getId());
+        return regionAdmin || isCompetitionOrganizer(roles, league.getId());
     }
 
-    private boolean isCompetitionOrganizer(List<RoleAssignment> roles, String competitionId) {
-        return competitionId != null && roles.stream().anyMatch(ra ->
-            ra.getRole() == Role.COMPETITION_ORGANIZER && Objects.equals(ra.getScopeId(), competitionId));
+    private boolean isCompetitionOrganizer(List<RoleAssignment> roles, String leagueId) {
+        return leagueId != null && roles.stream().anyMatch(ra ->
+            ra.getRole() == Role.COMPETITION_ORGANIZER && Objects.equals(ra.getScopeId(), leagueId));
     }
 
     /**
      * Tier D: may submit/confirm the league result of the given match day, gating the team-rep
-     * workflow. The caller must represent a *participating* team (axis 🟦+🟨) — a {@code team_admin}
+     * workflow. The caller must represent a participating team - a {@code team_admin}
      * of {@code teamHome}/{@code teamAway}, or an admin above that team (club/region/global). The
      * submitter-vs-opponent distinction on confirm is enforced in {@code MatchDayService} (a person
      * may not confirm their own submission); this gate only establishes affiliation.
@@ -324,7 +312,7 @@ public class AuthorizationService {
     /**
      * Whether the current player may act for {@code team}: its {@code team_admin}, or an admin above
      * it (club admin of its club, region admin of its region). Unlike {@link #canManageTeam} (team
-     * CRUD — admins above only), this also accepts the {@code team_admin} role itself, which exists
+     * CRUD - admins above only), this also accepts the {@code team_admin} role itself, which exists
      * precisely to act for one team in the result flow.
      */
     private boolean canRepresent(List<RoleAssignment> roles, Team team) {
@@ -379,11 +367,11 @@ public class AuthorizationService {
                     && (isRegionAdmin(roles, club.getFederationId()) || isClubAdmin(roles, club.getId()));
             }
             case COMPETITION -> {
-                // An competition belongs to its region via Competition -> Season -> Federation; the region
-                // admin of that region administers the competition (e.g. to appoint an competition organizer).
-                Competition competition = scopeId == null ? null : competitionRepository.findById(scopeId).orElse(null);
-                Federation region = competition == null || competition.getSeason() == null
-                    ? null : competition.getSeason().getFederation();
+                // A league belongs to its region via League -> Season -> Federation; the region admin
+                // of that region administers the league (e.g. to appoint a competition organizer).
+                League league = scopeId == null ? null : leagueRepository.findById(scopeId).orElse(null);
+                Federation region = league == null || league.getSeason() == null
+                    ? null : league.getSeason().getFederation();
                 yield region != null && isRegionAdmin(roles, region.getId());
             }
         };

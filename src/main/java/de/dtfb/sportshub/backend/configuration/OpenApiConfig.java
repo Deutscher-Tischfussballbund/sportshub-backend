@@ -50,11 +50,10 @@ public class OpenApiConfig {
      */
     private static final List<String> TAG_ORDER = List.of(
         "Federation", "Region", "Club", "Team",
-        "Season", "Competition", "Discipline", "Category", "Location",
-        "Stage", "Pool", "Round", "Match Day", "Match", "Match Set", "Match Event", "Standing",
+        "Season", "League", "Category", "Location", "League Rule Set",
+        "Tier", "Group", "Round", "Match Day", "Match", "Match Set", "Match Event", "Standing",
         "Player", "Player Admin",
-        "Auth Me", "Role Admin", "Role Catalog",
-        "Import");
+        "Auth Me", "Role Admin", "Role Catalog");
 
     /** One-line blurb per group, shown under the tag header in Swagger UI. */
     private static final Map<String, String> TAG_DESCRIPTIONS = Map.ofEntries(
@@ -63,24 +62,23 @@ public class OpenApiConfig {
         Map.entry("Club", "Vereine within a region. Read-only — clubs arrive via import."),
         Map.entry("Team", "Teams within a club. Managed by the club's or region's admin; every team belongs to a club."),
         Map.entry("Season", "Spielzeiten, scoped to a region. Managed by that region's admin."),
-        Map.entry("Competition", "Competitions (leagues & tournaments) within a season. Region-admin managed."),
-        Map.entry("Discipline", "An event's disciplines (a Category within an Event). Region-admin managed."),
+        Map.entry("League", "Leagues within a season (one category's ladder). Region-admin managed."),
         Map.entry("Category", "Global classifications (e.g. Herren). Admin-managed."),
         Map.entry("Location", "Venues, optionally tied to a region. Region- or admin-managed."),
-        Map.entry("Stage", "Competition structure within a discipline. Run by the event's organizer (or an admin above it)."),
-        Map.entry("Pool", "Pools / groups within a stage. Event-organizer managed."),
-        Map.entry("Round", "Rounds within a pool. Event-organizer managed."),
+        Map.entry("League Rule Set", "Reusable league rules (points, game plan, scoring). Region-owned; null = DTFB template."),
+        Map.entry("Tier", "Promotion/relegation levels within a league (e.g. 1. Bayernliga). Region-admin managed."),
+        Map.entry("Group", "Round-robin groups within a tier. Organizer-managed."),
+        Map.entry("Round", "Rounds within a group. Organizer-managed."),
         Map.entry("Match Day", "Match days within a round, plus the team-representative result submit/confirm flow."),
-        Map.entry("Match", "Individual matches within a match day. Event-organizer managed."),
-        Map.entry("Match Set", "Sets within a match. Event-organizer managed."),
-        Map.entry("Match Event", "Point / timeout / … events within a match. Event-organizer managed."),
-        Map.entry("Standing", "Computed pool standings. Read-only."),
+        Map.entry("Match", "Individual matches within a match day. Organizer-managed."),
+        Map.entry("Match Set", "Sets within a match. Organizer-managed."),
+        Map.entry("Match Event", "Point / timeout / … events within a match. Organizer-managed."),
+        Map.entry("Standing", "Computed group standings. Read-only."),
         Map.entry("Player", "Single player lookup."),
         Map.entry("Player Admin", "Member directory for the admin frontend."),
         Map.entry("Auth Me", "The caller's own identity, roles and manageable areas."),
         Map.entry("Role Admin", "Grant / revoke scoped role assignments and look them up."),
-        Map.entry("Role Catalog", "The static catalog of roles and the scope each implies."),
-        Map.entry("Import", "Bulk tournament / data import. Admin only."));
+        Map.entry("Role Catalog", "The static catalog of roles and the scope each implies."));
 
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
     private String issuerUri;

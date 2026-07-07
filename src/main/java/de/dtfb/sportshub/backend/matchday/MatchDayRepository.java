@@ -10,9 +10,9 @@ import java.util.Optional;
 public interface MatchDayRepository extends JpaRepository<MatchDay, String> {
     Optional<MatchDay> findByRoundAndName(Round round, String name);
 
-    @Query("select e from MatchDay e where e.round.pool.stage.discipline.competition.season.archivedAt is null")
+    @Query("select e from MatchDay e where e.round.group.tier.league.season.archivedAt is null")
     List<MatchDay> findAllVisible();
 
-    @Query("select e from MatchDay e where e.id = :id and e.round.pool.stage.discipline.competition.season.archivedAt is null")
+    @Query("select e from MatchDay e where e.id = :id and e.round.group.tier.league.season.archivedAt is null")
     Optional<MatchDay> findVisibleById(String id);
 }

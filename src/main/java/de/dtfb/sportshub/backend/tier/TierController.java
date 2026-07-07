@@ -24,7 +24,7 @@ public class TierController {
     }
 
     @PostMapping
-    @PreAuthorize("@authz.canManageCompetition(#tierDto.competitionId)")
+    @PreAuthorize("@authz.canManageLeague(#tierDto.leagueId)")
     public ResponseEntity<TierDto> createTier(@RequestBody TierDto tierDto) {
         TierDto returnedDto = service.create(tierDto);
 

@@ -9,17 +9,17 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface TierMapper {
 
-    @Mapping(source = "competition.id", target = "competitionId")
+    @Mapping(source = "league.id", target = "leagueId")
     @Mapping(source = "ruleSet.id", target = "ruleSetId")
     TierDto toDto(Tier tier);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "competition", ignore = true)
+    @Mapping(target = "league", ignore = true)
     @Mapping(target = "ruleSet", ignore = true)
     Tier toEntity(TierDto tierDto);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "competition", ignore = true)
+    @Mapping(target = "league", ignore = true)
     @Mapping(target = "ruleSet", ignore = true)
     void updateEntityFromDto(TierDto dto, @MappingTarget Tier entity);
 

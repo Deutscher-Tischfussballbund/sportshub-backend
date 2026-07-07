@@ -103,7 +103,7 @@ class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
             .content(String.format("{\"playerId\": \"%s\"}", playerId)));
     }
 
-    /** Create a season (open or closed) with a competition + team, and return a participation id. */
+    /** Create a season (open or closed) with a league + team, and return a participation id. */
     private String participationUnderSeason(String federationId, boolean registrationOpen) throws Exception {
         MvcResult season = mockMvc.perform(post("/v1/seasons")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -114,12 +114,13 @@ class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
             .andReturn();
         String seasonId = JsonPath.read(season.getResponse().getContentAsString(), "$.id");
 
-        MvcResult competition = mockMvc.perform(post("/v1/competitions")
+        MvcResult league = mockMvc.perform(post("/v1/leagues")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(String.format("{\"name\": \"Liga\", \"seasonId\": \"%s\"}", seasonId)))
+                .content(String.format("{\"name\": \"Liga\", \"seasonId\": \"%s\", \"categoryId\": \"%s\"}",
+                    seasonId, createCategory())))
             .andExpect(status().isCreated())
             .andReturn();
-        String competitionId = JsonPath.read(competition.getResponse().getContentAsString(), "$.id");
+        String leagueId = JsonPath.read(league.getResponse().getContentAsString(), "$.id");
 
         MvcResult team = mockMvc.perform(post("/v1/teams")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -130,7 +131,7 @@ class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
 
         MvcResult participation = mockMvc.perform(post("/v1/team-participations")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(String.format("{\"teamId\": \"%s\", \"competitionId\": \"%s\"}", teamId, competitionId)))
+                .content(String.format("{\"teamId\": \"%s\", \"leagueId\": \"%s\"}", teamId, leagueId)))
             .andExpect(status().isCreated())
             .andReturn();
         return JsonPath.read(participation.getResponse().getContentAsString(), "$.id");

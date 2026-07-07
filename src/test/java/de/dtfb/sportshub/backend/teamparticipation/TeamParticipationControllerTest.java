@@ -15,39 +15,30 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class TeamParticipationControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
 
     private String seasonId;
-    private String competitionId;
-    private String poolId;
+    private String leagueId;
+    private String groupId;
     private String teamId;
     private String url;
 
     @PostConstruct
     void setup() throws Exception {
-        MvcResult season = createSeason();
-        seasonId = JsonPath.read(season.getResponse().getContentAsString(), "$.id");
-        MvcResult competition = createEvent(seasonId);
-        competitionId = JsonPath.read(competition.getResponse().getContentAsString(), "$.id");
-        MvcResult discipline = createDiscipline(competitionId);
-        String disciplineId = JsonPath.read(discipline.getResponse().getContentAsString(), "$.id");
-        MvcResult stage = createStage(disciplineId);
-        String stageId = JsonPath.read(stage.getResponse().getContentAsString(), "$.id");
-        MvcResult pool = createPool(stageId);
-        poolId = JsonPath.read(pool.getResponse().getContentAsString(), "$.id");
-        MvcResult team = createTeam("Hand und Foos");
-        teamId = JsonPath.read(team.getResponse().getContentAsString(), "$.id");
+        seasonId = id(createSeason());
+        leagueId = id(createLeague(seasonId));
+        String tierId = id(createTier(leagueId));
+        groupId = id(createGroup(tierId));
+        teamId = id(createTeam("Hand und Foos"));
     }
 
     @BeforeEach
     void setupEach() throws Exception {
-        // Add a team to the competition without a division yet (registered-but-unplaced).
-        MvcResult participation = createParticipation(null);
-        url = participation.getResponse().getHeader("Location");
+        // Register a team without a division yet (registered-but-unplaced).
+        url = createParticipation(null).getResponse().getHeader("Location");
         assert url != null;
     }
 
     @Test
     void getAllParticipations() throws Exception {
-        mockMvc.perform(get("/v1/team-participations"))
-            .andExpect(status().isOk());
+        mockMvc.perform(get("/v1/team-participations")).andExpect(status().isOk());
     }
 
     @Test
@@ -61,24 +52,24 @@ class TeamParticipationControllerTest extends de.dtfb.sportshub.backend.support.
         mockMvc.perform(get(url))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.teamId").value(teamId))
-            .andExpect(jsonPath("$.competitionId").value(competitionId))
-            // season is derived from the competition, not sent by the client
+            .andExpect(jsonPath("$.leagueId").value(leagueId))
+            // season is derived from the league, not sent by the client
             .andExpect(jsonPath("$.seasonId").value(seasonId));
     }
 
     @Test
-    void updateParticipation_placesIntoPool() throws Exception {
+    void updateParticipation_placesIntoGroup() throws Exception {
         // promote/relegate: move the team into a division
         mockMvc.perform(put(url)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"teamId": "%s", "competitionId": "%s", "poolId": "%s"}
-                    """, teamId, competitionId, poolId)))
+                            {"teamId": "%s", "leagueId": "%s", "groupId": "%s"}
+                    """, teamId, leagueId, groupId)))
             .andExpect(status().isOk());
 
         mockMvc.perform(get(url))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.poolId").value(poolId));
+            .andExpect(jsonPath("$.groupId").value(groupId));
     }
 
     @Test
@@ -86,18 +77,15 @@ class TeamParticipationControllerTest extends de.dtfb.sportshub.backend.support.
         mockMvc.perform(put("/v1/team-participations/" + NanoIdUtils.randomNanoId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"teamId": "%s", "competitionId": "%s"}
-                    """, teamId, competitionId)))
+                            {"teamId": "%s", "leagueId": "%s"}
+                    """, teamId, leagueId)))
             .andExpect(status().isNotFound());
     }
 
     @Test
     void deleteParticipation() throws Exception {
-        mockMvc.perform(delete(url))
-            .andExpect(status().isOk());
-
-        mockMvc.perform(get(url))
-            .andExpect(status().isNotFound());
+        mockMvc.perform(delete(url)).andExpect(status().isOk());
+        mockMvc.perform(get(url)).andExpect(status().isNotFound());
     }
 
     @Test
@@ -106,13 +94,11 @@ class TeamParticipationControllerTest extends de.dtfb.sportshub.backend.support.
             .andExpect(status().isNotFound());
     }
 
-    /**
-     * =========================================================
-     * helper operations
-     * =========================================================
-     */
-
     //region helpers
+    private String id(MvcResult result) throws Exception {
+        return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+    }
+
     private MvcResult createSeason() throws Exception {
         String federationId = createFederation();
         return mockMvc.perform(post("/v1/seasons")
@@ -121,46 +107,32 @@ class TeamParticipationControllerTest extends de.dtfb.sportshub.backend.support.
                 """, federationId))).andReturn();
     }
 
-    private MvcResult createEvent(String uuid) throws Exception {
-        return mockMvc.perform(post("/v1/competitions")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(String.format("""
-                            {"name": "Turnier", "seasonId": "%s"}
-                    """, uuid)))
-            .andExpect(status().isCreated())
-            .andReturn();
-    }
-
-    private MvcResult createDiscipline(String uuid) throws Exception {
+    private MvcResult createLeague(String seasonId) throws Exception {
         String categoryId = createCategory();
-        return mockMvc.perform(post("/v1/disciplines")
+        return mockMvc.perform(post("/v1/leagues")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "Offenes Einzel", "competitionId": "%s", "categoryId": "%s"}
-                    """, uuid, categoryId)))
-            .andExpect(status().isCreated())
-            .andReturn();
+                            {"name": "Bayernliga", "seasonId": "%s", "categoryId": "%s"}
+                    """, seasonId, categoryId)))
+            .andExpect(status().isCreated()).andReturn();
     }
 
-    private MvcResult createStage(String uuid) throws Exception {
-        return mockMvc.perform(post("/v1/stages")
+    private MvcResult createTier(String leagueId) throws Exception {
+        return mockMvc.perform(post("/v1/tiers")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "Vorrunde", "disciplineId": "%s"}
-                    """, uuid)))
-            .andExpect(status().isCreated())
-            .andReturn();
+                            {"name": "1. Bayernliga", "leagueId": "%s"}
+                    """, leagueId)))
+            .andExpect(status().isCreated()).andReturn();
     }
 
-    private MvcResult createPool(String uuid) throws Exception {
-        return mockMvc.perform(post("/v1/pools")
+    private MvcResult createGroup(String tierId) throws Exception {
+        return mockMvc.perform(post("/v1/groups")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "1. Bundesliga", "tournamentMode": "round robin",
-                            "stageId": "%s", "poolState": "PLANNED"}
-                    """, uuid)))
-            .andExpect(status().isCreated())
-            .andReturn();
+                            {"name": "1. Bundesliga", "tierId": "%s", "groupState": "PLANNED"}
+                    """, tierId)))
+            .andExpect(status().isCreated()).andReturn();
     }
 
     private MvcResult createTeam(String name) throws Exception {
@@ -170,19 +142,17 @@ class TeamParticipationControllerTest extends de.dtfb.sportshub.backend.support.
                 .content(String.format("""
                             {"name": "%s", "clubId": "%s"}
                     """, name, clubId)))
-            .andExpect(status().isCreated())
-            .andReturn();
+            .andExpect(status().isCreated()).andReturn();
     }
 
-    private MvcResult createParticipation(String poolId) throws Exception {
-        String pool = poolId == null ? "null" : "\"" + poolId + "\"";
+    private MvcResult createParticipation(String groupId) throws Exception {
+        String group = groupId == null ? "null" : "\"" + groupId + "\"";
         return mockMvc.perform(post("/v1/team-participations")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"teamId": "%s", "competitionId": "%s", "poolId": %s}
-                    """, teamId, competitionId, pool)))
-            .andExpect(status().isCreated())
-            .andReturn();
+                            {"teamId": "%s", "leagueId": "%s", "groupId": %s}
+                    """, teamId, leagueId, group)))
+            .andExpect(status().isCreated()).andReturn();
     }
     //endregion
 }

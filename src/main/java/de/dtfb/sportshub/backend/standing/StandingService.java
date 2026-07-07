@@ -1,12 +1,12 @@
 package de.dtfb.sportshub.backend.standing;
 
+import de.dtfb.sportshub.backend.group.Group;
+import de.dtfb.sportshub.backend.group.GroupNotFoundException;
+import de.dtfb.sportshub.backend.group.GroupRepository;
 import de.dtfb.sportshub.backend.match.Match;
 import de.dtfb.sportshub.backend.match.MatchRepository;
 import de.dtfb.sportshub.backend.matchday.MatchDay;
 import de.dtfb.sportshub.backend.matchday.MatchDayConfirmedEvent;
-import de.dtfb.sportshub.backend.pool.Pool;
-import de.dtfb.sportshub.backend.pool.PoolNotFoundException;
-import de.dtfb.sportshub.backend.pool.PoolRepository;
 import de.dtfb.sportshub.backend.round.Round;
 import de.dtfb.sportshub.backend.team.Team;
 import org.springframework.context.event.EventListener;
@@ -19,21 +19,21 @@ import java.util.List;
 public class StandingService {
 
     private final StandingRepository standingRepository;
-    private final PoolRepository poolRepository;
+    private final GroupRepository groupRepository;
     private final MatchRepository matchRepository;
 
-    public StandingService(StandingRepository standingRepository, PoolRepository poolRepository,
+    public StandingService(StandingRepository standingRepository, GroupRepository groupRepository,
                            MatchRepository matchRepository) {
         this.standingRepository = standingRepository;
-        this.poolRepository = poolRepository;
+        this.groupRepository = groupRepository;
         this.matchRepository = matchRepository;
     }
 
     @Transactional(readOnly = true)
-    public List<StandingDto> getByPool(String poolId) {
-        Pool pool = poolRepository.findVisibleById(poolId)
-            .orElseThrow(() -> new PoolNotFoundException(poolId));
-        return standingRepository.findByPoolOrderByPointsDescSetsWonDesc(pool).stream()
+    public List<StandingDto> getByGroup(String groupId) {
+        Group group = groupRepository.findVisibleById(groupId)
+            .orElseThrow(() -> new GroupNotFoundException(groupId));
+        return standingRepository.findByGroupOrderByPointsDescSetsWonDesc(group).stream()
             .map(this::toDto)
             .toList();
     }
@@ -44,8 +44,8 @@ public class StandingService {
         MatchDay matchDay = event.getMatchDay();
         Round round = matchDay.getRound();
         if (round == null) return;
-        Pool pool = round.getPool();
-        if (pool == null) return;
+        Group group = round.getGroup();
+        if (group == null) return;
 
         List<Match> matches = matchRepository.findByMatchDay(matchDay);
 
@@ -70,15 +70,15 @@ public class StandingService {
         boolean awayWon = awayWins > homeWins;
         boolean isDraw = homeWins == awayWins;
 
-        updateStanding(pool, homeTeam, homeWon, isDraw, awayWon, homeSets, awaySets);
-        updateStanding(pool, awayTeam, awayWon, isDraw, homeWon, awaySets, homeSets);
+        updateStanding(group, homeTeam, homeWon, isDraw, awayWon, homeSets, awaySets);
+        updateStanding(group, awayTeam, awayWon, isDraw, homeWon, awaySets, homeSets);
     }
 
-    private void updateStanding(Pool pool, Team team, boolean won, boolean draw, boolean lost,
+    private void updateStanding(Group group, Team team, boolean won, boolean draw, boolean lost,
                                  int setsFor, int setsAgainst) {
-        Standing standing = standingRepository.findByPoolAndTeam(pool, team).orElseGet(() -> {
+        Standing standing = standingRepository.findByGroupAndTeam(group, team).orElseGet(() -> {
             Standing s = new Standing();
-            s.setPool(pool);
+            s.setGroup(group);
             s.setTeam(team);
             return s;
         });

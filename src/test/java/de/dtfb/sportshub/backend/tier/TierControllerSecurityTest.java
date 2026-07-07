@@ -19,7 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * A tier belongs to a competition and inherits its region scope — create gated on the target
- * competition's region via {@code @authz.canManageCompetition(#tierDto.competitionId)},
+ * competition's region via {@code @authz.canManageLeague(#tierDto.competitionId)},
  * update/delete on the tier's region via {@code @authz.canManageTier(#id)}. Reads stay open.
  */
 @SpringBootTest
@@ -33,7 +33,7 @@ class TierControllerSecurityTest {
     AuthorizationService authz;
 
     private static final String BODY = """
-        {"name": "1. Bayernliga", "competitionId": "competition-x"}
+        {"name": "1. Bayernliga", "leagueId": "league-x"}
         """;
 
     @Test
@@ -44,7 +44,7 @@ class TierControllerSecurityTest {
 
     @Test
     void create_whenNotCompetitionManager_isForbidden() throws Exception {
-        Mockito.when(authz.canManageCompetition(any())).thenReturn(false);
+        Mockito.when(authz.canManageLeague(any())).thenReturn(false);
         mockMvc.perform(post("/v1/tiers").with(jwt())
                 .contentType(MediaType.APPLICATION_JSON).content(BODY))
             .andExpect(status().isForbidden());
@@ -52,8 +52,8 @@ class TierControllerSecurityTest {
 
     @Test
     void create_whenCompetitionManager_passesGate() throws Exception {
-        Mockito.when(authz.canManageCompetition(any())).thenReturn(true);
-        // Gate passes; the request then 404s because competition "competition-x" does not exist,
+        Mockito.when(authz.canManageLeague(any())).thenReturn(true);
+        // Gate passes; the request then 404s because competition "league-x" does not exist,
         // which confirms authorization let it through (a denied request would be 403).
         mockMvc.perform(post("/v1/tiers").with(jwt())
                 .contentType(MediaType.APPLICATION_JSON).content(BODY))

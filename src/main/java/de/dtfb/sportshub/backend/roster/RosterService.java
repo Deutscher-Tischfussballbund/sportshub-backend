@@ -126,7 +126,7 @@ public class RosterService {
     }
 
     private void requireRegistrationOpen(TeamParticipation participation) {
-        Season season = participation.getCompetition() == null ? null : participation.getCompetition().getSeason();
+        Season season = participation.getLeague() == null ? null : participation.getLeague().getSeason();
         if (season == null || !season.isRegistrationOpen()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Season registration is closed");
         }

@@ -20,12 +20,12 @@ public class TeamParticipationController {
 
     @GetMapping
     public List<TeamParticipationDto> getAllTeamParticipations(@RequestParam(required = false) String seasonId,
-                                             @RequestParam(required = false) String competitionId) {
-        return service.getAll(seasonId, competitionId);
+                                             @RequestParam(required = false) String leagueId) {
+        return service.getAll(seasonId, leagueId);
     }
 
     @PostMapping
-    @PreAuthorize("@authz.canManageCompetition(#teamParticipationDto.competitionId)")
+    @PreAuthorize("@authz.canManageLeague(#teamParticipationDto.leagueId)")
     public ResponseEntity<TeamParticipationDto> createTeamParticipation(@RequestBody TeamParticipationDto teamParticipationDto) {
         TeamParticipationDto returnedDto = service.create(teamParticipationDto);
 

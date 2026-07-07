@@ -1,11 +1,11 @@
 package de.dtfb.sportshub.backend.teamparticipation;
 
-import de.dtfb.sportshub.backend.competition.Competition;
-import de.dtfb.sportshub.backend.competition.CompetitionNotFoundException;
-import de.dtfb.sportshub.backend.competition.CompetitionRepository;
-import de.dtfb.sportshub.backend.pool.Pool;
-import de.dtfb.sportshub.backend.pool.PoolNotFoundException;
-import de.dtfb.sportshub.backend.pool.PoolRepository;
+import de.dtfb.sportshub.backend.group.Group;
+import de.dtfb.sportshub.backend.group.GroupNotFoundException;
+import de.dtfb.sportshub.backend.group.GroupRepository;
+import de.dtfb.sportshub.backend.league.League;
+import de.dtfb.sportshub.backend.league.LeagueNotFoundException;
+import de.dtfb.sportshub.backend.league.LeagueRepository;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamNotFoundException;
 import de.dtfb.sportshub.backend.team.TeamRepository;
@@ -20,25 +20,25 @@ public class TeamParticipationService {
     private final TeamParticipationRepository repository;
     private final TeamParticipationMapper mapper;
     private final TeamRepository teamRepository;
-    private final CompetitionRepository competitionRepository;
-    private final PoolRepository poolRepository;
+    private final LeagueRepository leagueRepository;
+    private final GroupRepository groupRepository;
 
     public TeamParticipationService(TeamParticipationRepository repository, TeamParticipationMapper mapper,
-                                    TeamRepository teamRepository, CompetitionRepository competitionRepository,
-                                    PoolRepository poolRepository) {
+                                    TeamRepository teamRepository, LeagueRepository leagueRepository,
+                                    GroupRepository groupRepository) {
         this.repository = repository;
         this.mapper = mapper;
         this.teamRepository = teamRepository;
-        this.competitionRepository = competitionRepository;
-        this.poolRepository = poolRepository;
+        this.leagueRepository = leagueRepository;
+        this.groupRepository = groupRepository;
     }
 
-    /** Placements, optionally narrowed to one competition (preferred) or one season. */
+    /** Placements, optionally narrowed to one league (preferred) or one season. */
     @Transactional(readOnly = true)
-    public List<TeamParticipationDto> getAll(String seasonId, String competitionId) {
+    public List<TeamParticipationDto> getAll(String seasonId, String leagueId) {
         List<TeamParticipation> participations;
-        if (competitionId != null) {
-            participations = repository.findVisibleByCompetitionId(competitionId);
+        if (leagueId != null) {
+            participations = repository.findVisibleByLeagueId(leagueId);
         } else if (seasonId != null) {
             participations = repository.findVisibleBySeasonId(seasonId);
         } else {
@@ -73,11 +73,11 @@ public class TeamParticipationService {
         repository.delete(getParticipation(id));
     }
 
-    /** Resolve the team + competition (required) and pool (optional) referenced by the dto. */
+    /** Resolve the team + league (required) and group (optional) referenced by the dto. */
     private void applyRelations(TeamParticipationDto dto, TeamParticipation participation) {
         participation.setTeam(getTeam(dto.getTeamId()));
-        participation.setCompetition(getCompetition(dto.getCompetitionId()));
-        participation.setPool(dto.getPoolId() == null ? null : getPool(dto.getPoolId()));
+        participation.setLeague(getLeague(dto.getLeagueId()));
+        participation.setGroup(dto.getGroupId() == null ? null : getGroup(dto.getGroupId()));
     }
 
     private @NonNull TeamParticipation getParticipation(String id) {
@@ -88,12 +88,12 @@ public class TeamParticipationService {
         return teamRepository.findById(teamId).orElseThrow(() -> new TeamNotFoundException(teamId));
     }
 
-    private @NonNull Competition getCompetition(String competitionId) {
-        return competitionRepository.findById(competitionId)
-            .orElseThrow(() -> new CompetitionNotFoundException(competitionId));
+    private @NonNull League getLeague(String leagueId) {
+        return leagueRepository.findById(leagueId)
+            .orElseThrow(() -> new LeagueNotFoundException(leagueId));
     }
 
-    private @NonNull Pool getPool(String poolId) {
-        return poolRepository.findById(poolId).orElseThrow(() -> new PoolNotFoundException(poolId));
+    private @NonNull Group getGroup(String groupId) {
+        return groupRepository.findById(groupId).orElseThrow(() -> new GroupNotFoundException(groupId));
     }
 }

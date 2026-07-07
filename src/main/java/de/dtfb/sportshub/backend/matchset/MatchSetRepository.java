@@ -10,9 +10,9 @@ import java.util.Optional;
 public interface MatchSetRepository extends JpaRepository<MatchSet, String> {
     Optional<MatchSet> findByMatchAndSetNumber(Match match, Integer setNumber);
 
-    @Query("select e from MatchSet e where e.match.matchDay.round.pool.stage.discipline.competition.season.archivedAt is null")
+    @Query("select e from MatchSet e where e.match.matchDay.round.group.tier.league.season.archivedAt is null")
     List<MatchSet> findAllVisible();
 
-    @Query("select e from MatchSet e where e.id = :id and e.match.matchDay.round.pool.stage.discipline.competition.season.archivedAt is null")
+    @Query("select e from MatchSet e where e.id = :id and e.match.matchDay.round.group.tier.league.season.archivedAt is null")
     Optional<MatchSet> findVisibleById(String id);
 }
