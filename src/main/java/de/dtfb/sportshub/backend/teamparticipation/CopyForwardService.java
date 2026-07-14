@@ -77,6 +77,7 @@ public class CopyForwardService {
                 Tier newTier = new Tier();
                 newTier.setLeague(newLeague);
                 newTier.setName(sourceTier.getName());
+                newTier.setLevel(sourceTier.getLevel()); // preserve the promote/relegate ladder order
                 newTier.setRuleSet(sourceTier.getRuleSet()); // shared -- referenced, not cloned
                 newTier = tierRepository.save(newTier);
                 tiers++;

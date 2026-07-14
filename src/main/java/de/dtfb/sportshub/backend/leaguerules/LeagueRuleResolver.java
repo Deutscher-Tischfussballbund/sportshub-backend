@@ -1,13 +1,17 @@
 package de.dtfb.sportshub.backend.leaguerules;
 
+import de.dtfb.sportshub.backend.federation.Federation;
 import de.dtfb.sportshub.backend.group.Group;
+import de.dtfb.sportshub.backend.league.League;
+import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.tier.Tier;
 import org.springframework.stereotype.Component;
 
 /**
  * Resolves the {@link LeagueRuleSet} that governs a group and reads its settings with sensible
  * defaults. Resolution order (docs/09-league-model.md §3): the group's tier's own rule set, else the
- * league's default; {@code null} if neither is set (a federation-level default is not modeled yet).
+ * league's default, else the owning federation's default; {@code null} if none is set anywhere up
+ * the chain.
  *
  * <p>Callers that only need a single setting use the {@code pointsX} helpers, which fall back to the
  * historical defaults (2/1/0) when no rule set resolves or a field is unset — so behaviour is
@@ -32,7 +36,24 @@ public class LeagueRuleResolver {
         if (tier.getRuleSet() != null) {
             return tier.getRuleSet();
         }
-        return tier.getLeague() == null ? null : tier.getLeague().getRuleSet();
+        League league = tier.getLeague();
+        if (league == null) {
+            return null;
+        }
+        if (league.getRuleSet() != null) {
+            return league.getRuleSet();
+        }
+        return federationDefault(league);
+    }
+
+    /** The owning federation's default rule set (via league → season → federation), or null. */
+    private LeagueRuleSet federationDefault(League league) {
+        Season season = league.getSeason();
+        if (season == null) {
+            return null;
+        }
+        Federation federation = season.getFederation();
+        return federation == null ? null : federation.getDefaultRuleSet();
     }
 
     public int pointsWin(LeagueRuleSet rules) {

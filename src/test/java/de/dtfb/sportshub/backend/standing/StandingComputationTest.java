@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -57,21 +58,39 @@ class StandingComputationTest extends AuthorizedControllerTest {
         assertThat(pointsOf(s.groupId(), s.awayTeamId())).isEqualTo(0);  // default loss = 0
     }
 
-    /** Build a league (optionally with a points rule set), play one home-win match day, confirm it. */
+    @Test
+    void standings_useFederationDefaultWhenTierAndLeagueHaveNone() throws Exception {
+        // A rule set set as the federation's default, with neither tier nor league overriding it.
+        String federationId = create("/v1/federation", "{\"name\":\"FedDefault\"}");
+        String ruleSetId = createRuleSet(federationId, 5, 2, 1);
+        update("/v1/federation/" + federationId,
+            "{\"name\":\"FedDefault\",\"defaultRuleSetId\":\"" + ruleSetId + "\"}");
+
+        Scenario s = buildLeagueWithHomeWin(federationId, "");  // league has no rule set
+
+        assertThat(pointsOf(s.groupId(), s.homeTeamId())).isEqualTo(5);  // federation default win = 5
+        assertThat(pointsOf(s.groupId(), s.awayTeamId())).isEqualTo(1);  // federation default loss = 1
+    }
+
+    /** Build a league (optionally with a points rule set on the league), play one home win, confirm. */
     private Scenario buildLeagueWithHomeWin(Integer win, Integer draw, Integer loss) throws Exception {
         String federationId = create("/v1/federation", "{\"name\":\"Testverband\"}");
-        String seasonId = create("/v1/seasons", "{\"name\":\"2025\",\"federationId\":\"" + federationId + "\"}");
-        String categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"H\"}");
-
         String ruleSetRef = "";
         if (win != null) {
-            String ruleSetId = create("/v1/league-rule-sets", String.format(
-                "{\"name\":\"RS\",\"federationId\":\"%s\",\"playSystem\":\"ROUND_ROBIN\","
-                    + "\"pointsWin\":%d,\"pointsDraw\":%d,\"pointsLoss\":%d}", federationId, win, draw, loss));
-            ruleSetRef = ",\"ruleSetId\":\"" + ruleSetId + "\"";
+            ruleSetRef = ",\"ruleSetId\":\"" + createRuleSet(federationId, win, draw, loss) + "\"";
         }
+        return buildLeagueWithHomeWin(federationId, ruleSetRef);
+    }
+
+    /**
+     * Build a league under {@code federationId} (with an optional {@code leagueRuleSetRef} JSON
+     * fragment attaching a rule set to the league), play one home-win match day, confirm it.
+     */
+    private Scenario buildLeagueWithHomeWin(String federationId, String leagueRuleSetRef) throws Exception {
+        String seasonId = create("/v1/seasons", "{\"name\":\"2025\",\"federationId\":\"" + federationId + "\"}");
+        String categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"H\"}");
         String leagueId = create("/v1/leagues", "{\"name\":\"Liga\",\"seasonId\":\"" + seasonId
-            + "\",\"categoryId\":\"" + categoryId + "\"" + ruleSetRef + "}");
+            + "\",\"categoryId\":\"" + categoryId + "\"" + leagueRuleSetRef + "}");
         String tierId = create("/v1/tiers", "{\"name\":\"1. Liga\",\"leagueId\":\"" + leagueId + "\"}");
         String groupId = create("/v1/groups",
             "{\"name\":\"Gruppe A\",\"tierId\":\"" + tierId + "\",\"groupState\":\"RUNNING\"}");
@@ -132,6 +151,17 @@ class StandingComputationTest extends AuthorizedControllerTest {
             .andExpect(status().isCreated())
             .andReturn().getResponse().getContentAsString();
         return JsonPath.read(json, "$.id");
+    }
+
+    private void update(String path, String body) throws Exception {
+        mockMvc.perform(put(path).contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isOk());
+    }
+
+    private String createRuleSet(String federationId, int win, int draw, int loss) throws Exception {
+        return create("/v1/league-rule-sets", String.format(
+            "{\"name\":\"RS\",\"federationId\":\"%s\",\"playSystem\":\"ROUND_ROBIN\","
+                + "\"pointsWin\":%d,\"pointsDraw\":%d,\"pointsLoss\":%d}", federationId, win, draw, loss));
     }
 
     /**

@@ -45,11 +45,11 @@ shared identities (`Player`, `Team`, `Category`, `Federation`, `Location`).
 ```
 Season              federation, startDate, endDate, registrationOpen, archivedAt   (name kept)
   League            e.g. "Bayern Herren", one category; the copy-forward + ruleset-default unit
-    Tier            "1. Bayernliga", "2. Bayernliga"   ← FIRST-CLASS (promote/relegate between tiers)
+    Tier            "1. Bayernliga", "2. Bayernliga"   ← FIRST-CLASS; `level` (1=top) orders the promote/relegate ladder
       Group         "Gruppe A", "Gruppe B"             (one round-robin table of teams)
         Round       Spieltag N
           MatchDay  a fixture: teamHome vs teamAway
-            Match   an individual game (SINGLE | DOUBLE …), ordered per the game plan
+            Match   an individual game (SINGLE | DOUBLE …); `position` (1-based) orders it per the game plan
               MatchSet
         Standing    (Group × Team) — computed from the effective LeagueRuleSet
 ```
@@ -58,7 +58,7 @@ Season              federation, startDate, endDate, registrationOpen, archivedAt
 |---|---|---|---|
 | Season | `Season` | time container + registration switch | **name kept** (not renamed); `RankingSeason` added later (§5) |
 | League | `League` | one category's ladder in a federation for a season; carries `category` + default ruleset | was `Competition` (renamed); `Discipline`/category folded in as an attribute |
-| Tier | `Tier` | promotion/relegation level | **NEW** — was baked into `Pool.name` |
+| Tier | `Tier` | promotion/relegation level (ordinal `level`, 1 = top) | **NEW** — was baked into `Pool.name` |
 | Group | `Group` | one round-robin table | was `Pool` (split: tier extracted out) |
 | Round | `Round` | matchday number (Spieltag) | kept |
 | Fixture | `MatchDay` | team-vs-team encounter | kept |
@@ -101,11 +101,14 @@ ruleset may apply to **multiple tiers, even multiple leagues**; a tier *may* (bu
 have its own. So it is referenced, not embedded — editing one ruleset intentionally affects
 every tier/league that references it (to diverge, clone it).
 
-**Attachment & resolution:** referenced (nullable) from both `Tier` and `League`.
+**Attachment & resolution:** referenced (nullable) from `Tier`, `League`, and — as the last
+fallback — `Federation.defaultRuleSet`.
 ```
-effectiveRuleSet(group) = group.tier.ruleSet ?? group.tier.league.ruleSet ?? federationDefault
+effectiveRuleSet(group) = group.tier.ruleSet ?? group.tier.league.ruleSet
+                          ?? group.tier.league.season.federation.defaultRuleSet   (else historical 2/1/0)
 ```
-Ownership: `federation` (null federation = a DTFB-global template).
+Implemented in `LeagueRuleResolver.effectiveFor`; when nothing resolves, the `pointsX` helpers fall
+back to the historical 2/1/0. Ownership: `federation` (null federation = a DTFB-global template).
 
 **Fields (initial — expected to grow; this list is not complete):**
 ```
@@ -240,6 +243,22 @@ Deferred to the colleague-app integration (§5).
 
 ## 7. Open decisions / deferred (post-Phase-1)
 - **In-season phases** (playoffs/relegation) — deferred (see §1 note).
-- **Standings tiebreakers**, forfeit/no-show scoring, goalie rules — extend `LeagueRuleSet` when needed (Phase 2+).
-- **Federation-default ruleset source** — resolution in §3 (`tier ?? league ?? federationDefault`); confirm where the federation default lives when neither tier nor league sets one.
+- ✅ **Federation-default ruleset source** — RESOLVED (2026-07-15): the federation default lives on
+  `Federation.defaultRuleSet` (nullable) and is the last fallback in `LeagueRuleResolver`
+  (`tier ?? league ?? federation.defaultRuleSet`, else historical 2/1/0). Editable via
+  `PUT /v1/federation/{id}` (`defaultRuleSetId`).
+- ✅ **Tier ladder order** — RESOLVED (2026-07-15): `Tier.level` (Integer, 1 = top) defines the
+  promote/relegate order instead of parsing `Tier.name`; carried by copy-forward and surfaced
+  (sorted) in the `LeagueStructure` read-model.
+- ✅ **Match order within a matchday** — RESOLVED (2026-07-15): `Match.position` (1-based) maps a game
+  to its `GamePlanEntry.position`. Enforcement/auto-generation still deferred (Phase 2, §6).
+- **Standings tiebreakers**, forfeit/no-show scoring, goalie rules — extend `LeagueRuleSet` when
+  needed (Phase 2+). ⚠️ **Data-capture prerequisite:** `Standing` currently holds only
+  `setsWon/setsLost` (no `goalsFor/against`, no `pointsAdjustment`); add the columns before/with the
+  tiebreaker rules or they can't be computed.
+- **Per-match player lineup** — NOT modeled. `RosterEntry` is the team's season roster; `MatchEvent`
+  carries only a loose untyped `playerId` string. There is no entity linking which roster players
+  played a given `Match` (needed for player appearances/stats, and the bridge the parked tournament
+  per-player ranking will need — this is what the old `ImportPlayer` carried). Decide when player
+  stats or the tournament integration (§5) is picked up.
 - **Tournament aggregate + `RankingSeason`** — deferred to the colleague-app integration (§5).

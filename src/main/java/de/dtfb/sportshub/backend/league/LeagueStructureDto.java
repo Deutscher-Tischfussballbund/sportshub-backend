@@ -15,7 +15,7 @@ public record LeagueStructureDto(
     String name,
     List<TierNode> tiers
 ) {
-    public record TierNode(String id, String name, List<GroupNode> groups) {
+    public record TierNode(String id, String name, Integer level, List<GroupNode> groups) {
     }
 
     public record GroupNode(

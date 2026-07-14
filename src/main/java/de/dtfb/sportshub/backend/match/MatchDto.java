@@ -10,6 +10,8 @@ import java.time.Instant;
 public class MatchDto {
     private String id;
     private String matchDayId;
+    /** Order of this game within its matchday (1-based); maps to GamePlanEntry.position. */
+    private Integer position;
     private Instant startTime;
     private Instant endTime;
     private MatchState state;

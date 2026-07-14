@@ -34,4 +34,11 @@ public class Tier extends BaseEntity {
     private LeagueRuleSet ruleSet;
 
     private String name;
+
+    /**
+     * Ordinal ladder position within the league: lower = higher division (1 = top tier, e.g.
+     * "1. Bayernliga"). Defines the promote/relegate order between tiers so it need not be parsed
+     * from {@link #name} — see docs/09-league-model.md §1.
+     */
+    private Integer level;
 }

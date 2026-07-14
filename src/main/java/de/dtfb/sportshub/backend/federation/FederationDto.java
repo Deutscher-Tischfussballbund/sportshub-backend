@@ -8,4 +8,6 @@ import lombok.Setter;
 public class FederationDto {
     private String id;
     private String name;
+    /** Optional federation-wide default league rule set (last fallback in rule resolution). */
+    private String defaultRuleSetId;
 }

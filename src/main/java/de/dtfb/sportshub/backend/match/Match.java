@@ -16,6 +16,12 @@ public class Match extends BaseEntity {
     @JoinColumn(name = "match_day_id")
     private MatchDay matchDay;
 
+    /**
+     * Order of this game within its matchday (1-based); maps to the {@code GamePlanEntry.position}
+     * of the rule set's game plan — see docs/09-league-model.md §3.1.
+     */
+    private Integer position;
+
     @Column(nullable = false)
     private Instant startTime;
 

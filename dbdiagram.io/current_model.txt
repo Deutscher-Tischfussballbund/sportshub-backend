@@ -92,6 +92,7 @@ Enum ScopeType {
 Table federation {
   id varchar(14) [pk, note: 'A Landesverband / region']
   name varchar
+  default_rule_set_id varchar [ref: > league_rule_set.id, note: 'null = fall back to historical 2/1/0; last tier in rule resolution']
 }
 
 Table club {
@@ -173,6 +174,7 @@ Table tier {
   league_id varchar [ref: > league.id]
   rule_set_id varchar [ref: > league_rule_set.id, note: 'null = inherit league/federation']
   name varchar
+  level int [note: 'Ordinal ladder position, 1 = top tier; orders promote/relegate']
 }
 
 Table comp_group {
@@ -209,6 +211,7 @@ Table match_day {
 Table match {
   id varchar(14) [pk, note: 'An individual game within a match day']
   match_day_id varchar [ref: > match_day.id]
+  position int [note: '1-based order within the match day; maps to game_plan_entry.position']
   start_time datetime [not null]
   end_time datetime
   home_score int

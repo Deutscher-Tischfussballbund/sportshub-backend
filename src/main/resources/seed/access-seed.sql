@@ -104,6 +104,10 @@ VALUES ('gp-by-1', 'rs-by-std', 1, 'DOUBLE'),
        ('gp-by-2', 'rs-by-std', 2, 'DOUBLE'),
        ('gp-by-3', 'rs-by-std', 3, 'SINGLE');
 
+-- Bayern's federation-wide default rule set: groups whose tier/league set no rule set of their own
+-- inherit this (resolution order tier ?? league ?? federation default — docs/09-league-model.md §3).
+UPDATE federation SET default_rule_set_id = 'rs-by-std' WHERE id = 'fed-by';
+
 -- ---------------------------------------------------------------------------
 -- Demo season WITH recorded results — to exercise the guarded-delete flow in the UI:
 -- deleting it must be refused (409 SEASON_HAS_RESULTS) and offer "archive instead".
@@ -116,8 +120,8 @@ VALUES ('season-res', 'Saison 2023 (mit Ergebnissen)', 'fed-by', DATE '2023-09-0
 INSERT INTO league (id, season_id, name, category_id)
 VALUES ('league-res', 'season-res', 'Bayernliga 2023', 'cat-herren');
 
-INSERT INTO tier (id, league_id, name)
-VALUES ('tier-res', 'league-res', '1. Bayernliga');
+INSERT INTO tier (id, league_id, name, level)
+VALUES ('tier-res', 'league-res', '1. Bayernliga', 1);
 
 INSERT INTO comp_group (id, tier_id, name, group_state)
 VALUES ('group-res', 'tier-res', 'Gruppe A', 'FINISHED');
@@ -169,11 +173,11 @@ VALUES ('lg-by25-h', 'season-by25', 'Bayernliga Herren 2024/25', 'cat-herren', '
        ('lg-by25-d', 'season-by25', 'Bayernliga Damen 2024/25', 'cat-damen', NULL);
 
 -- Herren tiers: 1. Bayernliga (two groups), 2. Bayernliga (one group), plus a Playoffs tier.
-INSERT INTO tier (id, league_id, name)
-VALUES ('ti-by25-1', 'lg-by25-h', '1. Bayernliga'),
-       ('ti-by25-2', 'lg-by25-h', '2. Bayernliga'),
-       ('ti-by25-p', 'lg-by25-h', 'Playoffs'),
-       ('ti-by25-d', 'lg-by25-d', 'Damenliga');
+INSERT INTO tier (id, league_id, name, level)
+VALUES ('ti-by25-1', 'lg-by25-h', '1. Bayernliga', 1),
+       ('ti-by25-2', 'lg-by25-h', '2. Bayernliga', 2),
+       ('ti-by25-p', 'lg-by25-h', 'Playoffs', 3),
+       ('ti-by25-d', 'lg-by25-d', 'Damenliga', 1);
 
 INSERT INTO comp_group (id, tier_id, name, group_state)
 VALUES ('g-by25-1a', 'ti-by25-1', 'Gruppe A', 'RUNNING'),
@@ -216,8 +220,8 @@ VALUES ('season-bw25', 'Saison 2024/25 (BW)', 'fed-bw', DATE '2024-09-01', DATE 
 INSERT INTO league (id, season_id, name, category_id)
 VALUES ('lg-bw25', 'season-bw25', 'Baden-Württemberg-Liga 2024/25', 'cat-herren');
 
-INSERT INTO tier (id, league_id, name)
-VALUES ('ti-bw25', 'lg-bw25', 'Oberliga BW');
+INSERT INTO tier (id, league_id, name, level)
+VALUES ('ti-bw25', 'lg-bw25', 'Oberliga BW', 1);
 
 INSERT INTO comp_group (id, tier_id, name, group_state)
 VALUES ('g-bw25', 'ti-bw25', 'Oberliga BW', 'RUNNING');
@@ -239,9 +243,9 @@ VALUES ('season-cup', 'Bayern-Pokal 2024', 'fed-by', DATE '2024-06-01', DATE '20
 INSERT INTO league (id, season_id, name, category_id)
 VALUES ('lg-cup', 'season-cup', 'Bayern-Pokal 2024', 'cat-open');
 
-INSERT INTO tier (id, league_id, name)
-VALUES ('ti-cup-grp', 'lg-cup', 'Gruppenphase'),
-       ('ti-cup-fin', 'lg-cup', 'Finalrunde');
+INSERT INTO tier (id, league_id, name, level)
+VALUES ('ti-cup-grp', 'lg-cup', 'Gruppenphase', 1),
+       ('ti-cup-fin', 'lg-cup', 'Finalrunde', 2);
 
 INSERT INTO comp_group (id, tier_id, name, group_state)
 VALUES ('g-cup-a', 'ti-cup-grp', 'Gruppe A', 'FINISHED'),

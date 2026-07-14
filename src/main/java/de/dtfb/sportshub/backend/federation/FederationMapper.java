@@ -9,12 +9,15 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface FederationMapper {
 
+    @Mapping(source = "defaultRuleSet.id", target = "defaultRuleSetId")
     FederationDto toDto(Federation federation);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "defaultRuleSet", ignore = true)
     Federation toEntity(FederationDto federationDto);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "defaultRuleSet", ignore = true)
     void updateEntityFromDto(FederationDto dto, @MappingTarget Federation entity);
 
     List<FederationDto> toDtoList(List<Federation> federations);

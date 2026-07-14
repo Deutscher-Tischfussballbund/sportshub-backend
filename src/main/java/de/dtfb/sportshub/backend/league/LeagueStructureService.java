@@ -9,6 +9,7 @@ import de.dtfb.sportshub.backend.tier.TierRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -56,9 +57,12 @@ public class LeagueStructureService {
             .collect(Collectors.groupingBy(Group::getId, Collectors.counting()));
 
         List<LeagueStructureDto.TierNode> tierNodes = tiers.stream()
+            // Render the ladder top-down by level (1 = top tier); tiers without a level sort last.
+            .sorted(Comparator.comparing(Tier::getLevel, Comparator.nullsLast(Comparator.naturalOrder())))
             .map(t -> new LeagueStructureDto.TierNode(
                 t.getId(),
                 t.getName(),
+                t.getLevel(),
                 groupsByTier.getOrDefault(t.getId(), List.of()).stream()
                     .map(g -> new LeagueStructureDto.GroupNode(
                         g.getId(),
