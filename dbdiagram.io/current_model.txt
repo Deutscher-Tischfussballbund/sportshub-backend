@@ -33,7 +33,6 @@ Enum MatchState {
 Enum MatchType {
   SINGLE
   DOUBLE
-  TRIPLE
   GOALIE
 }
 

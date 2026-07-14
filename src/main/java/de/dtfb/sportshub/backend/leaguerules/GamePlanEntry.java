@@ -13,7 +13,7 @@ import lombok.Setter;
 /**
  * One slot in a {@link LeagueRuleSet}'s matchday game plan: "the game at {@link #position} is a
  * {@link #gameType}". A matchday instantiates its {@code Match} rows from these, in order. The
- * game type reuses {@link MatchType} (SINGLE/DOUBLE/GOALIE/TRIPLE) so a plan slot and the Match it
+ * game type reuses {@link MatchType} (SINGLE/DOUBLE/GOALIE) so a plan slot and the Match it
  * produces share one vocabulary.
  */
 @Entity
