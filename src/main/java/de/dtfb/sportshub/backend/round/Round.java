@@ -1,7 +1,7 @@
 package de.dtfb.sportshub.backend.round;
 
 import de.dtfb.sportshub.backend.base.BaseEntity;
-import de.dtfb.sportshub.backend.pool.Pool;
+import de.dtfb.sportshub.backend.group.Group;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -13,8 +13,8 @@ import lombok.Setter;
 @Setter
 public class Round extends BaseEntity {
     @ManyToOne
-    @JoinColumn(name = "pool_id")
-    private Pool pool;
+    @JoinColumn(name = "group_id")
+    private Group group;
 
     private String name;
     private Integer index;

@@ -61,9 +61,10 @@ class OpenApiDocsTest {
         // Relative order down the chain (robust to new controllers being appended).
         org.junit.jupiter.api.Assertions.assertTrue(
             tags.indexOf("Federation") < tags.indexOf("Season")
-                && tags.indexOf("Season") < tags.indexOf("Competition")
-                && tags.indexOf("Competition") < tags.indexOf("Stage")
-                && tags.indexOf("Stage") < tags.indexOf("Match Event"),
+                && tags.indexOf("Season") < tags.indexOf("League")
+                && tags.indexOf("League") < tags.indexOf("Tier")
+                && tags.indexOf("Tier") < tags.indexOf("Group")
+                && tags.indexOf("Group") < tags.indexOf("Match Event"),
             "tag order should follow the domain chain, was: " + tags);
     }
 

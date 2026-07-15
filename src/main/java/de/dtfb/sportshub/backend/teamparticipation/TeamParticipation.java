@@ -1,8 +1,8 @@
 package de.dtfb.sportshub.backend.teamparticipation;
 
 import de.dtfb.sportshub.backend.base.BaseEntity;
-import de.dtfb.sportshub.backend.competition.Competition;
-import de.dtfb.sportshub.backend.pool.Pool;
+import de.dtfb.sportshub.backend.group.Group;
+import de.dtfb.sportshub.backend.league.League;
 import de.dtfb.sportshub.backend.team.Team;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,10 +14,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Placement (L1): a team's entry into one competition. Region-admin owned; created en masse by
- * copy-forward, then edited — promote/relegate = move {@link #pool}, add/drop = create/delete. A
- * team may hold several participations in one season (e.g. league + cup). The season is the
- * competition's season, so it is not stored separately here.
+ * Placement (L1): a team's entry into one league. Region-admin owned; created en masse by
+ * copy-forward, then edited -- promote/relegate = move {@link #group}, add/drop = create/delete. A
+ * team may hold several participations in one season (e.g. two leagues). The season is the league's
+ * season, so it is not stored separately here.
  */
 @Entity
 @Getter
@@ -28,13 +28,13 @@ public class TeamParticipation extends BaseEntity {
     private Team team;
 
     @ManyToOne
-    @JoinColumn(name = "competition_id")
-    private Competition competition;
+    @JoinColumn(name = "league_id")
+    private League league;
 
-    /** The division the team is placed into; null while registered but not yet placed. */
+    /** The group the team is placed into; null while registered but not yet placed. */
     @ManyToOne
-    @JoinColumn(name = "pool_id")
-    private Pool pool;
+    @JoinColumn(name = "group_id")
+    private Group group;
 
     /** The participation this was cloned from by copy-forward (promotion/relegation history). */
     private String copiedFromParticipationId;

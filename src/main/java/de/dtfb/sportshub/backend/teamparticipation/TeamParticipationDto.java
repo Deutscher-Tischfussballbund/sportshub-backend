@@ -8,10 +8,10 @@ import lombok.Setter;
 public class TeamParticipationDto {
     private String id;
     private String teamId;
-    private String competitionId;
-    /** Read-only: derived from the competition's season. */
+    private String leagueId;
+    /** Read-only: derived from the league's season. */
     private String seasonId;
-    private String poolId;
+    private String groupId;
     private String copiedFromParticipationId;
     /** Read-only: the roster lifecycle state; changed via the roster submit/confirm/reopen endpoints. */
     private RosterStatus rosterStatus;

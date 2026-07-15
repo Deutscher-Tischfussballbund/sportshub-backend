@@ -1,0 +1,301 @@
+// sportshub-backend — current data model (league tree, docs/09-league-model.md)
+// Season -> League -> Tier -> Group -> Round -> MatchDay -> Match -> Set/Event
+// plus placement (TeamParticipation) / roster (RosterEntry), rule sets, and scoped RBAC.
+// All ids are 14-char nano-ids (varchar). Every parent link is a child-side FK (@ManyToOne).
+
+// ============================ Enums ============================
+
+Enum GroupState {
+  PLANNED
+  READY
+  RUNNING
+  FINISHED
+  CANCELED
+}
+
+Enum ResultState {
+  OPEN           [note: 'No result submitted yet']
+  HOME_SUBMITTED [note: 'Home team submitted; awaiting opponent confirmation']
+  CONFIRMED      [note: 'Confirmed by the opponent -> standings recomputed']
+}
+
+Enum MatchState {
+  OPEN       [note: 'Waiting to be announced']
+  PAUSED     [note: 'Disabled (on pause)']
+  SKIPPED    [note: 'Skipped (e.g. entry left tournament)']
+  RUNNING    [note: 'Running']
+  PLAYED     [note: 'Finished / played']
+  PLANNED    [note: 'Planned / awaiting announcement']
+  INCOMPLETE [note: 'Waiting for entries to be assigned']
+  BYE        [note: 'A bye (e.g. in elimination stage)']
+}
+
+Enum MatchType {
+  SINGLE
+  DOUBLE
+  GOALIE
+}
+
+Enum Winner {
+  HOME
+  AWAY
+  DRAW
+}
+
+Enum MatchEventType {
+  GOAL
+  OWN_GOAL
+  TIMEOUT
+  START
+  END
+  CARD
+  OTHER
+}
+
+Enum RosterStatus {
+  DRAFT     [note: 'Team admin edits the roster']
+  SUBMITTED [note: 'Locked by the team; awaiting admin confirmation']
+  CONFIRMED [note: 'Confirmed by an admin above the team']
+}
+
+Enum PlaySystem {
+  ROUND_ROBIN
+  SWISS [note: 'Carried over from the old system; likely removed']
+}
+
+Enum MatchdayDecision {
+  ALL_GAMES [note: 'Decided once all planned games are played']
+  FIRST_TO  [note: 'Decided once a team reaches matchday_target game wins']
+}
+
+Enum Role {
+  ADMIN
+  REGION_ADMIN
+  CLUB_ADMIN
+  TEAM_ADMIN
+  COMPETITION_ORGANIZER
+  TOURNAMENT_UPLOADER        [note: 'Deprecated']
+  REGION_TOURNAMENT_UPLOADER [note: 'Deprecated']
+}
+
+Enum ScopeType {
+  GLOBAL
+  REGION
+  CLUB
+  TEAM
+  COMPETITION [note: 'scope_id is a league id']
+}
+
+// ==================== Identity & access ====================
+
+Table federation {
+  id varchar(14) [pk, note: 'A Landesverband / region']
+  name varchar
+  default_rule_set_id varchar [ref: > league_rule_set.id, note: 'null = fall back to historical 2/1/0; last tier in rule resolution']
+}
+
+Table club {
+  id varchar(14) [pk]
+  name varchar [not null]
+  short_name varchar
+  city varchar
+  active boolean [not null, default: true]
+  federation_id varchar [not null, note: 'plain FK to federation (no @ManyToOne)']
+}
+
+Table team {
+  id varchar(14) [pk, note: 'Standing team identity (not per-season)']
+  name varchar
+  club_id varchar [ref: > club.id]
+}
+
+Table player {
+  id varchar(14) [pk]
+  dtfb_id varchar [unique, not null, note: 'Keycloak username -> dtfb_id']
+  email varchar
+  first_name varchar
+  last_name varchar
+  national_id varchar
+  international_id varchar
+  nationality varchar
+  birth_year int
+  gender varchar
+  national_license varchar
+  active boolean [not null, default: true]
+}
+
+Table category {
+  id varchar(14) [pk, note: 'Global classification: Herren / Damen / Open']
+  name varchar
+  short_name varchar
+}
+
+Table location {
+  id varchar(14) [pk]
+  name varchar
+  address varchar
+  federation_id varchar [ref: > federation.id, note: 'null = global venue']
+}
+
+Table role_assignment {
+  id varchar(14) [pk]
+  player_id varchar [ref: > player.id]
+  role Role [not null]
+  scope_type ScopeType [not null]
+  scope_id varchar [note: 'id of the scoped entity (null for GLOBAL)']
+  granted_by_dtfb_id varchar
+  created_at datetime [not null]
+}
+
+// ==================== League tree ====================
+
+Table season {
+  id varchar(14) [pk, note: 'League time container']
+  name varchar
+  federation_id varchar [ref: > federation.id]
+  start_date date
+  end_date date
+  registration_open boolean [note: 'Roster-editing window']
+  archived_at datetime [note: 'Soft delete']
+}
+
+Table league {
+  id varchar(14) [pk, note: 'One category ladder in a season (was Competition)']
+  season_id varchar [ref: > season.id]
+  category_id varchar [ref: > category.id]
+  rule_set_id varchar [ref: > league_rule_set.id, note: 'nullable default rule set']
+  name varchar
+  import_id varchar
+}
+
+Table tier {
+  id varchar(14) [pk, note: 'Promotion/relegation level, e.g. 1./2. Bayernliga']
+  league_id varchar [ref: > league.id]
+  rule_set_id varchar [ref: > league_rule_set.id, note: 'null = inherit league/federation']
+  name varchar
+  level int [note: 'Ordinal ladder position, 1 = top tier; orders promote/relegate']
+}
+
+Table comp_group {
+  id varchar(14) [pk, note: 'The Group entity (one round-robin table); table name comp_group']
+  tier_id varchar [ref: > tier.id]
+  name varchar
+  group_state GroupState [not null]
+}
+
+Table round {
+  id varchar(14) [pk, note: 'A matchday number (Spieltag)']
+  group_id varchar [ref: > comp_group.id]
+  name varchar
+  index int
+}
+
+Table match_day {
+  id varchar(14) [pk, note: 'A team-vs-team fixture']
+  round_id varchar [ref: > round.id]
+  location_id varchar [ref: > location.id]
+  team_home_id varchar [ref: > team.id]
+  team_away_id varchar [ref: > team.id]
+  name varchar
+  start_date datetime [not null]
+  end_date datetime
+  result_state ResultState [not null, default: 'OPEN']
+  submitted_by_dtfb_id varchar
+  home_confirmed_at datetime
+  away_confirmed_at datetime
+}
+
+// ==================== Match detail ====================
+
+Table match {
+  id varchar(14) [pk, note: 'An individual game within a match day']
+  match_day_id varchar [ref: > match_day.id]
+  position int [note: '1-based order within the match day; maps to game_plan_entry.position']
+  start_time datetime [not null]
+  end_time datetime
+  home_score int
+  away_score int
+  state MatchState
+  type MatchType
+  winner Winner
+}
+
+Table match_set {
+  id varchar(14) [pk]
+  match_id varchar [ref: > match.id]
+  set_number int
+  home_score int
+  away_score int
+}
+
+Table match_event {
+  id varchar(14) [pk]
+  match_id varchar [ref: > match.id]
+  team_id varchar [ref: > team.id]
+  player_id varchar [note: 'plain id, not a FK']
+  timestamp datetime
+  type MatchEventType
+  home_score int
+  away_score int
+  json text [note: '@Lob free-form payload']
+}
+
+Table standing {
+  id varchar(14) [pk, note: 'A league-table row; unique (group_id, team_id)']
+  group_id varchar [ref: > comp_group.id]
+  team_id varchar [ref: > team.id]
+  played int
+  wins int
+  draws int
+  losses int
+  points int [note: 'Awarded from the effective LeagueRuleSet']
+  sets_won int
+  sets_lost int
+
+  Indexes {
+    (group_id, team_id) [unique]
+  }
+}
+
+// ==================== Registration (placement + roster) ====================
+
+Table team_participation {
+  id varchar(14) [pk, note: 'A team placed in a league (season derived from league)']
+  team_id varchar [ref: > team.id]
+  league_id varchar [ref: > league.id]
+  group_id varchar [ref: > comp_group.id, note: 'null = registered but unplaced']
+  copied_from_participation_id varchar [note: 'copy-forward / promotion-relegation chain']
+  roster_status RosterStatus [not null, default: 'DRAFT']
+}
+
+Table roster_entry {
+  id varchar(14) [pk]
+  participation_id varchar [ref: > team_participation.id]
+  player_id varchar [ref: > player.id]
+  added_at datetime [not null]
+  removed_at datetime [note: 'null = active; set = soft-removed']
+}
+
+// ==================== Rule sets ====================
+
+Table league_rule_set {
+  id varchar(14) [pk, note: 'Reusable, typed league rules; shared across tiers/leagues']
+  federation_id varchar [ref: > federation.id, note: 'null = DTFB-global template']
+  name varchar
+  play_system PlaySystem
+  points_win int
+  points_draw int [note: 'null = draws impossible']
+  points_loss int
+  sets_per_game int [note: 'best-of-N sets in one match']
+  points_to_win_set int
+  matchday_decision MatchdayDecision
+  matchday_target int [note: 'the N for FIRST_TO']
+  side_switch_allowed boolean
+}
+
+Table game_plan_entry {
+  id varchar(14) [pk, note: 'One ordered slot in a rule set matchday game plan']
+  rule_set_id varchar [ref: > league_rule_set.id]
+  position int
+  game_type MatchType
+}

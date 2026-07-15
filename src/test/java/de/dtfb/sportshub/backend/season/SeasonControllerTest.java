@@ -110,37 +110,37 @@ class SeasonControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
 
     @Test
     void deleteSeason_withResultFreeStructure_cascades() throws Exception {
-        String competitionId = createCompetition(seasonId());
+        String leagueId = createLeague(seasonId());
 
         // No results yet → delete is allowed and wipes the structure (exercises SeasonStructure JPQL).
         mockMvc.perform(delete(url)).andExpect(status().isNoContent());
 
         mockMvc.perform(get(url)).andExpect(status().isNotFound());
-        mockMvc.perform(get("/v1/competitions/" + competitionId)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/v1/leagues/" + leagueId)).andExpect(status().isNotFound());
     }
 
     @Test
-    void archivedSeason_hidesItsCompetitions() throws Exception {
-        String competitionId = createCompetition(seasonId());
+    void archivedSeason_hidesItsLeagues() throws Exception {
+        String leagueId = createLeague(seasonId());
 
         mockMvc.perform(post(url + "/archive")).andExpect(status().isOk());
 
-        mockMvc.perform(get("/v1/competitions"))
-            .andExpect(jsonPath("$[?(@.id=='" + competitionId + "')]").value(empty()));
-        mockMvc.perform(get("/v1/competitions/" + competitionId)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/v1/leagues"))
+            .andExpect(jsonPath("$[?(@.id=='" + leagueId + "')]").value(empty()));
+        mockMvc.perform(get("/v1/leagues/" + leagueId)).andExpect(status().isNotFound());
     }
 
     @Test
     void archivedSeason_hidesDeeperEntities() throws Exception {
-        // A discipline lives below competition → season; archiving the season must hide it too.
-        String competitionId = createCompetition(seasonId());
-        String disciplineId = createDiscipline(competitionId, createCategory());
+        // A tier lives below league → season; archiving the season must hide it too.
+        String leagueId = createLeague(seasonId());
+        String tierId = createTier(leagueId);
 
         mockMvc.perform(post(url + "/archive")).andExpect(status().isOk());
 
-        mockMvc.perform(get("/v1/disciplines"))
-            .andExpect(jsonPath("$[?(@.id=='" + disciplineId + "')]").value(empty()));
-        mockMvc.perform(get("/v1/disciplines/" + disciplineId)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/v1/tiers"))
+            .andExpect(jsonPath("$[?(@.id=='" + tierId + "')]").value(empty()));
+        mockMvc.perform(get("/v1/tiers/" + tierId)).andExpect(status().isNotFound());
     }
 
     /**
@@ -166,23 +166,23 @@ class SeasonControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
         return url.substring(url.lastIndexOf('/') + 1);
     }
 
-    private String createDiscipline(String competitionId, String categoryId) throws Exception {
-        MvcResult result = mockMvc.perform(post("/v1/disciplines")
+    private String createTier(String leagueId) throws Exception {
+        MvcResult result = mockMvc.perform(post("/v1/tiers")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"competitionId": "%s", "categoryId": "%s"}
-                    """, competitionId, categoryId)))
+                            {"name": "1. Liga", "leagueId": "%s"}
+                    """, leagueId)))
             .andExpect(status().isCreated())
             .andReturn();
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
     }
 
-    private String createCompetition(String seasonId) throws Exception {
-        MvcResult result = mockMvc.perform(post("/v1/competitions")
+    private String createLeague(String seasonId) throws Exception {
+        MvcResult result = mockMvc.perform(post("/v1/leagues")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "Liga", "seasonId": "%s"}
-                    """, seasonId)))
+                            {"name": "Liga", "seasonId": "%s", "categoryId": "%s"}
+                    """, seasonId, createCategory())))
             .andExpect(status().isCreated())
             .andReturn();
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");

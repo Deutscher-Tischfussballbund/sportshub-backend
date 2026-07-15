@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * L1 placement authorization: a {@link de.dtfb.sportshub.backend.teamparticipation.TeamParticipation}
  * belongs to a competition and thus to that competition's region. Create is gated on the target
- * competition's region via {@code @authz.canManageCompetition(#dto.competitionId)}; update/delete on
+ * competition's region via {@code @authz.canManageLeague(#dto.competitionId)}; update/delete on
  * the participation's region via {@code @authz.canManageParticipation(#id)}. Reads stay open.
  *
  * <p>A mock JWT satisfies the {@code authenticated()} baseline; {@code @authz} is mocked so the
@@ -38,7 +38,7 @@ class TeamParticipationControllerSecurityTest {
     AuthorizationService authz;
 
     private static final String BODY = """
-        {"teamId": "team-x", "competitionId": "competition-x", "poolId": "pool-x"}
+        {"teamId": "team-x", "leagueId": "league-x", "groupId": "group-x"}
         """;
 
     @Test
@@ -49,7 +49,7 @@ class TeamParticipationControllerSecurityTest {
 
     @Test
     void create_whenNotRegionManager_isForbidden() throws Exception {
-        Mockito.when(authz.canManageCompetition(any())).thenReturn(false);
+        Mockito.when(authz.canManageLeague(any())).thenReturn(false);
         mockMvc.perform(post("/v1/team-participations").with(jwt())
                 .contentType(MediaType.APPLICATION_JSON).content(BODY))
             .andExpect(status().isForbidden());
@@ -57,8 +57,8 @@ class TeamParticipationControllerSecurityTest {
 
     @Test
     void create_whenRegionManager_passesGate() throws Exception {
-        Mockito.when(authz.canManageCompetition(any())).thenReturn(true);
-        // Gate passes; the request then fails only because competition "competition-x" does not exist
+        Mockito.when(authz.canManageLeague(any())).thenReturn(true);
+        // Gate passes; the request then fails only because competition "league-x" does not exist
         // (404), which confirms authorization let it through (a denied request would be 403).
         mockMvc.perform(post("/v1/team-participations").with(jwt())
                 .contentType(MediaType.APPLICATION_JSON).content(BODY))

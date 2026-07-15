@@ -24,7 +24,7 @@ public class RoundController {
     }
 
     @PostMapping
-    @PreAuthorize("@authz.canOrganizePool(#roundDto.poolId)")
+    @PreAuthorize("@authz.canOrganizeGroup(#roundDto.groupId)")
     public ResponseEntity<RoundDto> createRound(@RequestBody RoundDto roundDto) {
         RoundDto returnedDto = service.create(roundDto);
 

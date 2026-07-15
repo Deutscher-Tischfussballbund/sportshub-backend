@@ -62,14 +62,13 @@ class MatchDayResultAuthorizationIntegrationTest {
     void setup() throws Exception {
         String federationId = create("/v1/federation", "{\"name\":\"Testverband\"}");
         String seasonId = create("/v1/seasons", "{\"name\":\"2025\",\"federationId\":\"" + federationId + "\"}");
-        String competitionId = create("/v1/competitions", "{\"name\":\"Liga\",\"seasonId\":\"" + seasonId + "\"}");
         String categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"H\"}");
-        String disciplineId = create("/v1/disciplines",
-            "{\"name\":\"Einzel\",\"competitionId\":\"" + competitionId + "\",\"categoryId\":\"" + categoryId + "\"}");
-        String stageId = create("/v1/stages", "{\"name\":\"Vorrunde\",\"disciplineId\":\"" + disciplineId + "\"}");
-        String poolId = create("/v1/pools",
-            "{\"name\":\"Pool1\",\"tournamentMode\":\"SWISS\",\"poolState\":\"READY\",\"stageId\":\"" + stageId + "\"}");
-        String roundId = create("/v1/rounds", "{\"name\":\"Runde1\",\"index\":1,\"poolId\":\"" + poolId + "\"}");
+        String leagueId = create("/v1/leagues",
+            "{\"name\":\"Liga\",\"seasonId\":\"" + seasonId + "\",\"categoryId\":\"" + categoryId + "\"}");
+        String tierId = create("/v1/tiers", "{\"name\":\"1. Liga\",\"leagueId\":\"" + leagueId + "\"}");
+        String groupId = create("/v1/groups",
+            "{\"name\":\"Gruppe A\",\"tierId\":\"" + tierId + "\",\"groupState\":\"READY\"}");
+        String roundId = create("/v1/rounds", "{\"name\":\"Runde1\",\"index\":1,\"groupId\":\"" + groupId + "\"}");
         String locationId = create("/v1/locations", "{\"name\":\"Halle\",\"address\":\"Musterstr 1\"}");
 
         teamHomeId = seedTeam("Heim");
