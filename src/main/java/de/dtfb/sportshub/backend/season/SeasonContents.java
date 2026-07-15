@@ -5,7 +5,7 @@ package de.dtfb.sportshub.backend.season;
  * frontend can explain why (and how much) and steer the user to archive instead.
  */
 public record SeasonContents(
-    long competitions,
+    long leagues,
     long matchDays,
     long matchDaysWithResults,
     long standings
