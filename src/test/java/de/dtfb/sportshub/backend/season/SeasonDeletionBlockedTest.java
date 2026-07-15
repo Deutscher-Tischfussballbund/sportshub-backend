@@ -39,7 +39,7 @@ class SeasonDeletionBlockedTest extends AuthorizedControllerTest {
         mockMvc.perform(delete("/v1/seasons/" + id))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.code").value("SEASON_HAS_RESULTS"))
-            .andExpect(jsonPath("$.attached.competitions").value(2))
+            .andExpect(jsonPath("$.attached.leagues").value(2))
             .andExpect(jsonPath("$.attached.matchDaysWithResults").value(3))
             .andExpect(jsonPath("$.attached.standings").value(5));
 
