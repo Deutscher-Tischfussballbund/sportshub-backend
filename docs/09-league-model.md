@@ -114,7 +114,7 @@ back to the historical 2/1/0. Ownership: `federation` (null federation = a DTFB-
 ```
 LeagueRuleSet {
   name, federation?,                      // owner; null = DTFB global template
-  playSystem: ROUND_ROBIN | SWISS,        // SWISS kept from the old system; likely removed later
+  playSystem: ROUND_ROBIN | SWISS,        // SWISS retained — most common mode in table soccer, primarily a (parked) tournament format
   pointsWin, pointsDraw?, pointsLoss,     // standings points (pointsDraw null ⇒ draws impossible)
   gamePlan: [ GamePlanEntry ],            // ordered composition of a matchday (§3.1)
   setsPerGame,                            // best-of-N sets in one Match (1 = single set)
