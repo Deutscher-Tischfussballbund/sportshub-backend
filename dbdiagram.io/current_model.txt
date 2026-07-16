@@ -60,7 +60,7 @@ Enum RosterStatus {
 
 Enum PlaySystem {
   ROUND_ROBIN
-  SWISS [note: 'Carried over from the old system; likely removed']
+  SWISS [note: 'Retained; most common mode in table soccer, primarily a (parked) tournament format']
 }
 
 Enum MatchdayDecision {

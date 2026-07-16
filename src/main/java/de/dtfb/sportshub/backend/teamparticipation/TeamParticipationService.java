@@ -33,18 +33,27 @@ public class TeamParticipationService {
         this.groupRepository = groupRepository;
     }
 
-    /** Placements, optionally narrowed to one league (preferred) or one season. */
+    /** Placements, optionally narrowed to one league (preferred), one season, or one team. */
     @Transactional(readOnly = true)
-    public List<TeamParticipationDto> getAll(String seasonId, String leagueId) {
+    public List<TeamParticipationDto> getAll(String seasonId, String leagueId, String teamId) {
         List<TeamParticipation> participations;
         if (leagueId != null) {
             participations = repository.findVisibleByLeagueId(leagueId);
         } else if (seasonId != null) {
             participations = repository.findVisibleBySeasonId(seasonId);
+        } else if (teamId != null) {
+            participations = repository.findVisibleByTeamId(teamId);
         } else {
             participations = repository.findAllVisible();
         }
         return mapper.toDtoList(participations);
+    }
+
+    /** Rosters awaiting a region admin's confirmation: SUBMITTED participations in the federation. */
+    @Transactional(readOnly = true)
+    public List<TeamParticipationDto> getPendingApprovals(String federationId) {
+        return mapper.toDtoList(
+            repository.findVisibleByFederationIdAndRosterStatus(federationId, RosterStatus.SUBMITTED));
     }
 
     @Transactional(readOnly = true)

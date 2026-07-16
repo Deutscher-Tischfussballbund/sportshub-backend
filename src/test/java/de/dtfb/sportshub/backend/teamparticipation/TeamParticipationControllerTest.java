@@ -42,6 +42,18 @@ class TeamParticipationControllerTest extends de.dtfb.sportshub.backend.support.
     }
 
     @Test
+    void getAllParticipations_filteredByTeam() throws Exception {
+        mockMvc.perform(get("/v1/team-participations").param("teamId", teamId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].teamId").value(teamId));
+
+        mockMvc.perform(get("/v1/team-participations").param("teamId", NanoIdUtils.randomNanoId()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
     void getParticipation_expectException() throws Exception {
         mockMvc.perform(get("/v1/team-participations/" + NanoIdUtils.randomNanoId()))
             .andExpect(status().isNotFound());

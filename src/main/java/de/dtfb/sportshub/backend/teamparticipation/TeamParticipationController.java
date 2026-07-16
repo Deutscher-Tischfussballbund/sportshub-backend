@@ -20,8 +20,16 @@ public class TeamParticipationController {
 
     @GetMapping
     public List<TeamParticipationDto> getAllTeamParticipations(@RequestParam(required = false) String seasonId,
-                                             @RequestParam(required = false) String leagueId) {
-        return service.getAll(seasonId, leagueId);
+                                             @RequestParam(required = false) String leagueId,
+                                             @RequestParam(required = false) String teamId) {
+        return service.getAll(seasonId, leagueId, teamId);
+    }
+
+    /** A region admin's approval queue: rosters submitted for confirmation in their federation. */
+    @GetMapping("/pending")
+    @PreAuthorize("@authz.canManageRegion(#federationId)")
+    public List<TeamParticipationDto> getPendingTeamParticipations(@RequestParam String federationId) {
+        return service.getPendingApprovals(federationId);
     }
 
     @PostMapping
