@@ -15,5 +15,6 @@ source of truth for what the code does; **decision** docs record why a choice wa
 | 07 | [Prod Keycloak & admin bootstrap](./07-prod-keycloak-and-admin-bootstrap.md) | ops | Keycloak wiring and the config-driven bootstrap admin for production. |
 | 08 | [Member self-service registration](./08-member-registration.md) | decision | Deferred DTFB-ID account-claim flow: the "inverted seam" (backend attests, Keycloak creates the user), the invite variant, and the blocking directory-vs-Keycloak question. |
 | 09 | [League model (split from tournaments)](./09-league-model.md) | model + decision | **Proposed** direction: separate the league and tournament concerns instead of one overloaded tree. First-class `Tier`, a reusable typed `LeagueRuleSet` (points/game-plan/scoring), tournaments parked behind a seam. Supersedes doc 01 §1.1. |
+| 10 | [API consumers & authorization](./10-api-consumers-and-authz.md) | decision | Serving multiple frontends: authz is identity-based (`dtfb_id` → DB roles), client-agnostic, so new consumers are Keycloak+CORS config, not code. Keep the core to domain resources + projections (not screen-shaped BFF endpoints). Open: the public read tier; optional audience gating. |
 
 Numbers are a reading/topic order, not a chronology — renumber on the rare insert.
