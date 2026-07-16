@@ -25,6 +25,13 @@ public class TeamParticipationController {
         return service.getAll(seasonId, leagueId, teamId);
     }
 
+    /** A region admin's approval queue: rosters submitted for confirmation in their federation. */
+    @GetMapping("/pending")
+    @PreAuthorize("@authz.canManageRegion(#federationId)")
+    public List<TeamParticipationDto> getPendingTeamParticipations(@RequestParam String federationId) {
+        return service.getPendingApprovals(federationId);
+    }
+
     @PostMapping
     @PreAuthorize("@authz.canManageLeague(#teamParticipationDto.leagueId)")
     public ResponseEntity<TeamParticipationDto> createTeamParticipation(@RequestBody TeamParticipationDto teamParticipationDto) {

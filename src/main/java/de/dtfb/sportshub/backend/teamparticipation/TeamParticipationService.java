@@ -49,6 +49,13 @@ public class TeamParticipationService {
         return mapper.toDtoList(participations);
     }
 
+    /** Rosters awaiting a region admin's confirmation: SUBMITTED participations in the federation. */
+    @Transactional(readOnly = true)
+    public List<TeamParticipationDto> getPendingApprovals(String federationId) {
+        return mapper.toDtoList(
+            repository.findVisibleByFederationIdAndRosterStatus(federationId, RosterStatus.SUBMITTED));
+    }
+
     @Transactional(readOnly = true)
     public TeamParticipationDto get(String id) {
         return mapper.toDto(repository.findVisibleById(id).orElseThrow(
