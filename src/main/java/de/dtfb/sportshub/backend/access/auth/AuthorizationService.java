@@ -136,6 +136,21 @@ public class AuthorizationService {
     }
 
     /**
+     * May create a team participation for the given league: either the league's region admin
+     * (admin-driven placement flow) OR a {@code team_admin} who represents the team being
+     * registered (team self-registration). The team must be in the DTO; the season's
+     * {@code registrationOpen} window is enforced by the frontend / caller.
+     */
+    public boolean canRegisterForLeague(String leagueId, String teamId) {
+        if (canManageLeague(leagueId)) {
+            return true;
+        }
+        List<RoleAssignment> roles = currentRoles();
+        Team team = teamId == null ? null : teamRepository.findById(teamId).orElse(null);
+        return canRepresent(roles, team);
+    }
+
+    /**
      * May administer the given tier: a tier belongs to a league and thus to that league's season and
      * region, so the region's admin (or a global admin) manages it - the same authority as editing
      * the league it hangs off.
