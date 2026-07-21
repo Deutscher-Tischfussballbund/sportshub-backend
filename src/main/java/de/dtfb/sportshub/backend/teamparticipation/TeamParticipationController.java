@@ -33,7 +33,7 @@ public class TeamParticipationController {
     }
 
     @PostMapping
-    @PreAuthorize("@authz.canManageLeague(#teamParticipationDto.leagueId)")
+    @PreAuthorize("@authz.canRegisterForLeague(#teamParticipationDto.leagueId, #teamParticipationDto.teamId)")
     public ResponseEntity<TeamParticipationDto> createTeamParticipation(@RequestBody TeamParticipationDto teamParticipationDto) {
         TeamParticipationDto returnedDto = service.create(teamParticipationDto);
 

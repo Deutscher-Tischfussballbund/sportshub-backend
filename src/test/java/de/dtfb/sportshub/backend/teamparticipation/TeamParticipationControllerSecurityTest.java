@@ -19,13 +19,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * L1 placement authorization: a {@link de.dtfb.sportshub.backend.teamparticipation.TeamParticipation}
- * belongs to a competition and thus to that competition's region. Create is gated on the target
- * competition's region via {@code @authz.canManageLeague(#dto.competitionId)}; update/delete on
- * the participation's region via {@code @authz.canManageParticipation(#id)}. Reads stay open.
+ * Authorization for team participations. Create is gated on
+ * {@code @authz.canRegisterForLeague(leagueId, teamId)}: passes for a region admin (admin-driven
+ * placement) OR a team_admin who represents the team (self-registration). Update/delete are gated
+ * on {@code @authz.canManageParticipation(#id)} (region admin only). Reads stay open.
  *
  * <p>A mock JWT satisfies the {@code authenticated()} baseline; {@code @authz} is mocked so the
- * region verdicts are controlled deterministically.
+ * verdicts are controlled deterministically.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -48,18 +48,26 @@ class TeamParticipationControllerSecurityTest {
     }
 
     @Test
-    void create_whenNotRegionManager_isForbidden() throws Exception {
-        Mockito.when(authz.canManageLeague(any())).thenReturn(false);
+    void create_whenNeitherAdminNorTeamAdmin_isForbidden() throws Exception {
+        Mockito.when(authz.canRegisterForLeague(any(), any())).thenReturn(false);
         mockMvc.perform(post("/v1/team-participations").with(jwt())
                 .contentType(MediaType.APPLICATION_JSON).content(BODY))
             .andExpect(status().isForbidden());
     }
 
     @Test
-    void create_whenRegionManager_passesGate() throws Exception {
-        Mockito.when(authz.canManageLeague(any())).thenReturn(true);
-        // Gate passes; the request then fails only because competition "league-x" does not exist
-        // (404), which confirms authorization let it through (a denied request would be 403).
+    void create_whenRegionAdmin_passesGate() throws Exception {
+        Mockito.when(authz.canRegisterForLeague(any(), any())).thenReturn(true);
+        // Gate passes; the request then fails only because "league-x" does not exist (404),
+        // which confirms authorization let it through (a denied request would be 403).
+        mockMvc.perform(post("/v1/team-participations").with(jwt())
+                .contentType(MediaType.APPLICATION_JSON).content(BODY))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void create_whenTeamAdmin_passesGate() throws Exception {
+        Mockito.when(authz.canRegisterForLeague(any(), any())).thenReturn(true);
         mockMvc.perform(post("/v1/team-participations").with(jwt())
                 .contentType(MediaType.APPLICATION_JSON).content(BODY))
             .andExpect(status().isNotFound());
