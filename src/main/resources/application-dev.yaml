@@ -30,7 +30,7 @@ spring:
         oauth2:
             resourceserver:
                 jwt:
-                    issuer-uri: http://localhost:8084/realms/dtfb
+                    issuer-uri: http://localhost:8080/realms/dtfb
 springdoc:
     swagger-ui:
         # Keycloak login from the "Authorize" dialog (public SPA client, PKCE).
