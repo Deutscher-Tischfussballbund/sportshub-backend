@@ -106,9 +106,49 @@ class TeamParticipationControllerTest extends de.dtfb.sportshub.backend.support.
             .andExpect(status().isNotFound());
     }
 
+    @Test
+    void createParticipation_forEndedSeason_isConflict() throws Exception {
+        String endedLeagueId = createEndedLeague();
+
+        mockMvc.perform(post("/v1/team-participations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"teamId": "%s", "leagueId": "%s"}
+                    """, teamId, endedLeagueId)))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("SEASON_ENDED"))
+            .andExpect(jsonPath("$.endDate").value("2020-05-31"));
+    }
+
+    @Test
+    void updateParticipation_forEndedSeason_isAllowed() throws Exception {
+        // Placement edits (e.g. moving an existing participation) stay unrestricted regardless
+        // of season timing — only fresh registrations (create) are blocked.
+        String endedLeagueId = createEndedLeague();
+
+        mockMvc.perform(put(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"teamId": "%s", "leagueId": "%s"}
+                    """, teamId, endedLeagueId)))
+            .andExpect(status().isOk());
+    }
+
     //region helpers
     private String id(MvcResult result) throws Exception {
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+    }
+
+    /** A league under a season that ended 2020-05-31 (for the season-ended registration tests). */
+    private String createEndedLeague() throws Exception {
+        String federationId = createFederation();
+        MvcResult endedSeason = mockMvc.perform(post("/v1/seasons")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "2019", "federationId": "%s", "startDate": "2019-09-01", "endDate": "2020-05-31"}
+                    """, federationId)))
+            .andExpect(status().isCreated()).andReturn();
+        return id(createLeague(id(endedSeason)));
     }
 
     private MvcResult createSeason() throws Exception {

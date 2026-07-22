@@ -6,6 +6,7 @@ import de.dtfb.sportshub.backend.group.GroupRepository;
 import de.dtfb.sportshub.backend.league.League;
 import de.dtfb.sportshub.backend.league.LeagueNotFoundException;
 import de.dtfb.sportshub.backend.league.LeagueRepository;
+import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamNotFoundException;
 import de.dtfb.sportshub.backend.team.TeamRepository;
@@ -13,6 +14,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -66,6 +68,7 @@ public class TeamParticipationService {
     public TeamParticipationDto create(TeamParticipationDto dto) {
         TeamParticipation participation = mapper.toEntity(dto);
         applyRelations(dto, participation);
+        requireSeasonNotEnded(participation.getLeague());
         return mapper.toDto(repository.save(participation));
     }
 
@@ -87,6 +90,23 @@ public class TeamParticipationService {
         participation.setTeam(getTeam(dto.getTeamId()));
         participation.setLeague(getLeague(dto.getLeagueId()));
         participation.setGroup(dto.getGroupId() == null ? null : getGroup(dto.getGroupId()));
+    }
+
+    /**
+     * A team may not register for a league whose season has already ended. Only checked on
+     * create (a fresh registration) — not update, which region admins use for placement edits
+     * (promote/relegate) that should stay unrestricted regardless of season timing. Uses the
+     * season's actual endDate rather than the registrationOpen flag, which is a manually-toggled
+     * setting that can go stale (still true long after the season is over).
+     */
+    private void requireSeasonNotEnded(League league) {
+        Season season = league.getSeason();
+        LocalDate endDate = season == null ? null : season.getEndDate();
+        if (endDate != null && endDate.isBefore(LocalDate.now())) {
+            throw new SeasonEndedException(
+                "Cannot register for a season that has already ended (ended " + endDate + ")",
+                endDate.toString());
+        }
     }
 
     private @NonNull TeamParticipation getParticipation(String id) {
