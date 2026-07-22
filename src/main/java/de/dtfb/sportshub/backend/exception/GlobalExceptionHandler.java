@@ -4,6 +4,8 @@ import de.dtfb.sportshub.backend.roster.RosterSizeError;
 import de.dtfb.sportshub.backend.roster.RosterSizeException;
 import de.dtfb.sportshub.backend.season.SeasonDeletionBlockedError;
 import de.dtfb.sportshub.backend.season.SeasonDeletionBlockedException;
+import de.dtfb.sportshub.backend.teamparticipation.SeasonEndedError;
+import de.dtfb.sportshub.backend.teamparticipation.SeasonEndedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +39,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<RosterSizeError> handleRosterSize(RosterSizeException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new RosterSizeError(ex.getCode(), ex.getMessage(), ex.getLimit(), ex.getCurrent()));
+    }
+
+    // Registering a team into a league whose season has already ended → structured 409
+    // (code + endDate) so the frontend can show a precise, localized message.
+    @ExceptionHandler(SeasonEndedException.class)
+    public ResponseEntity<SeasonEndedError> handleSeasonEnded(SeasonEndedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new SeasonEndedError("SEASON_ENDED", ex.getMessage(), ex.getEndDate()));
     }
 
     // Failsafe
