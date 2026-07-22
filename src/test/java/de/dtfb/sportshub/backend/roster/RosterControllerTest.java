@@ -90,6 +90,36 @@ class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
         add(rosterUrl(closedParticipationId), PLAYER_A).andExpect(status().isConflict());
     }
 
+    @Test
+    void addPlayer_beyondMaxRosterSize_isConflict() throws Exception {
+        String federationId = createFederation();
+        String ruleSetId = createRuleSet(federationId, 1, 2);
+        String url = rosterUrl(participationUnderLeague(federationId, true, ruleSetId));
+
+        add(url, "player-p1").andExpect(status().isCreated());
+        add(url, "player-p2").andExpect(status().isCreated());
+        add(url, "player-p3").andExpect(status().isConflict());
+
+        mockMvc.perform(get(url))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    void submit_belowMinRosterSize_isConflict() throws Exception {
+        String federationId = createFederation();
+        String ruleSetId = createRuleSet(federationId, 2, null);
+        String url = rosterUrl(participationUnderLeague(federationId, true, ruleSetId));
+
+        add(url, "player-p1").andExpect(status().isCreated());
+        mockMvc.perform(post(url + "/submit")).andExpect(status().isConflict());
+
+        add(url, "player-p2").andExpect(status().isCreated());
+        mockMvc.perform(post(url + "/submit"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.rosterStatus").value("SUBMITTED"));
+    }
+
     /**
      * =========================================================
      * helper operations
@@ -105,6 +135,12 @@ class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
 
     /** Create a season (open or closed) with a league + team, and return a participation id. */
     private String participationUnderSeason(String federationId, boolean registrationOpen) throws Exception {
+        return participationUnderLeague(federationId, registrationOpen, null);
+    }
+
+    /** Same as above, but the league uses the given rule set (for roster-size enforcement tests). */
+    private String participationUnderLeague(String federationId, boolean registrationOpen, String ruleSetId)
+            throws Exception {
         MvcResult season = mockMvc.perform(post("/v1/seasons")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
@@ -116,8 +152,9 @@ class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
 
         MvcResult league = mockMvc.perform(post("/v1/leagues")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(String.format("{\"name\": \"Liga\", \"seasonId\": \"%s\", \"categoryId\": \"%s\"}",
-                    seasonId, createCategory())))
+                .content(String.format("""
+                    {"name": "Liga", "seasonId": "%s", "categoryId": "%s", "ruleSetId": %s}
+                    """, seasonId, createCategory(), ruleSetId == null ? "null" : "\"" + ruleSetId + "\"")))
             .andExpect(status().isCreated())
             .andReturn();
         String leagueId = JsonPath.read(league.getResponse().getContentAsString(), "$.id");
@@ -135,6 +172,18 @@ class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
             .andExpect(status().isCreated())
             .andReturn();
         return JsonPath.read(participation.getResponse().getContentAsString(), "$.id");
+    }
+
+    /** Create a league rule set with the given roster-size bounds (either may be null). */
+    private String createRuleSet(String federationId, Integer minRosterSize, Integer maxRosterSize) throws Exception {
+        MvcResult result = mockMvc.perform(post("/v1/league-rule-sets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"name": "RS", "federationId": "%s", "minRosterSize": %s, "maxRosterSize": %s}
+                    """, federationId, minRosterSize, maxRosterSize)))
+            .andExpect(status().isCreated())
+            .andReturn();
+        return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
     }
     //endregion
 }

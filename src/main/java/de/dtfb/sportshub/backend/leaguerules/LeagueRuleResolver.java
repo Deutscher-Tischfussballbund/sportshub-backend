@@ -4,6 +4,7 @@ import de.dtfb.sportshub.backend.federation.Federation;
 import de.dtfb.sportshub.backend.group.Group;
 import de.dtfb.sportshub.backend.league.League;
 import de.dtfb.sportshub.backend.season.Season;
+import de.dtfb.sportshub.backend.teamparticipation.TeamParticipation;
 import de.dtfb.sportshub.backend.tier.Tier;
 import org.springframework.stereotype.Component;
 
@@ -44,6 +45,26 @@ public class LeagueRuleResolver {
             return league.getRuleSet();
         }
         return federationDefault(league);
+    }
+
+    /**
+     * The effective rule set for a team's participation: the group's tier chain if it's been
+     * placed, otherwise the league's own rule set / federation default directly (a team can be
+     * registered and building its roster before placement has run).
+     */
+    public LeagueRuleSet effectiveFor(TeamParticipation participation) {
+        if (participation == null) {
+            return null;
+        }
+        Group group = participation.getGroup();
+        if (group != null) {
+            return effectiveFor(group);
+        }
+        League league = participation.getLeague();
+        if (league == null) {
+            return null;
+        }
+        return league.getRuleSet() != null ? league.getRuleSet() : federationDefault(league);
     }
 
     /** The owning federation's default rule set (via league → season → federation), or null. */

@@ -1,5 +1,7 @@
 package de.dtfb.sportshub.backend.roster;
 
+import de.dtfb.sportshub.backend.leaguerules.LeagueRuleResolver;
+import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
 import de.dtfb.sportshub.backend.player.Player;
 import de.dtfb.sportshub.backend.player.PlayerNotFoundException;
 import de.dtfb.sportshub.backend.player.PlayerRepository;
@@ -22,7 +24,9 @@ import java.util.List;
  * Roster management (L2): the players on a team's roster for one participation, plus the whole
  * roster's lifecycle (DRAFT → SUBMITTED → CONFIRMED). Editing is a hard-gated to the DRAFT state
  * while the season's registration is open; confirm/reopen are admin lifecycle moves (authorized in
- * the controller). Rules are hardwired settings (here: {@code Season.registrationOpen}); no RuleSet.
+ * the controller). Most rules are hardwired settings (here: {@code Season.registrationOpen}); the
+ * one exception is roster size, which comes from the resolved {@link LeagueRuleSet}
+ * (min enforced on submit, max enforced on addPlayer) since it's federation/league-configurable.
  */
 @Service
 public class RosterService {
@@ -32,15 +36,18 @@ public class RosterService {
     private final TeamParticipationRepository participationRepository;
     private final TeamParticipationMapper participationMapper;
     private final PlayerRepository playerRepository;
+    private final LeagueRuleResolver ruleResolver;
 
     public RosterService(RosterEntryRepository rosterRepository, RosterEntryMapper rosterMapper,
                          TeamParticipationRepository participationRepository,
-                         TeamParticipationMapper participationMapper, PlayerRepository playerRepository) {
+                         TeamParticipationMapper participationMapper, PlayerRepository playerRepository,
+                         LeagueRuleResolver ruleResolver) {
         this.rosterRepository = rosterRepository;
         this.rosterMapper = rosterMapper;
         this.participationRepository = participationRepository;
         this.participationMapper = participationMapper;
         this.playerRepository = playerRepository;
+        this.ruleResolver = ruleResolver;
     }
 
     @Transactional(readOnly = true)
@@ -59,6 +66,7 @@ public class RosterService {
             .ifPresent(existing -> {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Player is already on the roster");
             });
+        requireUnderMax(participation);
 
         RosterEntry entry = new RosterEntry();
         entry.setParticipation(participation);
@@ -83,6 +91,7 @@ public class RosterService {
         TeamParticipation participation = getParticipation(participationId);
         requireStatus(participation, RosterStatus.DRAFT);
         requireRegistrationOpen(participation);
+        requireMinRosterSize(participation);
         return transition(participation, RosterStatus.SUBMITTED);
     }
 
@@ -130,5 +139,37 @@ public class RosterService {
         if (season == null || !season.isRegistrationOpen()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Season registration is closed");
         }
+    }
+
+    /** Adding a player must not push the active roster past the resolved rule set's max, if set. */
+    private void requireUnderMax(TeamParticipation participation) {
+        LeagueRuleSet rules = ruleResolver.effectiveFor(participation);
+        Integer max = rules == null ? null : rules.getMaxRosterSize();
+        if (max == null) {
+            return;
+        }
+        int current = activeRosterCount(participation.getId());
+        if (current + 1 > max) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "Roster already has the maximum of " + max + " players");
+        }
+    }
+
+    /** Submitting requires at least the resolved rule set's min active roster entries, if set. */
+    private void requireMinRosterSize(TeamParticipation participation) {
+        LeagueRuleSet rules = ruleResolver.effectiveFor(participation);
+        Integer min = rules == null ? null : rules.getMinRosterSize();
+        if (min == null) {
+            return;
+        }
+        int current = activeRosterCount(participation.getId());
+        if (current < min) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "Roster needs at least " + min + " players to submit (has " + current + ")");
+        }
+    }
+
+    private int activeRosterCount(String participationId) {
+        return rosterRepository.findByParticipationIdAndRemovedAtIsNull(participationId).size();
     }
 }

@@ -27,6 +27,9 @@ public class LeagueRuleSetDto {
 
     private Boolean sideSwitchAllowed;
 
+    private Integer minRosterSize;
+    private Integer maxRosterSize;
+
     /** Ordered matchday composition; replaced wholesale on update. */
     private List<GamePlanEntryDto> gamePlan;
 }

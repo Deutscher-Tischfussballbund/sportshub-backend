@@ -50,4 +50,9 @@ public class LeagueRuleSet extends BaseEntity {
     private Integer matchdayTarget; // the N for FIRST_TO
 
     private Boolean sideSwitchAllowed;
+
+    // Roster size (L2), enforced by RosterService on submit/addPlayer. Either may be null
+    // (unconstrained).
+    private Integer minRosterSize;
+    private Integer maxRosterSize;
 }

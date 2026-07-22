@@ -257,3 +257,46 @@ VALUES ('tp-cup-1', 'team-tfcm-1', 'lg-cup', 'g-cup-a', 'CONFIRMED'),
        ('tp-cup-2', 'team-kfa-1', 'lg-cup', 'g-cup-a', 'CONFIRMED'),
        ('tp-cup-3', 'team-tfcm-2', 'lg-cup', 'g-cup-b', 'CONFIRMED'),
        ('tp-cup-4', 'team-kfa-2', 'lg-cup', 'g-cup-b', 'CONFIRMED');
+
+-- ---------------------------------------------------------------------------
+-- "Current" and "upcoming" examples for TFC München 1's team-rosters page
+-- (frontend TeamRostersService.seasonBadge): a season whose date range brackets
+-- "now" shows CURRENT regardless of registration_open; a season that hasn't
+-- started yet but is open for registration shows UPCOMING. Both dated relative
+-- to a 2026-ish "today" — adjust forward if this seed is still in use once
+-- these ranges are themselves in the past.
+-- ---------------------------------------------------------------------------
+INSERT INTO season (id, name, federation_id, start_date, end_date, registration_open)
+VALUES ('season-2026', 'Saison 2026', 'fed-by', DATE '2026-01-01', DATE '2026-12-31', FALSE);
+
+INSERT INTO league (id, season_id, name, category_id, rule_set_id)
+VALUES ('lg-2026-h', 'season-2026', 'Bayernliga Herren 2026', 'cat-herren', 'rs-by-std');
+
+INSERT INTO tier (id, league_id, name, level)
+VALUES ('ti-2026-1', 'lg-2026-h', '1. Bayernliga', 1);
+
+INSERT INTO comp_group (id, tier_id, name, group_state)
+VALUES ('g-2026-1', 'ti-2026-1', 'Gruppe A', 'RUNNING');
+
+-- Roster already confirmed — the season is running, so registration/roster editing
+-- for it is closed; team-tfcm-1 is mid-season.
+INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status)
+VALUES ('tp-2026-1', 'team-tfcm-1', 'lg-2026-h', 'g-2026-1', 'CONFIRMED');
+
+INSERT INTO roster_entry (id, participation_id, player_id, added_at, removed_at)
+VALUES ('re-2026-1', 'tp-2026-1', 'player-p1', TIMESTAMP '2026-01-15 10:00:00', NULL),
+       ('re-2026-2', 'tp-2026-1', 'player-p2', TIMESTAMP '2026-01-15 10:00:00', NULL),
+       ('re-2026-3', 'tp-2026-1', 'player-p3', TIMESTAMP '2026-01-15 10:00:00', NULL);
+
+-- Next season: registration already open, but it hasn't started yet — no tier/group
+-- structure set up either, since placements haven't run (mirrors tp-by25-4's
+-- "registered but unplaced" shape). team-tfcm-1 has pre-registered; its roster is
+-- still an empty DRAFT since the season is still a ways off.
+INSERT INTO season (id, name, federation_id, start_date, end_date, registration_open)
+VALUES ('season-2027', 'Saison 2027/28', 'fed-by', DATE '2027-09-01', DATE '2028-05-31', TRUE);
+
+INSERT INTO league (id, season_id, name, category_id, rule_set_id)
+VALUES ('lg-2027-h', 'season-2027', 'Bayernliga Herren 2027/28', 'cat-herren', 'rs-by-std');
+
+INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status)
+VALUES ('tp-2027-1', 'team-tfcm-1', 'lg-2027-h', NULL, 'DRAFT');
