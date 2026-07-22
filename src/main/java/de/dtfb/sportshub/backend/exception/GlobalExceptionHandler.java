@@ -1,5 +1,7 @@
 package de.dtfb.sportshub.backend.exception;
 
+import de.dtfb.sportshub.backend.roster.RosterSizeError;
+import de.dtfb.sportshub.backend.roster.RosterSizeException;
 import de.dtfb.sportshub.backend.season.SeasonDeletionBlockedError;
 import de.dtfb.sportshub.backend.season.SeasonDeletionBlockedException;
 import org.springframework.http.HttpStatus;
@@ -27,6 +29,14 @@ public class GlobalExceptionHandler {
         SeasonDeletionBlockedException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new SeasonDeletionBlockedError("SEASON_HAS_RESULTS", ex.getMessage(), ex.getContents()));
+    }
+
+    // Roster addPlayer/submit refused by the resolved rule set's min/max roster size → structured
+    // 409 (code + limit + current) so the frontend can show a precise, localized message.
+    @ExceptionHandler(RosterSizeException.class)
+    public ResponseEntity<RosterSizeError> handleRosterSize(RosterSizeException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new RosterSizeError(ex.getCode(), ex.getMessage(), ex.getLimit(), ex.getCurrent()));
     }
 
     // Failsafe

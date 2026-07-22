@@ -150,8 +150,8 @@ public class RosterService {
         }
         int current = activeRosterCount(participation.getId());
         if (current + 1 > max) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                "Roster already has the maximum of " + max + " players");
+            throw new RosterSizeException("ROSTER_AT_MAX",
+                "Roster already has the maximum of " + max + " players", max, current);
         }
     }
 
@@ -164,8 +164,8 @@ public class RosterService {
         }
         int current = activeRosterCount(participation.getId());
         if (current < min) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                "Roster needs at least " + min + " players to submit (has " + current + ")");
+            throw new RosterSizeException("ROSTER_BELOW_MIN",
+                "Roster needs at least " + min + " players to submit (has " + current + ")", min, current);
         }
     }
 
