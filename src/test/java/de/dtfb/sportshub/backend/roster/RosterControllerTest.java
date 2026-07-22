@@ -98,7 +98,11 @@ class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
 
         add(url, "player-p1").andExpect(status().isCreated());
         add(url, "player-p2").andExpect(status().isCreated());
-        add(url, "player-p3").andExpect(status().isConflict());
+        add(url, "player-p3")
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("ROSTER_AT_MAX"))
+            .andExpect(jsonPath("$.limit").value(2))
+            .andExpect(jsonPath("$.current").value(2));
 
         mockMvc.perform(get(url))
             .andExpect(status().isOk())
@@ -112,7 +116,11 @@ class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
         String url = rosterUrl(participationUnderLeague(federationId, true, ruleSetId));
 
         add(url, "player-p1").andExpect(status().isCreated());
-        mockMvc.perform(post(url + "/submit")).andExpect(status().isConflict());
+        mockMvc.perform(post(url + "/submit"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("ROSTER_BELOW_MIN"))
+            .andExpect(jsonPath("$.limit").value(2))
+            .andExpect(jsonPath("$.current").value(1));
 
         add(url, "player-p2").andExpect(status().isCreated());
         mockMvc.perform(post(url + "/submit"))
