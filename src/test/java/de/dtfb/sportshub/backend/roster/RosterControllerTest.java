@@ -91,6 +91,23 @@ class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
     }
 
     @Test
+    void edit_whenWithdrawn_isConflict() throws Exception {
+        mockMvc.perform(post("/v1/team-participations/" + openParticipationId + "/withdraw"))
+            .andExpect(status().isOk());
+
+        add(rosterUrl(openParticipationId), PLAYER_A).andExpect(status().isConflict());
+    }
+
+    @Test
+    void submit_whenWithdrawn_isConflict() throws Exception {
+        add(rosterUrl(openParticipationId), PLAYER_A).andExpect(status().isCreated());
+        mockMvc.perform(post("/v1/team-participations/" + openParticipationId + "/withdraw"))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post(rosterUrl(openParticipationId) + "/submit")).andExpect(status().isConflict());
+    }
+
+    @Test
     void addPlayer_beyondMaxRosterSize_isConflict() throws Exception {
         String federationId = createFederation();
         String ruleSetId = createRuleSet(federationId, 1, 2);

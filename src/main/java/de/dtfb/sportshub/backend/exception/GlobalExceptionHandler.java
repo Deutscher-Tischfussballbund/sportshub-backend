@@ -4,6 +4,8 @@ import de.dtfb.sportshub.backend.roster.RosterSizeError;
 import de.dtfb.sportshub.backend.roster.RosterSizeException;
 import de.dtfb.sportshub.backend.season.SeasonDeletionBlockedError;
 import de.dtfb.sportshub.backend.season.SeasonDeletionBlockedException;
+import de.dtfb.sportshub.backend.teamparticipation.ParticipationDeletionBlockedError;
+import de.dtfb.sportshub.backend.teamparticipation.ParticipationDeletionBlockedException;
 import de.dtfb.sportshub.backend.teamparticipation.SeasonEndedError;
 import de.dtfb.sportshub.backend.teamparticipation.SeasonEndedException;
 import org.springframework.http.HttpStatus;
@@ -47,6 +49,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<SeasonEndedError> handleSeasonEnded(SeasonEndedException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new SeasonEndedError("SEASON_ENDED", ex.getMessage(), ex.getEndDate()));
+    }
+
+    // Participation delete refused because the team has recorded matches/standings → 409, withdraw
+    // instead (preserves the history the delete would have orphaned).
+    @ExceptionHandler(ParticipationDeletionBlockedException.class)
+    public ResponseEntity<ParticipationDeletionBlockedError> handleParticipationDeletionBlocked(
+        ParticipationDeletionBlockedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ParticipationDeletionBlockedError("PARTICIPATION_HAS_MATCHES", ex.getMessage()));
     }
 
     // Failsafe

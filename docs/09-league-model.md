@@ -157,6 +157,24 @@ cleanly **league-only** (ad-hoc tournament pairings never used them). Re-parenti
   (`canEditRoster`/`canConfirmRoster`), and the `registrationOpen` gate all stay as doc 01
   §3.4–§3.6 / §6.
 
+**Withdrawal (added post-Phase-1):** a team drops out of a league via a **status change**, not a
+delete — `TeamParticipation.status` (`ACTIVE`/`WITHDRAWN`, default `ACTIVE`) +
+`withdrawnAt` (set on transition). `POST /v1/team-participations/{id}/withdraw`, gated by the same
+`canManageParticipation` (region admin) as update/delete; withdrawing a participation that's
+already `WITHDRAWN` is a 409. Withdrawing locks the roster (`RosterService` refuses
+add/remove/submit/confirm/reopen once withdrawn) and excludes the participation from future
+copy-forward (a team that dropped out doesn't automatically re-enter next season). Resolving the
+team's remaining scheduled fixtures (forfeit/walkover scoring) is a **separate, deferred concern**
+(§7) — withdrawal only flags the participation; already-scheduled `MatchDay`s are left for an admin
+to resolve manually.
+
+**Delete guard:** hard-deleting a `TeamParticipation` is now refused (`409 PARTICIPATION_HAS_MATCHES`)
+once the team has any recorded `MatchDay` or `Standing` in that league — before this, a plain
+`repository.delete(...)` neither failed nor cleaned up (`MatchDay`/`Standing` FK `Team` directly,
+not `TeamParticipation`), so deleting mid-season silently orphaned the match/standing history from
+its placement record. Delete stays available for the zero-history case (a misregistered team);
+withdraw is the correct action once matches exist.
+
 ## 5. Tournament seam (parked — do not build now)
 
 Kept only so the future integration has somewhere to attach; **no entities built now.**

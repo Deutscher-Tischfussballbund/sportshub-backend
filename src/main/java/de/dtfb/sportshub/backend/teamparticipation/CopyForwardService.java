@@ -32,7 +32,9 @@ import java.util.Map;
  * chain the region admin then edits via the placement CRUD. Cloned participations stay DRAFT and
  * roster entries are copied with a direct save (no {@code RosterService} validation) -- this is a
  * starting point for the new registration period, not an enforced invariant, so it doesn't matter
- * that a new season's roster-size rules may not yet be satisfied.
+ * that a new season's roster-size rules may not yet be satisfied. A source participation with
+ * {@link ParticipationStatus#WITHDRAWN} is skipped entirely -- a team that dropped out doesn't
+ * automatically re-enter next season.
  */
 @Service
 public class CopyForwardService {
@@ -107,6 +109,9 @@ public class CopyForwardService {
         int participations = 0;
         int rosterEntries = 0;
         for (TeamParticipation source0 : participationRepository.findByLeague_Season_Id(sourceSeasonId)) {
+            if (source0.getStatus() == ParticipationStatus.WITHDRAWN) {
+                continue; // a withdrawn team doesn't carry forward into the next season
+            }
             League newLeague = source0.getLeague() == null
                 ? null : leagueBySourceId.get(source0.getLeague().getId());
             if (newLeague == null) {

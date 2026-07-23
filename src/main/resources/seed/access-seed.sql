@@ -142,9 +142,9 @@ VALUES ('st-res-1', 'group-res', 'team-tfcm-1', 2, 2, 0, 0, 6, 6, 1),
 -- Team placements (TeamParticipation, L1) in the source season: both TFC München teams
 -- placed in Gruppe A. Gives the placements view real rows AND gives copy-forward
 -- something to clone into the empty target season below.
-INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status)
-VALUES ('tp-res-1', 'team-tfcm-1', 'league-res', 'group-res', 'CONFIRMED'),
-       ('tp-res-2', 'team-tfcm-2', 'league-res', 'group-res', 'CONFIRMED');
+INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status, status)
+VALUES ('tp-res-1', 'team-tfcm-1', 'league-res', 'group-res', 'CONFIRMED', 'ACTIVE'),
+       ('tp-res-2', 'team-tfcm-2', 'league-res', 'group-res', 'CONFIRMED', 'ACTIVE');
 
 -- ---------------------------------------------------------------------------
 -- Empty target season under fed-by (Bayern) — the copy-forward destination:
@@ -187,14 +187,16 @@ VALUES ('g-by25-1a', 'ti-by25-1', 'Gruppe A', 'RUNNING'),
        ('g-by25-d', 'ti-by25-d', 'Damenliga', 'PLANNED');
 
 -- Placements: g-by25-2 and g-by25-p stay empty (count 0); team-kfa-2 is registered but
--- unplaced (null group). Roster states span the whole lifecycle.
-INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status)
-VALUES ('tp-by25-1', 'team-tfcm-1', 'lg-by25-h', 'g-by25-1a', 'CONFIRMED'),
-       ('tp-by25-2', 'team-kfa-1', 'lg-by25-h', 'g-by25-1a', 'SUBMITTED'),
-       ('tp-by25-3', 'team-tfcm-2', 'lg-by25-h', 'g-by25-1b', 'DRAFT'),
-       ('tp-by25-4', 'team-kfa-2', 'lg-by25-h', NULL, 'DRAFT'),
-       ('tp-by25-5', 'team-tfcm-d', 'lg-by25-d', 'g-by25-d', 'CONFIRMED'),
-       ('tp-by25-6', 'team-kfa-d', 'lg-by25-d', 'g-by25-d', 'DRAFT');
+-- unplaced (null group). Roster states span the whole lifecycle. tp-by25-6 has withdrawn
+-- (no matches recorded for it yet, so it's a clean withdrawal demo) -- roster locked, excluded
+-- from copy-forward.
+INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status, status, withdrawn_at)
+VALUES ('tp-by25-1', 'team-tfcm-1', 'lg-by25-h', 'g-by25-1a', 'CONFIRMED', 'ACTIVE', NULL),
+       ('tp-by25-2', 'team-kfa-1', 'lg-by25-h', 'g-by25-1a', 'SUBMITTED', 'ACTIVE', NULL),
+       ('tp-by25-3', 'team-tfcm-2', 'lg-by25-h', 'g-by25-1b', 'DRAFT', 'ACTIVE', NULL),
+       ('tp-by25-4', 'team-kfa-2', 'lg-by25-h', NULL, 'DRAFT', 'ACTIVE', NULL),
+       ('tp-by25-5', 'team-tfcm-d', 'lg-by25-d', 'g-by25-d', 'CONFIRMED', 'ACTIVE', NULL),
+       ('tp-by25-6', 'team-kfa-d', 'lg-by25-d', 'g-by25-d', 'DRAFT', 'WITHDRAWN', TIMESTAMP '2024-10-15 09:00:00');
 
 -- Roster entries. tp-by25-3 (DRAFT) has an active roster plus one soft-removed player
 -- (removed_at set) so the transfer-history / soft-delete case is visible.
@@ -226,11 +228,11 @@ VALUES ('ti-bw25', 'lg-bw25', 'Oberliga BW', 1);
 INSERT INTO comp_group (id, tier_id, name, group_state)
 VALUES ('g-bw25', 'ti-bw25', 'Oberliga BW', 'RUNNING');
 
-INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status)
-VALUES ('tp-bw25-1', 'team-tsvs-1', 'lg-bw25', 'g-bw25', 'CONFIRMED'),
-       ('tp-bw25-2', 'team-tsvs-2', 'lg-bw25', 'g-bw25', 'DRAFT'),
-       ('tp-bw25-3', 'team-ktfc-1', 'lg-bw25', 'g-bw25', 'SUBMITTED'),
-       ('tp-bw25-4', 'team-mtfv-1', 'lg-bw25', NULL, 'DRAFT');
+INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status, status)
+VALUES ('tp-bw25-1', 'team-tsvs-1', 'lg-bw25', 'g-bw25', 'CONFIRMED', 'ACTIVE'),
+       ('tp-bw25-2', 'team-tsvs-2', 'lg-bw25', 'g-bw25', 'DRAFT', 'ACTIVE'),
+       ('tp-bw25-3', 'team-ktfc-1', 'lg-bw25', 'g-bw25', 'SUBMITTED', 'ACTIVE'),
+       ('tp-bw25-4', 'team-mtfv-1', 'lg-bw25', NULL, 'DRAFT', 'ACTIVE');
 
 -- ---------------------------------------------------------------------------
 -- An Open-category season (Bayern-Pokal) — a second category in fed-by, modeled as a
@@ -252,11 +254,11 @@ VALUES ('g-cup-a', 'ti-cup-grp', 'Gruppe A', 'FINISHED'),
        ('g-cup-b', 'ti-cup-grp', 'Gruppe B', 'FINISHED'),
        ('g-cup-ko', 'ti-cup-fin', 'K.-o.-Runde', 'PLANNED');
 
-INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status)
-VALUES ('tp-cup-1', 'team-tfcm-1', 'lg-cup', 'g-cup-a', 'CONFIRMED'),
-       ('tp-cup-2', 'team-kfa-1', 'lg-cup', 'g-cup-a', 'CONFIRMED'),
-       ('tp-cup-3', 'team-tfcm-2', 'lg-cup', 'g-cup-b', 'CONFIRMED'),
-       ('tp-cup-4', 'team-kfa-2', 'lg-cup', 'g-cup-b', 'CONFIRMED');
+INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status, status)
+VALUES ('tp-cup-1', 'team-tfcm-1', 'lg-cup', 'g-cup-a', 'CONFIRMED', 'ACTIVE'),
+       ('tp-cup-2', 'team-kfa-1', 'lg-cup', 'g-cup-a', 'CONFIRMED', 'ACTIVE'),
+       ('tp-cup-3', 'team-tfcm-2', 'lg-cup', 'g-cup-b', 'CONFIRMED', 'ACTIVE'),
+       ('tp-cup-4', 'team-kfa-2', 'lg-cup', 'g-cup-b', 'CONFIRMED', 'ACTIVE');
 
 -- ---------------------------------------------------------------------------
 -- "Current" and "upcoming" examples for TFC München 1's team-rosters page
@@ -280,8 +282,8 @@ VALUES ('g-2026-1', 'ti-2026-1', 'Gruppe A', 'RUNNING');
 
 -- Roster already confirmed — the season is running, so registration/roster editing
 -- for it is closed; team-tfcm-1 is mid-season.
-INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status)
-VALUES ('tp-2026-1', 'team-tfcm-1', 'lg-2026-h', 'g-2026-1', 'CONFIRMED');
+INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status, status)
+VALUES ('tp-2026-1', 'team-tfcm-1', 'lg-2026-h', 'g-2026-1', 'CONFIRMED', 'ACTIVE');
 
 INSERT INTO roster_entry (id, participation_id, player_id, added_at, removed_at)
 VALUES ('re-2026-1', 'tp-2026-1', 'player-p1', TIMESTAMP '2026-01-15 10:00:00', NULL),
@@ -298,5 +300,5 @@ VALUES ('season-2027', 'Saison 2027/28', 'fed-by', DATE '2027-09-01', DATE '2028
 INSERT INTO league (id, season_id, name, category_id, rule_set_id)
 VALUES ('lg-2027-h', 'season-2027', 'Bayernliga Herren 2027/28', 'cat-herren', 'rs-by-std');
 
-INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status)
-VALUES ('tp-2027-1', 'team-tfcm-1', 'lg-2027-h', NULL, 'DRAFT');
+INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status, status)
+VALUES ('tp-2027-1', 'team-tfcm-1', 'lg-2027-h', NULL, 'DRAFT', 'ACTIVE');

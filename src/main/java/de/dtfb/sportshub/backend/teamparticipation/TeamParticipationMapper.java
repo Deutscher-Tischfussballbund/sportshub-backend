@@ -20,6 +20,8 @@ public interface TeamParticipationMapper {
     @Mapping(target = "league", ignore = true)
     @Mapping(target = "group", ignore = true)
     @Mapping(target = "rosterStatus", ignore = true) // starts DRAFT; changed only via roster lifecycle
+    @Mapping(target = "status", ignore = true) // starts ACTIVE; changed only via the withdraw endpoint
+    @Mapping(target = "withdrawnAt", ignore = true)
     TeamParticipation toEntity(TeamParticipationDto dto);
 
     @Mapping(target = "id", ignore = true)
@@ -27,6 +29,8 @@ public interface TeamParticipationMapper {
     @Mapping(target = "league", ignore = true)
     @Mapping(target = "group", ignore = true)
     @Mapping(target = "rosterStatus", ignore = true) // placement edits never change roster status
+    @Mapping(target = "status", ignore = true) // placement edits never change withdrawal status
+    @Mapping(target = "withdrawnAt", ignore = true)
     void updateEntityFromDto(TeamParticipationDto dto, @MappingTarget TeamParticipation entity);
 
     List<TeamParticipationDto> toDtoList(List<TeamParticipation> participations);

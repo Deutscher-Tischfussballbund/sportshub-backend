@@ -2,17 +2,33 @@ package de.dtfb.sportshub.backend.teamparticipation;
 
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
 import com.jayway.jsonpath.JsonPath;
+import de.dtfb.sportshub.backend.group.Group;
+import de.dtfb.sportshub.backend.group.GroupRepository;
+import de.dtfb.sportshub.backend.standing.Standing;
+import de.dtfb.sportshub.backend.standing.StandingRepository;
+import de.dtfb.sportshub.backend.team.Team;
+import de.dtfb.sportshub.backend.team.TeamRepository;
 import jakarta.annotation.PostConstruct;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
+
+import java.time.Instant;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class TeamParticipationControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
+
+    @Autowired
+    private StandingRepository standingRepository;
+    @Autowired
+    private GroupRepository groupRepository;
+    @Autowired
+    private TeamRepository teamRepository;
 
     private String seasonId;
     private String leagueId;
@@ -107,6 +123,63 @@ class TeamParticipationControllerTest extends de.dtfb.sportshub.backend.support.
     }
 
     @Test
+    void deleteParticipation_blockedWhenMatchDayExists() throws Exception {
+        String opponentId = id(createTeam("Gegner"));
+        String roundId = id(createRound(groupId));
+        createMatchDay(roundId, teamId, opponentId);
+
+        mockMvc.perform(delete(url))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("PARTICIPATION_HAS_MATCHES"));
+
+        // untouched -- still there, still deletable once the block is lifted (not exercised here)
+        mockMvc.perform(get(url)).andExpect(status().isOk());
+    }
+
+    @Test
+    void deleteParticipation_blockedWhenStandingExists() throws Exception {
+        Standing standing = new Standing();
+        standing.setGroup(groupRepository.findById(groupId).orElseThrow());
+        standing.setTeam(teamRepository.findById(teamId).orElseThrow());
+        standingRepository.save(standing);
+
+        mockMvc.perform(delete(url))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("PARTICIPATION_HAS_MATCHES"));
+    }
+
+    @Test
+    void withdraw_setsStatusAndTimestamp() throws Exception {
+        mockMvc.perform(post(url + "/withdraw"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("WITHDRAWN"))
+            .andExpect(jsonPath("$.withdrawnAt").isNotEmpty());
+
+        mockMvc.perform(get(url))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("WITHDRAWN"));
+    }
+
+    @Test
+    void withdraw_alreadyWithdrawn_isConflict() throws Exception {
+        mockMvc.perform(post(url + "/withdraw")).andExpect(status().isOk());
+        mockMvc.perform(post(url + "/withdraw")).andExpect(status().isConflict());
+    }
+
+    @Test
+    void withdraw_expectException() throws Exception {
+        mockMvc.perform(post("/v1/team-participations/" + NanoIdUtils.randomNanoId() + "/withdraw"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void withdrawnParticipation_canStillBeDeleted_ifNoMatches() throws Exception {
+        // Withdrawing alone doesn't block delete -- only recorded matches/standings do.
+        mockMvc.perform(post(url + "/withdraw")).andExpect(status().isOk());
+        mockMvc.perform(delete(url)).andExpect(status().isOk());
+    }
+
+    @Test
     void createParticipation_forEndedSeason_isConflict() throws Exception {
         String endedLeagueId = createEndedLeague();
 
@@ -194,6 +267,36 @@ class TeamParticipationControllerTest extends de.dtfb.sportshub.backend.support.
                 .content(String.format("""
                             {"name": "%s", "clubId": "%s"}
                     """, name, clubId)))
+            .andExpect(status().isCreated()).andReturn();
+    }
+
+    private MvcResult createRound(String groupId) throws Exception {
+        return mockMvc.perform(post("/v1/rounds")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "Runde 1", "groupId": "%s"}
+                    """, groupId)))
+            .andExpect(status().isCreated()).andReturn();
+    }
+
+    private MvcResult createMatchDay(String roundId, String teamHomeId, String teamAwayId) throws Exception {
+        String locationId = id(createLocation());
+        return mockMvc.perform(post("/v1/matchdays")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "Spieltag 1", "roundId": "%s", "teamHomeId": "%s", "teamAwayId": "%s",
+                             "locationId": "%s", "startDate": "%s"}
+                    """, roundId, teamHomeId, teamAwayId, locationId, Instant.parse("2025-01-01T10:00:00Z"))))
+            .andExpect(status().isCreated()).andReturn();
+    }
+
+    private MvcResult createLocation() throws Exception {
+        String federationId = createFederation();
+        return mockMvc.perform(post("/v1/locations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "Halle 1", "federationId": "%s"}
+                    """, federationId)))
             .andExpect(status().isCreated()).andReturn();
     }
 

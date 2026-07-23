@@ -13,6 +13,8 @@ import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
+
 /**
  * Placement (L1): a team's entry into one league. Region-admin owned; created en masse by
  * copy-forward, then edited -- promote/relegate = move {@link #group}, add/drop = create/delete. A
@@ -43,4 +45,12 @@ public class TeamParticipation extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RosterStatus rosterStatus = RosterStatus.DRAFT;
+
+    /** Whether the team is still active in this league, or has withdrawn. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ParticipationStatus status = ParticipationStatus.ACTIVE;
+
+    /** Set when {@link #status} transitions to {@link ParticipationStatus#WITHDRAWN}. */
+    private Instant withdrawnAt;
 }
