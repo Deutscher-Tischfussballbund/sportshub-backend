@@ -68,7 +68,7 @@ COMPETITION   (Competition.id)  ── belongs to Season ── belongs to Feder
 ### New — functional
 | Role | Scope | Meaning |
 |---|---|---|
-| `competition_organizer` | COMPETITION | Run one competition (league or tournament): structure, scheduling, results, standings for that Competition. |
+| `competition_organizer` | COMPETITION | A full "league admin" scoped to one league (or future tournament): everything a region admin could do for it, narrowed to just that one. Covers the competition's own structure/scheduling/results/standings (Tier C), the league's own metadata, its placements (add/move/remove/withdraw), roster edit/confirm, and appointing a co-organizer for the same league (widened post-Phase-1; see `09-league-model.md` §4). |
 
 ### Deprecated — superseded, pending removal
 | Role | Why |
