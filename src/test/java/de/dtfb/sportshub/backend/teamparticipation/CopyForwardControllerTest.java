@@ -154,7 +154,7 @@ class CopyForwardControllerTest extends de.dtfb.sportshub.backend.support.Author
     private String createSeason(String federationId) throws Exception {
         MvcResult result = mockMvc.perform(post("/v1/seasons")
                 .contentType(MediaType.APPLICATION_JSON).content(String.format("""
-                    {"name": "Season", "federationId": "%s", "registrationOpen": true}
+                    {"name": "Season", "federationId": "%s", "registrationOpensAt": "2020-01-01"}
                     """, federationId)))
             .andExpect(status().isCreated())
             .andReturn();

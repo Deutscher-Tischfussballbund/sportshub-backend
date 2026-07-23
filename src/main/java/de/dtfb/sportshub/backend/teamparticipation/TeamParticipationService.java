@@ -144,8 +144,10 @@ public class TeamParticipationService {
      * A team may not register for a league whose season has already ended. Only checked on
      * create (a fresh registration) — not update, which region admins use for placement edits
      * (promote/relegate) that should stay unrestricted regardless of season timing. Uses the
-     * season's actual endDate rather than the registrationOpen flag, which is a manually-toggled
-     * setting that can go stale (still true long after the season is over).
+     * season's actual endDate rather than the registration window ({@code registrationOpen}) --
+     * those are distinct concepts (a season could still be within its registration window after
+     * its own endDate if an admin left it open-ended) and endDate is the authoritative signal that
+     * the season itself is over.
      */
     private void requireSeasonNotEnded(League league) {
         Season season = league.getSeason();

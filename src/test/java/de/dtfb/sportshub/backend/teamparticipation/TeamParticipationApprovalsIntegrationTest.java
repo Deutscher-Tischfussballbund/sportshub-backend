@@ -19,6 +19,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import java.time.LocalDate;
+
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -91,7 +93,7 @@ class TeamParticipationApprovalsIntegrationTest {
         Season season = new Season();
         season.setName("2025");
         season.setFederation(federation);
-        season.setRegistrationOpen(true);
+        season.setRegistrationOpensAt(LocalDate.of(2020, 1, 1));
         return seasonRepository.save(season);
     }
 
