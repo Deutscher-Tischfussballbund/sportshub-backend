@@ -10,7 +10,8 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Copy-forward endpoint (L1b): seed a season's placements from a previous season. Gated on the
  * target season's region — a region admin carries their own league forward. The same-federation
- * rule (enforced in the service) keeps this within one region.
+ * rule (enforced in the service) keeps this within one region. Rosters are copied along with the
+ * placements by default ({@code copyRoster=false} opts out).
  */
 @RestController
 @RequestMapping("/v1/seasons")
@@ -24,7 +25,8 @@ public class CopyForwardController {
 
     @PostMapping("/{targetSeasonId}/copy-forward")
     @PreAuthorize("@authz.canManageSeason(#targetSeasonId)")
-    public CopyForwardResultDto copyForward(@PathVariable String targetSeasonId, @RequestParam String from) {
-        return service.copyForward(targetSeasonId, from);
+    public CopyForwardResultDto copyForward(@PathVariable String targetSeasonId, @RequestParam String from,
+                                            @RequestParam(defaultValue = "true") boolean copyRoster) {
+        return service.copyForward(targetSeasonId, from, copyRoster);
     }
 }
