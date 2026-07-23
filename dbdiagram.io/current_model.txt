@@ -299,6 +299,8 @@ Table league_rule_set {
   matchday_decision MatchdayDecision
   matchday_target int [note: 'the N for FIRST_TO']
   side_switch_allowed boolean
+  min_roster_size int [note: 'Enforced by RosterService on submit; null = unconstrained']
+  max_roster_size int [note: 'Enforced by RosterService on addPlayer; null = unconstrained']
 }
 
 Table game_plan_entry {
