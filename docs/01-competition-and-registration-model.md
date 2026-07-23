@@ -216,7 +216,7 @@ escalation are **deferred** (see §8) — add them only if a real need appears.
 
 ## 6. Authorization mapping (reuses the existing model)
 
-Roles already exist: `ADMIN > REGION_ADMIN > CLUB_ADMIN > TEAM_ADMIN` (+ `COMPETITION_ORGANIZER`, renamed from `EVENT_ORGANIZER` alongside the entity).
+Roles already exist: `ADMIN > REGION_ADMIN > CLUB_ADMIN > TEAM_ADMIN` (+ `COMPETITION_ORGANIZER`, renamed from `EVENT_ORGANIZER` alongside the entity, later widened to a full "league admin" scoped to one league — see `docs/03-authorization-model.md` §4 and `docs/09-league-model.md` §4).
 **Captain = `TEAM_ADMIN`** (no separate role, no magic links).
 
 | Action | Gate |
