@@ -12,8 +12,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Roster CRUD + lifecycle as an admin (real authz stack, admin rights). Exercises the hardwired
- * hard rules: edits require DRAFT + open registration; the lifecycle transitions guard their status.
- * Uses seeded players ({@code player-test}, {@code player-club}).
+ * hard rules: edits require DRAFT; the lifecycle transitions guard their status. Since every
+ * request here runs as the bootstrap global admin, {@code registrationOpen} doesn't block edits
+ * (see {@link RosterAdminBypassIntegrationTest} for the team_admin side of that gate). Uses seeded
+ * players ({@code player-test}, {@code player-club}).
  */
 class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
 
@@ -86,8 +88,12 @@ class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
     }
 
     @Test
-    void edit_whenRegistrationClosed_isConflict() throws Exception {
-        add(rosterUrl(closedParticipationId), PLAYER_A).andExpect(status().isConflict());
+    void edit_whenRegistrationClosed_admin_isAllowed() throws Exception {
+        // An admin above the team may edit regardless of registrationOpen (e.g. to fix a
+        // copy-forwarded roster before registration opens) -- unlike a self-editing team_admin,
+        // see RosterAdminBypassIntegrationTest for that side of the gate.
+        add(rosterUrl(closedParticipationId), PLAYER_A).andExpect(status().isCreated());
+        mockMvc.perform(post(rosterUrl(closedParticipationId) + "/submit")).andExpect(status().isOk());
     }
 
     @Test

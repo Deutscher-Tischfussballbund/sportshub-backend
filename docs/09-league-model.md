@@ -155,7 +155,11 @@ cleanly **league-only** (ad-hoc tournament pairings never used them). Re-parenti
 - `TeamParticipation.pool` → **`group`** (nullable = registered-but-unplaced).
 - Roster lifecycle `DRAFT → SUBMITTED → CONFIRMED`, soft-delete, authz split
   (`canEditRoster`/`canConfirmRoster`), and the `registrationOpen` gate all stay as doc 01
-  §3.4–§3.6 / §6.
+  §3.4–§3.6 / §6 -- **except** the gate now only binds a self-editing `team_admin` (added
+  post-Phase-1): an admin above the team (club/region/global, resolved via `canConfirmRoster`) may
+  add/remove/submit regardless of `registrationOpen`, e.g. to fix a copy-forwarded roster before
+  registration opens. `RosterController` passes the resolved `canConfirmRoster` verdict into
+  `RosterService` as `actingAsAdmin`; the service doesn't depend on `AuthorizationService` itself.
 
 **Withdrawal (added post-Phase-1):** a team drops out of a league via a **status change**, not a
 delete — `TeamParticipation.status` (`ACTIVE`/`WITHDRAWN`, default `ACTIVE`) +
