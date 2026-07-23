@@ -58,4 +58,11 @@ public class TeamParticipationController {
     public void deleteTeamParticipation(@PathVariable String id) {
         service.delete(id);
     }
+
+    /** The team drops out of the league for the rest of the season -- a status change, not a delete. */
+    @PostMapping("/{id}/withdraw")
+    @PreAuthorize("@authz.canManageParticipation(#id)")
+    public TeamParticipationDto withdrawTeamParticipation(@PathVariable String id) {
+        return service.withdraw(id);
+    }
 }

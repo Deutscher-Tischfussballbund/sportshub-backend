@@ -111,6 +111,22 @@ class CopyForwardControllerTest extends de.dtfb.sportshub.backend.support.Author
     }
 
     @Test
+    void copyForward_skipsWithdrawnParticipation() throws Exception {
+        mockMvc.perform(post("/v1/team-participations/" + sourceParticipationId + "/withdraw"))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post("/v1/seasons/" + targetSeasonId + "/copy-forward").param("from", sourceSeasonId))
+            .andExpect(status().isOk())
+            // the structure still clones -- only the participation itself is skipped
+            .andExpect(jsonPath("$.groups").value(1))
+            .andExpect(jsonPath("$.participations").value(0));
+
+        mockMvc.perform(get("/v1/team-participations").param("seasonId", targetSeasonId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
     void copyForward_rejectsWhenTargetNotEmpty() throws Exception {
         mockMvc.perform(post("/v1/seasons/" + targetSeasonId + "/copy-forward").param("from", sourceSeasonId))
             .andExpect(status().isOk());

@@ -89,6 +89,22 @@ class TeamParticipationControllerSecurityTest {
     }
 
     @Test
+    void withdraw_whenNotParticipationManager_isForbidden() throws Exception {
+        Mockito.when(authz.canManageParticipation(any())).thenReturn(false);
+        mockMvc.perform(post("/v1/team-participations/participation-x/withdraw").with(jwt()))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void withdraw_whenParticipationManager_passesGate() throws Exception {
+        Mockito.when(authz.canManageParticipation(any())).thenReturn(true);
+        // Gate passes; fails only because "participation-x" does not exist (404), confirming
+        // authorization let it through (a denied request would be 403).
+        mockMvc.perform(post("/v1/team-participations/participation-x/withdraw").with(jwt()))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
     void read_asAnyAuthenticatedUser_isAllowed() throws Exception {
         mockMvc.perform(get("/v1/team-participations").with(jwt()))
             .andExpect(status().isOk());

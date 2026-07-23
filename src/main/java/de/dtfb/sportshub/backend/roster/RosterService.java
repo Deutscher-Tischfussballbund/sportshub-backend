@@ -6,6 +6,7 @@ import de.dtfb.sportshub.backend.player.Player;
 import de.dtfb.sportshub.backend.player.PlayerNotFoundException;
 import de.dtfb.sportshub.backend.player.PlayerRepository;
 import de.dtfb.sportshub.backend.season.Season;
+import de.dtfb.sportshub.backend.teamparticipation.ParticipationStatus;
 import de.dtfb.sportshub.backend.teamparticipation.RosterStatus;
 import de.dtfb.sportshub.backend.teamparticipation.TeamParticipation;
 import de.dtfb.sportshub.backend.teamparticipation.TeamParticipationDto;
@@ -89,6 +90,7 @@ public class RosterService {
     @Transactional
     public TeamParticipationDto submit(String participationId) {
         TeamParticipation participation = getParticipation(participationId);
+        requireActive(participation);
         requireStatus(participation, RosterStatus.DRAFT);
         requireRegistrationOpen(participation);
         requireMinRosterSize(participation);
@@ -98,6 +100,7 @@ public class RosterService {
     @Transactional
     public TeamParticipationDto confirm(String participationId) {
         TeamParticipation participation = getParticipation(participationId);
+        requireActive(participation);
         requireStatus(participation, RosterStatus.SUBMITTED);
         return transition(participation, RosterStatus.CONFIRMED);
     }
@@ -105,6 +108,7 @@ public class RosterService {
     @Transactional
     public TeamParticipationDto reopen(String participationId) {
         TeamParticipation participation = getParticipation(participationId);
+        requireActive(participation);
         if (participation.getRosterStatus() == RosterStatus.DRAFT) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Roster is already open (DRAFT)");
         }
@@ -123,8 +127,16 @@ public class RosterService {
 
     /** Roster entries may be added/removed only while the roster is DRAFT and registration is open. */
     private void requireEditable(TeamParticipation participation) {
+        requireActive(participation);
         requireStatus(participation, RosterStatus.DRAFT);
         requireRegistrationOpen(participation);
+    }
+
+    /** A withdrawn team's roster is locked -- no more edits or lifecycle transitions. */
+    private void requireActive(TeamParticipation participation) {
+        if (participation.getStatus() == ParticipationStatus.WITHDRAWN) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Team has withdrawn from this league");
+        }
     }
 
     private void requireStatus(TeamParticipation participation, RosterStatus expected) {

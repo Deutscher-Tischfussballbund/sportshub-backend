@@ -6,14 +6,19 @@ import de.dtfb.sportshub.backend.group.GroupRepository;
 import de.dtfb.sportshub.backend.league.League;
 import de.dtfb.sportshub.backend.league.LeagueNotFoundException;
 import de.dtfb.sportshub.backend.league.LeagueRepository;
+import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
 import de.dtfb.sportshub.backend.season.Season;
+import de.dtfb.sportshub.backend.standing.StandingRepository;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamNotFoundException;
 import de.dtfb.sportshub.backend.team.TeamRepository;
 import org.jspecify.annotations.NonNull;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -24,15 +29,20 @@ public class TeamParticipationService {
     private final TeamRepository teamRepository;
     private final LeagueRepository leagueRepository;
     private final GroupRepository groupRepository;
+    private final MatchDayRepository matchDayRepository;
+    private final StandingRepository standingRepository;
 
     public TeamParticipationService(TeamParticipationRepository repository, TeamParticipationMapper mapper,
                                     TeamRepository teamRepository, LeagueRepository leagueRepository,
-                                    GroupRepository groupRepository) {
+                                    GroupRepository groupRepository, MatchDayRepository matchDayRepository,
+                                    StandingRepository standingRepository) {
         this.repository = repository;
         this.mapper = mapper;
         this.teamRepository = teamRepository;
         this.leagueRepository = leagueRepository;
         this.groupRepository = groupRepository;
+        this.matchDayRepository = matchDayRepository;
+        this.standingRepository = standingRepository;
     }
 
     /** Placements, optionally narrowed to one league (preferred), one season, or one team. */
@@ -82,7 +92,45 @@ public class TeamParticipationService {
 
     @Transactional
     public void delete(String id) {
-        repository.delete(getParticipation(id));
+        TeamParticipation participation = getParticipation(id);
+        requireNoRecordedMatches(participation);
+        repository.delete(participation);
+    }
+
+    /**
+     * A team drops out of a league by withdrawing, not deleting the row -- this preserves the
+     * participation (and any recorded matches/standings) instead of removing it. Withdrawing locks
+     * the roster ({@link de.dtfb.sportshub.backend.roster.RosterService}) and excludes the
+     * participation from future copy-forward. Resolving the team's remaining scheduled fixtures
+     * (forfeit/walkover scoring) is a separate, deferred concern -- withdrawal only flags the
+     * participation.
+     */
+    @Transactional
+    public TeamParticipationDto withdraw(String id) {
+        TeamParticipation participation = getParticipation(id);
+        if (participation.getStatus() == ParticipationStatus.WITHDRAWN) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Team has already withdrawn from this league");
+        }
+        participation.setStatus(ParticipationStatus.WITHDRAWN);
+        participation.setWithdrawnAt(Instant.now());
+        return mapper.toDto(repository.save(participation));
+    }
+
+    /**
+     * A participation with recorded matches or a standing in its league cannot be hard-deleted --
+     * that would either fail with an unhandled FK issue (Match/Standing FK the Team directly, so
+     * today it wouldn't even fail, it would just orphan the history) or silently erase the record
+     * that the team was ever placed there. Withdraw instead.
+     */
+    private void requireNoRecordedMatches(TeamParticipation participation) {
+        String leagueId = participation.getLeague().getId();
+        String teamId = participation.getTeam().getId();
+        boolean hasMatches = matchDayRepository.existsByLeagueIdAndTeamId(leagueId, teamId);
+        boolean hasStanding = standingRepository.existsByLeagueIdAndTeamId(leagueId, teamId);
+        if (hasMatches || hasStanding) {
+            throw new ParticipationDeletionBlockedException(
+                "Team has recorded matches or a standing in this league; withdraw instead of deleting");
+        }
     }
 
     /** Resolve the team + league (required) and group (optional) referenced by the dto. */
