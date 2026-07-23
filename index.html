@@ -369,7 +369,7 @@
     </p>
     <div class="diagram-card">
 <pre class="mermaid">
-%%{init: {'theme':'base', 'themeVariables': {'fontFamily': 'Public Sans, sans-serif', 'primaryColor': '#e9f4ec', 'primaryBorderColor': '#0f7a3d', 'primaryTextColor': '#16211a', 'lineColor': '#7c8a78', 'background': 'transparent', 'edgeLabelBackground':'#f6f8f5'}}}%%
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#e9f4ec', 'primaryBorderColor': '#0f7a3d', 'primaryTextColor': '#16211a', 'lineColor': '#7c8a78', 'background': 'transparent', 'edgeLabelBackground':'#f6f8f5'}}}%%
 flowchart TD
     subgraph RA["REGION ADMIN"]
         direction TB
@@ -419,7 +419,7 @@ flowchart TD
     </p>
     <div class="diagram-card">
 <pre class="mermaid">
-%%{init: {'theme':'base', 'themeVariables': {'fontFamily': 'Public Sans, sans-serif', 'primaryColor': '#f7ecdf', 'primaryBorderColor': '#a15b12', 'primaryTextColor': '#16211a', 'lineColor': '#7c8a78', 'background': 'transparent', 'edgeLabelBackground':'#f6f8f5'}}}%%
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#f7ecdf', 'primaryBorderColor': '#a15b12', 'primaryTextColor': '#16211a', 'lineColor': '#7c8a78', 'background': 'transparent', 'edgeLabelBackground':'#f6f8f5'}}}%%
 flowchart TD
     subgraph CA["CLUB ADMIN"]
         direction TB
@@ -473,7 +473,7 @@ flowchart TD
     <div class="two-up">
       <div class="diagram-card">
 <pre class="mermaid">
-%%{init: {'theme':'base', 'themeVariables': {'fontFamily': 'Public Sans, sans-serif', 'primaryColor': '#e9f4ec', 'primaryBorderColor': '#0f7a3d', 'primaryTextColor': '#16211a', 'lineColor': '#7c8a78', 'background': 'transparent', 'edgeLabelBackground':'#f6f8f5'}}}%%
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#e9f4ec', 'primaryBorderColor': '#0f7a3d', 'primaryTextColor': '#16211a', 'lineColor': '#7c8a78', 'background': 'transparent', 'edgeLabelBackground':'#f6f8f5'}}}%%
 flowchart TD
     subgraph RA3["REGION ADMIN — or LEAGUE ADMIN"]
         direction TB
@@ -532,7 +532,7 @@ flowchart TD
     <div class="two-up">
       <div class="diagram-card">
 <pre class="mermaid">
-%%{init: {'theme':'base', 'themeVariables': {'fontFamily': 'Public Sans, sans-serif', 'primaryColor': '#e8f2f5', 'primaryBorderColor': '#1c6f8c', 'primaryTextColor': '#16211a', 'lineColor': '#7c8a78', 'background': 'transparent', 'edgeLabelBackground':'#f6f8f5', 'noteBkgColor': '#f7ecdf', 'noteBorderColor': '#a15b12', 'noteTextColor': '#16211a'}}}%%
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#e8f2f5', 'primaryBorderColor': '#1c6f8c', 'primaryTextColor': '#16211a', 'lineColor': '#7c8a78', 'background': 'transparent', 'edgeLabelBackground':'#f6f8f5', 'noteBkgColor': '#f7ecdf', 'noteBorderColor': '#a15b12', 'noteTextColor': '#16211a'}}}%%
 stateDiagram-v2
     [*] --> DRAFT
     DRAFT --> DRAFT: captain adds / removes players (registration window open)
@@ -587,7 +587,12 @@ stateDiagram-v2
 
 <script src="mermaid.min.js"></script>
 <script>
-  mermaid.initialize({ startOnLoad: true, securityLevel: 'loose' });
+  // Render only after the custom @font-face's (Big Shoulders / Public Sans) finish loading --
+  // mermaid measures node text synchronously at render time, so rendering before the real font
+  // paints locks in box sizes based on a fallback font's (narrower) metrics, and it never
+  // re-lays-out once the real font swaps in, leaving text clipped against the old box width.
+  mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
+  document.fonts.ready.then(() => mermaid.run());
 </script>
 </body>
 </html>
