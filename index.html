@@ -535,13 +535,12 @@ flowchart TD
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#e8f2f5', 'primaryBorderColor': '#1c6f8c', 'primaryTextColor': '#16211a', 'lineColor': '#7c8a78', 'background': 'transparent', 'edgeLabelBackground':'#f6f8f5', 'noteBkgColor': '#f7ecdf', 'noteBorderColor': '#a15b12', 'noteTextColor': '#16211a'}}}%%
 stateDiagram-v2
     [*] --> DRAFT
-    DRAFT --> DRAFT: captain adds / removes players (registration window open)
     DRAFT --> SUBMITTED: captain submits (minimum roster size met)
     SUBMITTED --> CONFIRMED: region/club/league admin confirms — never the submitting captain
     SUBMITTED --> DRAFT: region/club/league admin reopens
     CONFIRMED --> DRAFT: region/club/league admin reopens
     note right of DRAFT
-        An admin above the team may add, remove or submit at any point — the registration window only binds a captain editing their own team's roster.
+        Captain adds/removes players while in DRAFT. An admin above the team may add, remove or submit at any point — the registration window only binds a captain editing their own team's roster.
     end note
     classDef draftState fill:#e8f2f5,stroke:#1c6f8c,color:#16211a
     classDef submittedState fill:#f7ecdf,stroke:#a15b12,color:#16211a
