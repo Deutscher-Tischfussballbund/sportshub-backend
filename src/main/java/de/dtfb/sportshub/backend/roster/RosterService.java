@@ -23,11 +23,17 @@ import java.util.List;
 
 /**
  * Roster management (L2): the players on a team's roster for one participation, plus the whole
- * roster's lifecycle (DRAFT → SUBMITTED → CONFIRMED). Editing is a hard-gated to the DRAFT state
+ * roster's lifecycle (DRAFT → SUBMITTED → CONFIRMED). Editing is hard-gated to the DRAFT state
  * while the season's registration is open; confirm/reopen are admin lifecycle moves (authorized in
  * the controller). Most rules are hardwired settings (here: {@code Season.registrationOpen}); the
  * one exception is roster size, which comes from the resolved {@link LeagueRuleSet}
  * (min enforced on submit, max enforced on addPlayer) since it's federation/league-configurable.
+ *
+ * <p>The {@code registrationOpen} gate applies to a self-editing {@code team_admin} only -- an
+ * admin above the team (club/region/global) may add/remove/submit regardless, e.g. to correct a
+ * copy-forwarded roster before registration opens. The caller resolves this via
+ * {@code @authz.canConfirmRoster} (the controller passes it in as {@code actingAsAdmin}) rather
+ * than this service depending on {@code AuthorizationService} directly.
  */
 @Service
 public class RosterService {
@@ -58,9 +64,9 @@ public class RosterService {
     }
 
     @Transactional
-    public RosterEntryDto addPlayer(String participationId, String playerId) {
+    public RosterEntryDto addPlayer(String participationId, String playerId, boolean actingAsAdmin) {
         TeamParticipation participation = getParticipation(participationId);
-        requireEditable(participation);
+        requireEditable(participation, actingAsAdmin);
         Player player = playerRepository.findById(playerId)
             .orElseThrow(() -> new PlayerNotFoundException(playerId));
         rosterRepository.findByParticipationIdAndPlayerIdAndRemovedAtIsNull(participationId, playerId)
@@ -77,9 +83,9 @@ public class RosterService {
     }
 
     @Transactional
-    public void removePlayer(String participationId, String playerId) {
+    public void removePlayer(String participationId, String playerId, boolean actingAsAdmin) {
         TeamParticipation participation = getParticipation(participationId);
-        requireEditable(participation);
+        requireEditable(participation, actingAsAdmin);
         RosterEntry entry = rosterRepository
             .findByParticipationIdAndPlayerIdAndRemovedAtIsNull(participationId, playerId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player is not on the roster"));
@@ -88,11 +94,13 @@ public class RosterService {
     }
 
     @Transactional
-    public TeamParticipationDto submit(String participationId) {
+    public TeamParticipationDto submit(String participationId, boolean actingAsAdmin) {
         TeamParticipation participation = getParticipation(participationId);
         requireActive(participation);
         requireStatus(participation, RosterStatus.DRAFT);
-        requireRegistrationOpen(participation);
+        if (!actingAsAdmin) {
+            requireRegistrationOpen(participation);
+        }
         requireMinRosterSize(participation);
         return transition(participation, RosterStatus.SUBMITTED);
     }
@@ -125,11 +133,17 @@ public class RosterService {
             .orElseThrow(() -> new TeamParticipationNotFoundException(participationId));
     }
 
-    /** Roster entries may be added/removed only while the roster is DRAFT and registration is open. */
-    private void requireEditable(TeamParticipation participation) {
+    /**
+     * Roster entries may be added/removed only while the roster is DRAFT -- and, for a self-editing
+     * team_admin, only while registration is open. An admin above the team may edit regardless
+     * ({@code actingAsAdmin}), e.g. to fix a copy-forwarded roster before registration opens.
+     */
+    private void requireEditable(TeamParticipation participation, boolean actingAsAdmin) {
         requireActive(participation);
         requireStatus(participation, RosterStatus.DRAFT);
-        requireRegistrationOpen(participation);
+        if (!actingAsAdmin) {
+            requireRegistrationOpen(participation);
+        }
     }
 
     /** A withdrawn team's roster is locked -- no more edits or lifecycle transitions. */
