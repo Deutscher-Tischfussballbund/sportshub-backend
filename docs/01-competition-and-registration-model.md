@@ -108,15 +108,30 @@ plain admin editing whose first-class operation is **copy-forward**.
 
 ```
 Season {
-  name, federation,                       // existing
-  startDate, endDate,                     // general duration
-  registrationOpen: boolean,             // is roster registration open?
-  archivedAt,                             // soft-delete (see 05-season-archiving-and-deletion.md)
+  name, federation,                                    // existing
+  startDate, endDate,                                  // general duration
+  registrationOpensAt, registrationClosesAt: LocalDate?, // registration window (opensAt required, closesAt optional)
+  registrationOpen: boolean,                            // READ-ONLY, derived from the window above
+  archivedAt,                                            // soft-delete (see 05-season-archiving-and-deletion.md)
 }
 ```
-`registrationOpen` is the **roster-management switch** (when team admins may edit rosters).
-A scheduled open/close *window* was considered and dropped — a single boolean was enough;
-deadlines that gate finer actions come from the `RuleSet` (§4).
+`registrationOpen` is the **roster-management switch** (when team admins may edit rosters) — now
+computed fresh on every read from `registrationOpensAt`/`registrationClosesAt` rather than stored as
+a manually-toggled boolean.
+
+**UPDATE (post-Phase-1):** the scheduled open/close *window* noted below as "considered and
+dropped" was in fact added later, once the plain boolean's staleness became a recurring problem —
+`TeamParticipationService.requireSeasonNotEnded` and the frontend's season-badge logic both had to
+route around it (using `Season.endDate` instead) specifically because a manually-toggled flag could
+stay `true` long after it should have closed. The window fixes that at the source: `registrationOpen`
+is still exposed with the same name/shape for existing consumers, it's just always accurate now.
+`registrationOpensAt` is required for registration to ever be open (an admin still must deliberately
+schedule it, matching the old boolean's default-closed behaviour); `registrationClosesAt` is optional
+— leaving it unset means registration stays open indefinitely once it starts. Original passage below,
+kept for history:
+
+> A scheduled open/close *window* was considered and dropped — a single boolean was enough;
+> deadlines that gate finer actions come from the `RuleSet` (§4).
 
 ### 3.3 `Competition` — gains deadlines + optional rule override
 

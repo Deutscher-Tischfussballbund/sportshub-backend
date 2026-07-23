@@ -62,9 +62,9 @@ class RosterAdminBypassIntegrationTest {
     @BeforeEach
     void setup() throws Exception {
         String federationId = create("/v1/federation", "{\"name\":\"Testverband\"}");
-        // registrationOpen: false -- the whole point of this test
+        // no registration window set -- closed, which is the whole point of this test
         String seasonId = create("/v1/seasons",
-            "{\"name\":\"2025\",\"federationId\":\"" + federationId + "\",\"registrationOpen\":false}");
+            "{\"name\":\"2025\",\"federationId\":\"" + federationId + "\"}");
         String categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"H\"}");
         String leagueId = create("/v1/leagues",
             "{\"name\":\"Liga\",\"seasonId\":\"" + seasonId + "\",\"categoryId\":\"" + categoryId + "\"}");

@@ -172,11 +172,13 @@ class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
     /** Same as above, but the league uses the given rule set (for roster-size enforcement tests). */
     private String participationUnderLeague(String federationId, boolean registrationOpen, String ruleSetId)
             throws Exception {
+        // true -> opened long ago, no close date (stays open); false -> never opened (closed).
+        String opensAt = registrationOpen ? "\"2020-01-01\"" : "null";
         MvcResult season = mockMvc.perform(post("/v1/seasons")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                    {"name": "S", "federationId": "%s", "registrationOpen": %s}
-                    """, federationId, registrationOpen)))
+                    {"name": "S", "federationId": "%s", "registrationOpensAt": %s}
+                    """, federationId, opensAt)))
             .andExpect(status().isCreated())
             .andReturn();
         String seasonId = JsonPath.read(season.getResponse().getContentAsString(), "$.id");

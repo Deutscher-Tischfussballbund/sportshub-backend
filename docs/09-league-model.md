@@ -43,7 +43,7 @@ shared identities (`Player`, `Team`, `Category`, `Federation`, `Location`).
 > tournament aggregate (§5). So below, "LeagueSeason" = the existing `Season` entity.
 
 ```
-Season              federation, startDate, endDate, registrationOpen, archivedAt   (name kept)
+Season              federation, startDate, endDate, registrationOpensAt/ClosesAt (→ registrationOpen), archivedAt   (name kept)
   League            e.g. "Bayern Herren", one category; the copy-forward + ruleset-default unit
     Tier            "1. Bayernliga", "2. Bayernliga"   ← FIRST-CLASS; `level` (1=top) orders the promote/relegate ladder
       Group         "Gruppe A", "Gruppe B"             (one round-robin table of teams)

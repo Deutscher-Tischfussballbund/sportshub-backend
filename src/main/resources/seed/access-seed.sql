@@ -114,8 +114,9 @@ UPDATE federation SET default_rule_set_id = 'rs-by-std' WHERE id = 'fed-by';
 -- Full spine under fed-by (Bayern): season -> league -> tier -> group -> round -> match_day,
 -- with one CONFIRMED match-day and two standings.
 -- ---------------------------------------------------------------------------
-INSERT INTO season (id, name, federation_id, start_date, end_date, registration_open)
-VALUES ('season-res', 'Saison 2023 (mit Ergebnissen)', 'fed-by', DATE '2023-09-01', DATE '2024-05-31', FALSE);
+-- Never opened (both bounds null) -- a fully played-out old season, registration long since moot.
+INSERT INTO season (id, name, federation_id, start_date, end_date, registration_opens_at, registration_closes_at)
+VALUES ('season-res', 'Saison 2023 (mit Ergebnissen)', 'fed-by', DATE '2023-09-01', DATE '2024-05-31', NULL, NULL);
 
 INSERT INTO league (id, season_id, name, category_id)
 VALUES ('league-res', 'season-res', 'Bayernliga 2023', 'cat-herren');
@@ -151,12 +152,13 @@ VALUES ('tp-res-1', 'team-tfcm-1', 'league-res', 'group-res', 'CONFIRMED', 'ACTI
 -- on the placements page pick "Saison 2024" and copy-forward from "Saison 2023"
 -- to clone the division + both placements into here.
 -- ---------------------------------------------------------------------------
-INSERT INTO season (id, name, federation_id, start_date, end_date, registration_open)
-VALUES ('season-2024', 'Saison 2024', 'fed-by', DATE '2024-09-01', DATE '2025-05-31', TRUE);
+-- Open indefinitely (opened long ago, no close date) -- stays open regardless of "today".
+INSERT INTO season (id, name, federation_id, start_date, end_date, registration_opens_at)
+VALUES ('season-2024', 'Saison 2024', 'fed-by', DATE '2024-09-01', DATE '2025-05-31', DATE '2024-01-01');
 
 -- Archived season (fed-by) — shows up only in the "View archive" list, not the main one.
-INSERT INTO season (id, name, federation_id, start_date, end_date, registration_open, archived_at)
-VALUES ('season-arch', 'Saison 2019 (archiviert)', 'fed-by', DATE '2019-09-01', DATE '2020-05-31', FALSE,
+INSERT INTO season (id, name, federation_id, start_date, end_date, registration_opens_at, registration_closes_at, archived_at)
+VALUES ('season-arch', 'Saison 2019 (archiviert)', 'fed-by', DATE '2019-09-01', DATE '2020-05-31', NULL, NULL,
         TIMESTAMP '2020-07-01 00:00:00');
 
 -- ---------------------------------------------------------------------------
@@ -165,8 +167,8 @@ VALUES ('season-arch', 'Saison 2019 (archiviert)', 'fed-by', DATE '2019-09-01', 
 -- empty one (count 0), placed + one unplaced team, and rosters in every lifecycle state
 -- (DRAFT / SUBMITTED / CONFIRMED). The Herren league uses the shared rule set rs-by-std.
 -- ---------------------------------------------------------------------------
-INSERT INTO season (id, name, federation_id, start_date, end_date, registration_open)
-VALUES ('season-by25', 'Saison 2024/25 (Bayern)', 'fed-by', DATE '2024-09-01', DATE '2025-05-31', TRUE);
+INSERT INTO season (id, name, federation_id, start_date, end_date, registration_opens_at)
+VALUES ('season-by25', 'Saison 2024/25 (Bayern)', 'fed-by', DATE '2024-09-01', DATE '2025-05-31', DATE '2024-01-01');
 
 INSERT INTO league (id, season_id, name, category_id, rule_set_id)
 VALUES ('lg-by25-h', 'season-by25', 'Bayernliga Herren 2024/25', 'cat-herren', 'rs-by-std'),
@@ -216,8 +218,8 @@ VALUES ('re-1', 'tp-by25-1', 'player-p1', TIMESTAMP '2024-09-10 10:00:00', NULL)
 -- A second region's league (Baden-Württemberg) — so placements/structure aren't
 -- Bayern-only and switching regions shows genuinely different data.
 -- ---------------------------------------------------------------------------
-INSERT INTO season (id, name, federation_id, start_date, end_date, registration_open)
-VALUES ('season-bw25', 'Saison 2024/25 (BW)', 'fed-bw', DATE '2024-09-01', DATE '2025-05-31', TRUE);
+INSERT INTO season (id, name, federation_id, start_date, end_date, registration_opens_at)
+VALUES ('season-bw25', 'Saison 2024/25 (BW)', 'fed-bw', DATE '2024-09-01', DATE '2025-05-31', DATE '2024-01-01');
 
 INSERT INTO league (id, season_id, name, category_id)
 VALUES ('lg-bw25', 'season-bw25', 'Baden-Württemberg-Liga 2024/25', 'cat-herren');
@@ -239,8 +241,8 @@ VALUES ('tp-bw25-1', 'team-tsvs-1', 'lg-bw25', 'g-bw25', 'CONFIRMED', 'ACTIVE'),
 -- league with a group phase (two groups) and a finals tier. (Tournaments proper are parked;
 -- this stays valid league-shaped demo data.)
 -- ---------------------------------------------------------------------------
-INSERT INTO season (id, name, federation_id, start_date, end_date, registration_open)
-VALUES ('season-cup', 'Bayern-Pokal 2024', 'fed-by', DATE '2024-06-01', DATE '2024-06-30', TRUE);
+INSERT INTO season (id, name, federation_id, start_date, end_date, registration_opens_at)
+VALUES ('season-cup', 'Bayern-Pokal 2024', 'fed-by', DATE '2024-06-01', DATE '2024-06-30', DATE '2024-01-01');
 
 INSERT INTO league (id, season_id, name, category_id)
 VALUES ('lg-cup', 'season-cup', 'Bayern-Pokal 2024', 'cat-open');
@@ -263,13 +265,17 @@ VALUES ('tp-cup-1', 'team-tfcm-1', 'lg-cup', 'g-cup-a', 'CONFIRMED', 'ACTIVE'),
 -- ---------------------------------------------------------------------------
 -- "Current" and "upcoming" examples for TFC München 1's team-rosters page
 -- (frontend TeamRostersService.seasonBadge): a season whose date range brackets
--- "now" shows CURRENT regardless of registration_open; a season that hasn't
--- started yet but is open for registration shows UPCOMING. Both dated relative
--- to a 2026-ish "today" — adjust forward if this seed is still in use once
--- these ranges are themselves in the past.
+-- "now" shows CURRENT regardless of the registration window; a season that hasn't
+-- started yet but has an open registration window shows UPCOMING. Season dates
+-- (start_date/end_date, used for the badge) are relative to a 2026-ish "today" —
+-- adjust forward if this seed is still in use once these ranges are themselves
+-- in the past.
 -- ---------------------------------------------------------------------------
-INSERT INTO season (id, name, federation_id, start_date, end_date, registration_open)
-VALUES ('season-2026', 'Saison 2026', 'fed-by', DATE '2026-01-01', DATE '2026-12-31', FALSE);
+-- Registration window already closed (Oct-Dec 2025) -- fixed in the past, unlike the season's
+-- own dates above it never needs "adjust forward".
+INSERT INTO season (id, name, federation_id, start_date, end_date, registration_opens_at, registration_closes_at)
+VALUES ('season-2026', 'Saison 2026', 'fed-by', DATE '2026-01-01', DATE '2026-12-31',
+        DATE '2025-10-01', DATE '2025-12-31');
 
 INSERT INTO league (id, season_id, name, category_id, rule_set_id)
 VALUES ('lg-2026-h', 'season-2026', 'Bayernliga Herren 2026', 'cat-herren', 'rs-by-std');
@@ -294,8 +300,8 @@ VALUES ('re-2026-1', 'tp-2026-1', 'player-p1', TIMESTAMP '2026-01-15 10:00:00', 
 -- structure set up either, since placements haven't run (mirrors tp-by25-4's
 -- "registered but unplaced" shape). team-tfcm-1 has pre-registered; its roster is
 -- still an empty DRAFT since the season is still a ways off.
-INSERT INTO season (id, name, federation_id, start_date, end_date, registration_open)
-VALUES ('season-2027', 'Saison 2027/28', 'fed-by', DATE '2027-09-01', DATE '2028-05-31', TRUE);
+INSERT INTO season (id, name, federation_id, start_date, end_date, registration_opens_at)
+VALUES ('season-2027', 'Saison 2027/28', 'fed-by', DATE '2027-09-01', DATE '2028-05-31', DATE '2026-01-01');
 
 INSERT INTO league (id, season_id, name, category_id, rule_set_id)
 VALUES ('lg-2027-h', 'season-2027', 'Bayernliga Herren 2027/28', 'cat-herren', 'rs-by-std');
