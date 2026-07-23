@@ -78,9 +78,16 @@ leagues here don't need it now). `Pool.tournamentMode` is replaced by
 
 `League`/`Tier`/`Group` are **per-season instances** under a `LeagueSeason`.
 
-- **Copy-forward** clones `League → Tier → Group` (+ `TeamParticipation` placements) from a
-  prior season into a new one as a *starting point* (as today, doc 01 §7 L1). It **references
-  the same shared rulesets** (§3), it does not clone them.
+- **Copy-forward** clones `League → Tier → Group` (+ `TeamParticipation` placements, and — unless
+  opted out via `copyRoster=false` — each placement's active `RosterEntry` rows) from a prior
+  season into a new one as a *starting point* (as today, doc 01 §7 L1). It **references the same
+  shared rulesets** (§3), it does not clone them.
+- **Roster copy** (added post-Phase-1): most teams' rosters barely change season to season, so
+  copy-forward pre-fills the new participation's roster from the source's active (non-removed)
+  entries instead of leaving it empty. The clone stays `RosterStatus.DRAFT` and the copy bypasses
+  `RosterService` validation (direct save, same as the participation clone) — it's a starting
+  point, not an enforced invariant, so a new season's roster-size rules (which may differ) don't
+  block the copy; the team edits and submits normally once the new registration period opens.
 - It is **not guaranteed**: teams fluctuate (unknown whether the same teams return), and the
   **number of leagues/tiers/groups can differ season to season** (common in smaller
   federations). So everything copied forward is **fully editable**, and a season can also be

@@ -59,6 +59,58 @@ class CopyForwardControllerTest extends de.dtfb.sportshub.backend.support.Author
     }
 
     @Test
+    void copyForward_clonesActiveRosterByDefault() throws Exception {
+        addToRoster(sourceParticipationId, "player-test");
+        addToRoster(sourceParticipationId, "player-club");
+        // a removed player must NOT come along
+        String removedPlayerId = "player-p1";
+        addToRoster(sourceParticipationId, removedPlayerId);
+        mockMvc.perform(delete(rosterUrl(sourceParticipationId) + "/" + removedPlayerId))
+            .andExpect(status().isOk());
+
+        String json = mockMvc.perform(post("/v1/seasons/" + targetSeasonId + "/copy-forward")
+                .param("from", sourceSeasonId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.rosterEntries").value(2))
+            .andReturn().getResponse().getContentAsString();
+
+        String clonedParticipationId = JsonPath.read(
+            mockMvc.perform(get("/v1/team-participations").param("seasonId", targetSeasonId))
+                .andReturn().getResponse().getContentAsString(),
+            "$[0].id");
+
+        mockMvc.perform(get(rosterUrl(clonedParticipationId)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(2))
+            .andExpect(jsonPath("$[*].playerId").value(org.hamcrest.Matchers.containsInAnyOrder(
+                "player-test", "player-club")));
+
+        // cloned participation stays editable — untouched by the copy
+        mockMvc.perform(get("/v1/team-participations/" + clonedParticipationId))
+            .andExpect(jsonPath("$.rosterStatus").value("DRAFT"));
+    }
+
+    @Test
+    void copyForward_skipsRosterWhenOptedOut() throws Exception {
+        addToRoster(sourceParticipationId, "player-test");
+
+        mockMvc.perform(post("/v1/seasons/" + targetSeasonId + "/copy-forward")
+                .param("from", sourceSeasonId)
+                .param("copyRoster", "false"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.rosterEntries").value(0));
+
+        String clonedParticipationId = JsonPath.read(
+            mockMvc.perform(get("/v1/team-participations").param("seasonId", targetSeasonId))
+                .andReturn().getResponse().getContentAsString(),
+            "$[0].id");
+
+        mockMvc.perform(get(rosterUrl(clonedParticipationId)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
     void copyForward_rejectsWhenTargetNotEmpty() throws Exception {
         mockMvc.perform(post("/v1/seasons/" + targetSeasonId + "/copy-forward").param("from", sourceSeasonId))
             .andExpect(status().isOk());
@@ -86,7 +138,7 @@ class CopyForwardControllerTest extends de.dtfb.sportshub.backend.support.Author
     private String createSeason(String federationId) throws Exception {
         MvcResult result = mockMvc.perform(post("/v1/seasons")
                 .contentType(MediaType.APPLICATION_JSON).content(String.format("""
-                    {"name": "Season", "federationId": "%s"}
+                    {"name": "Season", "federationId": "%s", "registrationOpen": true}
                     """, federationId)))
             .andExpect(status().isCreated())
             .andReturn();
@@ -148,6 +200,17 @@ class CopyForwardControllerTest extends de.dtfb.sportshub.backend.support.Author
             .andExpect(status().isCreated())
             .andReturn();
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+    }
+
+    private String rosterUrl(String participationId) {
+        return "/v1/team-participations/" + participationId + "/roster";
+    }
+
+    private void addToRoster(String participationId, String playerId) throws Exception {
+        mockMvc.perform(post(rosterUrl(participationId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("{\"playerId\": \"%s\"}", playerId)))
+            .andExpect(status().isCreated());
     }
     //endregion
 }

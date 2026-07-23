@@ -6,6 +6,8 @@ import de.dtfb.sportshub.backend.group.GroupRepository;
 import de.dtfb.sportshub.backend.group.GroupState;
 import de.dtfb.sportshub.backend.league.League;
 import de.dtfb.sportshub.backend.league.LeagueRepository;
+import de.dtfb.sportshub.backend.roster.RosterEntry;
+import de.dtfb.sportshub.backend.roster.RosterEntryRepository;
 import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.season.SeasonNotFoundException;
 import de.dtfb.sportshub.backend.season.SeasonRepository;
@@ -16,16 +18,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Copy-forward (L1b): seeds a target season from a source season by deep-cloning the league
- * structure (League -> Tier -> Group) and the team placements ({@link TeamParticipation}). Cloned
- * groups reset to {@link GroupState#PLANNED}; last season's fixtures/results (Round/MatchDay/Match/
- * Standing) are NOT carried, and the shared Category / LeagueRuleSet are referenced, not cloned.
- * Each new participation records its {@code copiedFromParticipationId} -- the promotion/relegation
- * audit chain the region admin then edits via the placement CRUD.
+ * structure (League -> Tier -> Group), the team placements ({@link TeamParticipation}), and
+ * (unless opted out) each placement's active roster ({@link RosterEntry}). Cloned groups reset to
+ * {@link GroupState#PLANNED}; last season's fixtures/results (Round/MatchDay/Match/Standing) are
+ * NOT carried, and the shared Category / LeagueRuleSet are referenced, not cloned. Each new
+ * participation records its {@code copiedFromParticipationId} -- the promotion/relegation audit
+ * chain the region admin then edits via the placement CRUD. Cloned participations stay DRAFT and
+ * roster entries are copied with a direct save (no {@code RosterService} validation) -- this is a
+ * starting point for the new registration period, not an enforced invariant, so it doesn't matter
+ * that a new season's roster-size rules may not yet be satisfied.
  */
 @Service
 public class CopyForwardService {
@@ -35,19 +42,22 @@ public class CopyForwardService {
     private final TierRepository tierRepository;
     private final GroupRepository groupRepository;
     private final TeamParticipationRepository participationRepository;
+    private final RosterEntryRepository rosterEntryRepository;
 
     public CopyForwardService(SeasonRepository seasonRepository, LeagueRepository leagueRepository,
                               TierRepository tierRepository, GroupRepository groupRepository,
-                              TeamParticipationRepository participationRepository) {
+                              TeamParticipationRepository participationRepository,
+                              RosterEntryRepository rosterEntryRepository) {
         this.seasonRepository = seasonRepository;
         this.leagueRepository = leagueRepository;
         this.tierRepository = tierRepository;
         this.groupRepository = groupRepository;
         this.participationRepository = participationRepository;
+        this.rosterEntryRepository = rosterEntryRepository;
     }
 
     @Transactional
-    public CopyForwardResultDto copyForward(String targetSeasonId, String sourceSeasonId) {
+    public CopyForwardResultDto copyForward(String targetSeasonId, String sourceSeasonId, boolean copyRoster) {
         Season target = seasonRepository.findById(targetSeasonId)
             .orElseThrow(() -> new SeasonNotFoundException(targetSeasonId));
         Season source = seasonRepository.findById(sourceSeasonId)
@@ -95,6 +105,7 @@ public class CopyForwardService {
         }
 
         int participations = 0;
+        int rosterEntries = 0;
         for (TeamParticipation source0 : participationRepository.findByLeague_Season_Id(sourceSeasonId)) {
             League newLeague = source0.getLeague() == null
                 ? null : leagueBySourceId.get(source0.getLeague().getId());
@@ -106,11 +117,29 @@ public class CopyForwardService {
             clone.setLeague(newLeague);
             clone.setGroup(source0.getGroup() == null ? null : groupBySourceId.get(source0.getGroup().getId()));
             clone.setCopiedFromParticipationId(source0.getId());
-            participationRepository.save(clone);
+            clone = participationRepository.save(clone);
             participations++;
+
+            if (copyRoster) {
+                rosterEntries += cloneRoster(source0, clone);
+            }
         }
 
-        return new CopyForwardResultDto(leagues, tiers, groups, participations);
+        return new CopyForwardResultDto(leagues, tiers, groups, participations, rosterEntries);
+    }
+
+    /** Clones the active (non-removed) roster from the source participation onto its clone. */
+    private int cloneRoster(TeamParticipation source, TeamParticipation clone) {
+        int copied = 0;
+        for (RosterEntry sourceEntry : rosterEntryRepository.findByParticipationIdAndRemovedAtIsNull(source.getId())) {
+            RosterEntry entryClone = new RosterEntry();
+            entryClone.setParticipation(clone);
+            entryClone.setPlayer(sourceEntry.getPlayer());
+            entryClone.setAddedAt(Instant.now());
+            rosterEntryRepository.save(entryClone);
+            copied++;
+        }
+        return copied;
     }
 
     private void requireSameFederation(Season source, Season target) {
