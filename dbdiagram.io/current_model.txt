@@ -63,6 +63,11 @@ Enum PlaySystem {
   SWISS [note: 'Retained; most common mode in table soccer, primarily a (parked) tournament format']
 }
 
+Enum ParticipationStatus {
+  ACTIVE
+  WITHDRAWN [note: 'Team dropped out of the league; roster locked, excluded from copy-forward']
+}
+
 Enum MatchdayDecision {
   ALL_GAMES [note: 'Decided once all planned games are played']
   FIRST_TO  [note: 'Decided once a team reaches matchday_target game wins']
@@ -155,7 +160,8 @@ Table season {
   federation_id varchar [ref: > federation.id]
   start_date date
   end_date date
-  registration_open boolean [note: 'Roster-editing window']
+  registration_opens_at date [note: 'Required for registration to ever be open']
+  registration_closes_at date [note: 'null = stays open indefinitely once opened']
   archived_at datetime [note: 'Soft delete']
 }
 
@@ -266,6 +272,8 @@ Table team_participation {
   group_id varchar [ref: > comp_group.id, note: 'null = registered but unplaced']
   copied_from_participation_id varchar [note: 'copy-forward / promotion-relegation chain']
   roster_status RosterStatus [not null, default: 'DRAFT']
+  status ParticipationStatus [not null, default: 'ACTIVE']
+  withdrawn_at datetime [note: 'Set when status becomes WITHDRAWN']
 }
 
 Table roster_entry {
