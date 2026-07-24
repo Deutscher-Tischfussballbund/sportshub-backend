@@ -50,8 +50,8 @@ import java.util.Objects;
  * that club's region). A region admin therefore administers every club and team within that region,
  * and a club admin administers the teams within that club.
  *
- * <p>Note: the {@code COMPETITION} scope / {@code COMPETITION_ORGANIZER} role gate a {@link League}
- * (the scope's {@code scopeId} is a league id); the scope/role keep their generic names.
+ * <p>Note: the {@code LEAGUE} scope / {@code LEAGUE_ADMIN} role gate a {@link League} directly
+ * (the scope's {@code scopeId} is a league id).
  */
 @Component("authz")
 public class AuthorizationService {
@@ -132,12 +132,12 @@ public class AuthorizationService {
 
     /**
      * May administer the given league's meta: its region's admin (or global), OR a
-     * {@code competition_organizer} appointed to it -- a league admin has full authority over their
+     * {@code league_admin} appointed to it -- a league admin has full authority over their
      * one league, not just its Tier/Group/MatchDay data (see {@link #canOrganize}). See the
-     * COMPETITION scope.
+     * LEAGUE scope.
      */
     public boolean canManageLeague(String leagueId) {
-        return canManageScope(currentRoles(), ScopeType.COMPETITION, leagueId);
+        return canManageScope(currentRoles(), ScopeType.LEAGUE, leagueId);
     }
 
     /**
@@ -158,7 +158,7 @@ public class AuthorizationService {
     /**
      * May administer the given tier: a tier belongs to a league and thus to that league's season and
      * region, so the region's admin (or a global admin) manages it - the same authority as editing
-     * the league it hangs off. A {@code competition_organizer} of that league may too, for the same
+     * the league it hangs off. A {@code league_admin} of that league may too, for the same
      * reason {@link #canManageLeague} accepts one.
      */
     public boolean canManageTier(String tierId) {
@@ -171,7 +171,7 @@ public class AuthorizationService {
         Season season = league == null ? null : league.getSeason();
         Federation region = season == null ? null : season.getFederation();
         return (region != null && isRegionAdmin(roles, region.getId()))
-            || (league != null && isCompetitionOrganizer(roles, league.getId()));
+            || (league != null && isLeagueAdmin(roles, league.getId()));
     }
 
     /**
@@ -201,7 +201,7 @@ public class AuthorizationService {
      * May administer the given team participation (placement): it belongs to a league and thus to
      * that league's season and region, so the region's admin (or a global admin) manages it. This is
      * region placement authority - the same scope as editing the season itself (section 6 of the
-     * model) - plus a {@code competition_organizer} of that participation's league, as a full league
+     * model) - plus a {@code league_admin} of that participation's league, as a full league
      * admin manages placements within their own league too.
      */
     public boolean canManageParticipation(String participationId) {
@@ -215,13 +215,13 @@ public class AuthorizationService {
         Season season = league == null ? null : league.getSeason();
         Federation region = season == null ? null : season.getFederation();
         return (region != null && isRegionAdmin(roles, region.getId()))
-            || (league != null && isCompetitionOrganizer(roles, league.getId()));
+            || (league != null && isLeagueAdmin(roles, league.getId()));
     }
 
     /**
      * May edit/submit the roster of the given participation (L2): the {@code team_admin} of the
      * participation's team, or an admin above it (club/region/global). Same authority as representing
-     * the team in the result flow - see {@link #canReportMatchDay}. A {@code competition_organizer} of
+     * the team in the result flow - see {@link #canReportMatchDay}. A {@code league_admin} of
      * the participation's league may too, as a full league admin.
      */
     public boolean canEditRoster(String participationId) {
@@ -233,13 +233,13 @@ public class AuthorizationService {
             ? null : teamParticipationRepository.findById(participationId).orElse(null);
         Team team = participation == null ? null : participation.getTeam();
         League league = participation == null ? null : participation.getLeague();
-        return canRepresent(roles, team) || (league != null && isCompetitionOrganizer(roles, league.getId()));
+        return canRepresent(roles, team) || (league != null && isLeagueAdmin(roles, league.getId()));
     }
 
     /**
      * May confirm/reopen the roster of the given participation (L2): an admin ABOVE the team
      * (club/region/global) - deliberately NOT the {@code team_admin} who submits, so the final say is
-     * separate from the submission - or a {@code competition_organizer} of the participation's league,
+     * separate from the submission - or a {@code league_admin} of the participation's league,
      * as a full league admin.
      */
     public boolean canConfirmRoster(String participationId) {
@@ -249,7 +249,7 @@ public class AuthorizationService {
         Team team = participation == null ? null : participation.getTeam();
         League league = participation == null ? null : participation.getLeague();
         boolean adminAboveTeam = team != null && canManageScope(roles, ScopeType.TEAM, team.getId());
-        return adminAboveTeam || (league != null && isCompetitionOrganizer(roles, league.getId()));
+        return adminAboveTeam || (league != null && isLeagueAdmin(roles, league.getId()));
     }
 
     /**
@@ -267,7 +267,7 @@ public class AuthorizationService {
     }
 
     // --- Tier C: competition data. May run the league the entity belongs to - the region/global
-    // admin above its league, OR a competition_organizer appointed to that league. Each entity resolves
+    // admin above its league, OR a league_admin appointed to that league. Each entity resolves
     // to its owning League via CompetitionResolver (Group -> Tier -> League, Match -> MatchDay -> ... -> League).
 
     public boolean canOrganizeTier(String tierId) {
@@ -300,7 +300,7 @@ public class AuthorizationService {
 
     /**
      * Competition-data capability for the given league: the region/global admin above it OR a
-     * {@code competition_organizer} appointed to that league. Distinct from {@link #canManageLeague}
+     * {@code league_admin} appointed to that league. Distinct from {@link #canManageLeague}
      * (league meta - admins only); an organizer runs the league, not the league's place in the tree.
      */
     private boolean canOrganize(League league) {
@@ -313,12 +313,12 @@ public class AuthorizationService {
         }
         Federation region = league.getSeason() == null ? null : league.getSeason().getFederation();
         boolean regionAdmin = region != null && isRegionAdmin(roles, region.getId());
-        return regionAdmin || isCompetitionOrganizer(roles, league.getId());
+        return regionAdmin || isLeagueAdmin(roles, league.getId());
     }
 
-    private boolean isCompetitionOrganizer(List<RoleAssignment> roles, String leagueId) {
+    private boolean isLeagueAdmin(List<RoleAssignment> roles, String leagueId) {
         return leagueId != null && roles.stream().anyMatch(ra ->
-            ra.getRole() == Role.COMPETITION_ORGANIZER && Objects.equals(ra.getScopeId(), leagueId));
+            ra.getRole() == Role.LEAGUE_ADMIN && Objects.equals(ra.getScopeId(), leagueId));
     }
 
     /**
@@ -397,17 +397,17 @@ public class AuthorizationService {
                 yield club != null
                     && (isRegionAdmin(roles, club.getFederationId()) || isClubAdmin(roles, club.getId()));
             }
-            case COMPETITION -> {
+            case LEAGUE -> {
                 // A league belongs to its region via League -> Season -> Federation; the region admin
-                // of that region administers the league (e.g. to appoint a competition organizer) --
-                // and, as a full league admin, a competition_organizer already appointed to it
-                // administers it too (e.g. to appoint a co-organizer), same pattern as a club admin
+                // of that region administers the league (e.g. to appoint a league admin) --
+                // and, as a full league admin, a league_admin already appointed to it
+                // administers it too (e.g. to appoint a co-admin), same pattern as a club admin
                 // granting team_admin within their own club.
                 League league = scopeId == null ? null : leagueRepository.findById(scopeId).orElse(null);
                 Federation region = league == null || league.getSeason() == null
                     ? null : league.getSeason().getFederation();
                 yield (region != null && isRegionAdmin(roles, region.getId()))
-                    || isCompetitionOrganizer(roles, scopeId);
+                    || isLeagueAdmin(roles, scopeId);
             }
         };
     }

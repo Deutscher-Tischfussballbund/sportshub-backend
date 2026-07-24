@@ -25,12 +25,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Tier C, end-to-end: exercises the REAL authorization stack (no mocked {@code @authz}) to prove a
- * {@code competition_organizer} may run the competition under their league, resolving each entity up
+ * {@code league_admin} may run the competition under their league, resolving each entity up
  * the spine (Round → Group → Tier → League) to its owning League — and that an outsider, or an
- * organizer of a *different* league, may not. The COMPETITION scope's {@code scopeId} is a league id.
+ * organizer of a *different* league, may not. The LEAGUE scope's {@code scopeId} is a league id.
  *
  * <p>The chain is built by the bootstrap admin (dev profile seeds {@code dtfb_id="admin"} as global
- * ADMIN); other actors are seeded as players with a single {@code COMPETITION_ORGANIZER} grant.
+ * ADMIN); other actors are seeded as players with a single {@code LEAGUE_ADMIN} grant.
  * Note: creating a {@code Tier} is admin-only ({@code canManageLeague}); the organizer's authority
  * begins at the group and below ({@code canOrganizeTier}/{@code canOrganizeGroup}/…).
  */
@@ -125,13 +125,13 @@ class LeagueAuthorizationIntegrationTest {
         return player;
     }
 
-    /** Seed a player with a single COMPETITION_ORGANIZER grant on {@code leagueId} and return its JWT. */
+    /** Seed a player with a single LEAGUE_ADMIN grant on {@code leagueId} and return its JWT. */
     private RequestPostProcessor grantLeagueOrganizer(String dtfbId, String leagueId) {
         Player player = playerRepository.save(player(dtfbId));
         RoleAssignment grant = new RoleAssignment();
         grant.setPlayer(player);
-        grant.setRole(Role.COMPETITION_ORGANIZER);
-        grant.setScopeType(ScopeType.COMPETITION);
+        grant.setRole(Role.LEAGUE_ADMIN);
+        grant.setScopeType(ScopeType.LEAGUE);
         grant.setScopeId(leagueId);
         grant.setCreatedAt(Instant.now());
         roleAssignmentRepository.save(grant);

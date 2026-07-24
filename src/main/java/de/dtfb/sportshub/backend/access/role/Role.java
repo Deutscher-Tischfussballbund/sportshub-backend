@@ -16,12 +16,17 @@ public enum Role {
     /** Acts for a single team, e.g. submits/confirms league match-day results. */
     TEAM_ADMIN("team_admin", ScopeType.TEAM),
 
-    // --- Functional roles (scope = the competition) ---
-    /** Runs one competition (league or tournament): structure, scheduling, results, standings. */
-    COMPETITION_ORGANIZER("competition_organizer", ScopeType.COMPETITION),
+    // --- Functional roles (scope = the league) ---
+    /**
+     * Runs one league: structure, scheduling, results, standings. Named LEAGUE (not the more
+     * generic COMPETITION) because leagues are the only thing this scopes today — tournaments are
+     * parked, with no first-class Competition concept unifying them yet. Revisit this naming once
+     * that concept exists and this role needs to widen to cover it too.
+     */
+    LEAGUE_ADMIN("league_admin", ScopeType.LEAGUE),
 
-    // --- Deprecated: superseded by COMPETITION_ORGANIZER (wrong axis — anchored to club/region,
-    // not the competition). Kept until removal is coordinated with the @dtfb/api client + i18n. ---
+    // --- Deprecated: superseded by LEAGUE_ADMIN (wrong axis — anchored to club/region,
+    // not the league). Kept until removal is coordinated with the @dtfb/api client + i18n. ---
     @Deprecated
     TOURNAMENT_UPLOADER("tournament_uploader", ScopeType.CLUB),
     @Deprecated

@@ -16,7 +16,7 @@ and a decision is computed by **walking the resource up the domain tree** to a n
 holds a matching role.
 
 Example (`@authz.canOrganizeMatch`): `match → matchday → round → pool → stage → discipline → competition`,
-then check *"region admin of that competition's region, or `competition_organizer` of that competition."*
+then check *"region admin of that competition's region, or `league_admin` of that competition."*
 
 Structurally this is a **hand-rolled, domain-specific ReBAC** (relationship-based access control):
 a permission is a *function* of `(grant @ node)` and `(the resource's position in the graph)`. It is
@@ -45,8 +45,9 @@ Ours are almost entirely *structural*. Given that:
   we already do*, only stored in `acl_*` tables instead of computed. Heavy schema, zero gain.
 - **Our grant cardinality is tiny on purpose.** The scope model is the compression: a few
   `role_assignment` rows cover the whole federation. ACLs discard that compression.
-- **`COMPETITION_ORGANIZER` already gives per-competition granularity** without object ACLs — because "competition" is a
-  first-class scope node.
+- **`LEAGUE_ADMIN` already gives per-league granularity** without object ACLs — because "league" is a
+  first-class scope node (named generically as `LEAGUE`, not `COMPETITION`, since a league is all this
+  scopes today — see `docs/09-league-model.md`).
 
 So for the current requirements, classic ACLs would be a step backwards.
 

@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
  * Resolves any competition-data entity up to its owning {@link League}, walking the
  * {@code Tier -> League} spine (Group -> Tier, Round -> Group, MatchDay -> Round, ...). Every link
  * is a {@code @ManyToOne} (eagerly fetched), so the whole ancestor chain is populated by the single
- * {@code findById} load -- the same assumption the COMPETITION scope check already relies on.
+ * {@code findById} load -- the same assumption the LEAGUE scope check already relies on.
  *
  * <p>Returns {@code null} when the entity or any ancestor is missing; callers treat an unresolved
  * league as "deny" (a global admin is short-circuited earlier, before resolution).

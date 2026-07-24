@@ -64,7 +64,8 @@ VALUES ('player-admin', 'admin', 'DTFB', 'Administrator', 'DE', 'A', TRUE),
        ('player-test', 'test', 'Test', 'Player', 'DE', 'A', TRUE),
        ('player-region', 'region', 'Regina', 'Region', 'DE', 'A', TRUE),
        ('player-club', 'club', 'Claus', 'Club', 'DE', 'A', TRUE),
-       ('player-team', 'team', 'Tom', 'Team', 'DE', 'A', TRUE);
+       ('player-team', 'team', 'Tom', 'Team', 'DE', 'A', TRUE),
+       ('player-liga', 'liga', 'Lena', 'Liga', 'DE', 'A', TRUE);
 
 -- More players (with license/birth-year/gender) to fill rosters and the player search.
 INSERT INTO player (id, dtfb_id, first_name, last_name, nationality, national_id, birth_year, gender, national_license, active)
@@ -213,6 +214,14 @@ VALUES ('re-1', 'tp-by25-1', 'player-p1', TIMESTAMP '2024-09-10 10:00:00', NULL)
        ('re-8', 'tp-by25-3', 'player-p2', TIMESTAMP '2024-09-15 10:00:00', TIMESTAMP '2024-10-01 10:00:00'),
        ('re-9', 'tp-by25-5', 'player-p7', TIMESTAMP '2024-09-11 10:00:00', NULL),
        ('re-10', 'tp-by25-5', 'player-p8', TIMESTAMP '2024-09-11 10:00:00', NULL);
+
+-- League admin (player-liga) scoped to just lg-by25-h (Bayernliga Herren 2024/25). Simulates a
+-- region admin delegating one league's day-to-day running: player-liga gets region-admin-
+-- equivalent authority narrowed to lg-by25-h only, e.g. can manage its placements/rosters but not
+-- lg-by25-d or any other fed-by league/season.
+INSERT INTO role_assignment (id, player_id, role, scope_type, scope_id, created_at)
+VALUES ('ra-liga', 'player-liga', 'LEAGUE_ADMIN', 'LEAGUE', 'lg-by25-h',
+        TIMESTAMP '2024-01-01 00:00:00');
 
 -- ---------------------------------------------------------------------------
 -- A second region's league (Baden-Württemberg) — so placements/structure aren't
