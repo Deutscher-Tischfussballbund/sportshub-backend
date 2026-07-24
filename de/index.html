@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Who does what, in what order -- the DTFB admin app + sportshub-backend process map.">
-<title>Sportshub — Who Does What</title>
+<meta name="description" content="Wer macht was, in welcher Reihenfolge – der Ablauf in der DTFB-Verwaltung, verständlich erklärt.">
+<title>Sportshub — Wer macht was</title>
 <style>
   @font-face {
     font-family: 'Big Shoulders';
@@ -347,6 +347,20 @@
   .lang-switch a:focus-visible {
     text-decoration: underline;
   }
+
+  .glossary {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.95rem;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 0.6rem;
+    box-shadow: var(--shadow);
+    padding: 1rem 1.3rem;
+  }
+  .glossary strong { color: var(--ink); }
 </style>
 </head>
 <body>
@@ -354,58 +368,64 @@
 
 <div class="page">
 
-  <p class="lang-switch"><a href="de/">Deutsche Version →</a></p>
+  <p class="lang-switch"><a href="../">English version →</a></p>
 
   <header class="hero">
-    <span class="eyebrow">Admin app · process map</span>
-    <h1>Who does what, in what order</h1>
+    <span class="eyebrow">Verwaltung · Ablaufübersicht</span>
+    <h1>Wer macht was — und in welcher Reihenfolge</h1>
     <p class="lede">
-      Four roles run the season end to end — a region admin who owns the competition, a club
-      admin who owns the club's teams, a captain who owns one roster, and a global admin who
-      oversees all of it. A region admin can also delegate one league's day-to-day running to a
-      league admin, who gets that same region-admin authority but narrowed to a single league.
-      This maps every step each of them takes, in the order they actually happen, as built in the
-      admin app today.
+      Eine Saison läuft nicht von selbst: Vier Rollen teilen sich die Arbeit. Ein
+      Landesverband-Admin richtet den Wettbewerb ein und begleitet ihn. Eine Vereinsmanagerin oder
+      ein Vereinsmanager kümmert sich um die Mannschaften des eigenen Vereins. Ein Team-Admin — der
+      Kapitän — pflegt den Kader der eigenen Mannschaft. Und ein Administrator behält über alles
+      hinweg den Überblick. Ein Landesverband kann außerdem für einzelne Ligen einen Liga-Admin
+      ernennen, der die Tagesarbeit für genau diese eine Liga übernimmt. Diese Seite zeigt, wer
+      welchen Schritt geht — in der Reihenfolge, in der es tatsächlich passiert, so wie es die
+      Verwaltungsoberfläche heute vorsieht.
     </p>
+    <div class="glossary">
+      <span><strong>Kader:</strong> die Liste der Spielerinnen und Spieler einer Mannschaft.</span>
+      <span><strong>Platzierung:</strong> der Startplatz einer Mannschaft in einer Liga bzw. Gruppe — unabhängig vom Kader.</span>
+    </div>
     <div class="legend">
-      <div class="chip admin"><span class="dot"></span><strong>Global admin</strong><span class="scope">— sees every region</span></div>
-      <div class="chip region"><span class="dot"></span><strong>Region admin</strong><span class="scope">— runs one federation's competitions</span></div>
-      <div class="chip league"><span class="dot"></span><strong>League admin</strong><span class="scope">— runs one league, appointed per league</span></div>
-      <div class="chip club"><span class="dot"></span><strong>Club admin</strong><span class="scope">— runs one club's teams</span></div>
-      <div class="chip team"><span class="dot"></span><strong>Team admin / captain</strong><span class="scope">— runs one team's roster</span></div>
+      <div class="chip admin"><span class="dot"></span><strong>Administrator</strong><span class="scope">— behält den Überblick über alle Landesverbände</span></div>
+      <div class="chip region"><span class="dot"></span><strong>Landesverband-Admin</strong><span class="scope">— leitet die Wettbewerbe eines Landesverbands</span></div>
+      <div class="chip league"><span class="dot"></span><strong>Liga-Admin</strong><span class="scope">— kümmert sich um eine Liga, vom Landesverband ernannt</span></div>
+      <div class="chip club"><span class="dot"></span><strong>Vereinsmanager:in</strong><span class="scope">— verwaltet die Mannschaften eines Vereins</span></div>
+      <div class="chip team"><span class="dot"></span><strong>Team-Admin / Kapitän</strong><span class="scope">— pflegt den Kader einer Mannschaft</span></div>
     </div>
   </header>
 
   <section class="phase">
     <div class="phase-head">
       <span class="phase-num">01</span>
-      <h2>Set up the season</h2>
+      <h2>Die Saison vorbereiten</h2>
     </div>
     <p class="desc">
-      The region admin opens each season and decides when teams may register. Most seasons don't
-      start from a blank page — copy-forward seeds the whole league tree and every placement from
-      a prior season in one step, rosters included if most teams are staying put.
+      Der Landesverband-Admin eröffnet die Saison und legt fest, wann sich Mannschaften anmelden
+      dürfen. Die wenigsten Saisons starten bei null: Meist wird die komplette Struktur samt allen
+      Mannschaften der Vorsaison mit einem Klick übernommen — auf Wunsch sogar inklusive Kader.
     </p>
     <div class="diagram-card">
 <pre class="mermaid">
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#e9f4ec', 'primaryBorderColor': '#0f7a3d', 'primaryTextColor': '#16211a', 'lineColor': '#7c8a78', 'background': 'transparent', 'edgeLabelBackground':'#f6f8f5'}}}%%
 flowchart TD
-    subgraph RA["REGION ADMIN"]
+    subgraph RA["LANDESVERBAND-ADMIN"]
         direction TB
-        A1["Create the season<br/>name · region · registration opens/closes"]
-        A1 --> A2{"Where does the\nstructure come from?"}
-        A2 -->|"Build fresh"| A3["Create league(s)<br/><i>category, e.g. Herren</i>"]
-        A3 --> A4["Create tier(s)<br/><i>promotion ladder, e.g. 1./2. Bayernliga</i>"]
-        A4 --> A5["Create group(s)<br/><i>one table per group</i>"]
-        A2 -->|"Copy forward"| A6["Pick a prior season\nin the same region"]
-        A6 --> A7["League → Tier → Group cloned,\nplus every placement (+ rosters, if kept on)"]
-        A5 --> A8(["Season ready for teams"])
+        A1["Saison anlegen<br/>Name · Landesverband · Meldezeitraum"]
+        A1 --> A2{"Woher kommt\ndie Struktur?"}
+        A2 -->|"Neu aufbauen"| A3["Liga(en) anlegen<br/><i>Kategorie, z. B. Herren</i>"]
+        A3 --> A4["Ligastufe(n) anlegen<br/><i>Tabellenebene, z. B. 1./2. Bayernliga</i>"]
+        A4 --> A5["Gruppe(n) anlegen<br/><i>je eine Tabelle</i>"]
+        A2 -->|"Aus Vorsaison übernehmen"| A6["Vorsaison im selben\nLandesverband wählen"]
+        A6 --> A7["Liga → Ligastufe → Gruppe kopiert,\nplus jede Platzierung (+ Kader, falls gewünscht)"]
+        A5 --> A8(["Saison bereit für Anmeldungen"])
         A7 --> A8
     end
-    subgraph LA1["LEAGUE ADMIN — if appointed"]
+    subgraph LA1["LIGA-ADMIN — falls ernannt"]
         direction TB
-        A9(["Appointed via Roles & Access\n(shield icon on Placements)"])
-        A9 --> A10["Same authority as a region admin,\nnarrowed to just this one league"]
+        A9(["Ernennung über „Rollen & Zugriff“\n(Schild-Symbol bei Platzierungen)"])
+        A9 --> A10["Gleiche Befugnis wie ein Landesverband-Admin,\nnur beschränkt auf diese eine Liga"]
     end
     A8 -.->|"optional"| A9
     class RA regionLane
@@ -429,34 +449,35 @@ flowchart TD
   <section class="phase">
     <div class="phase-head">
       <span class="phase-num">02</span>
-      <h2>Stand up a team, then register it</h2>
+      <h2>Eine Mannschaft gründen und anmelden</h2>
     </div>
     <p class="desc">
-      A team is a standing identity, separate from any one season — the club admin creates it
-      once and hands the captain the keys. From there the captain registers for any open league
-      in the region themselves, or the region admin places the team directly.
+      Eine Mannschaft besteht dauerhaft und unabhängig von einer einzelnen Saison — die
+      Vereinsmanagerin oder der Vereinsmanager legt sie einmal an und übergibt sie an den Kapitän.
+      Von da an meldet der Kapitän die Mannschaft selbst für jede offene Liga im Landesverband an,
+      oder der Landesverband-Admin trägt die Mannschaft direkt ein.
     </p>
     <div class="diagram-card">
 <pre class="mermaid">
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#f7ecdf', 'primaryBorderColor': '#a15b12', 'primaryTextColor': '#16211a', 'lineColor': '#7c8a78', 'background': 'transparent', 'edgeLabelBackground':'#f6f8f5'}}}%%
 flowchart TD
-    subgraph CA["CLUB ADMIN"]
+    subgraph CA["VEREINSMANAGER:IN"]
         direction TB
-        B1["Create a team\nfor the club"]
-        B2["Assign a player as\nteam admin (captain)"]
+        B1["Mannschaft für\nden Verein anlegen"]
+        B2["Spieler:in als Team-Admin\n(Kapitän) bestimmen"]
         B1 --> B2
     end
-    subgraph TA["TEAM ADMIN / CAPTAIN"]
+    subgraph TA["TEAM-ADMIN / KAPITÄN"]
         direction TB
-        B3{"Registration window\nopen for a league?"}
-        B3 -->|"Yes"| B4["Register the existing team\nfor that league"]
-        B3 -->|"Captain is also\nthe club admin"| B5["Register a brand-new team\nin one step"]
-        B4 --> B6(["Placement created — unplaced,\nroster starts DRAFT"])
+        B3{"Meldephase für\neine Liga geöffnet?"}
+        B3 -->|"Ja"| B4["Bestehende Mannschaft\nfür diese Liga anmelden"]
+        B3 -->|"Kapitän ist zugleich\nVereinsmanager:in"| B5["Neue Mannschaft in\neinem Schritt anmelden"]
+        B4 --> B6(["Anmeldung erfolgt — noch ohne Gruppe,\nKader startet als Entwurf"])
         B5 --> B6
     end
-    subgraph RA2["REGION ADMIN — alternate path"]
+    subgraph RA2["LANDESVERBAND-ADMIN — alternativer Weg"]
         direction TB
-        B7["Add the team to a\nleague + group directly"]
+        B7["Mannschaft direkt in\nLiga + Gruppe eintragen"]
         B7 --> B6
     end
     B2 -.-> B3
@@ -481,30 +502,30 @@ flowchart TD
   <section class="phase">
     <div class="phase-head">
       <span class="phase-num">03</span>
-      <h2>Manage placements through the season</h2>
+      <h2>Platzierungen während der Saison verwalten</h2>
     </div>
     <p class="desc">
-      One table, one region admin (or that league's own league admin, if one's been appointed),
-      four moves. Removing a team only works before it's played anything — once a match day or a
-      standing exists for it, the only way out is to withdraw it, which keeps that history intact
-      instead of erasing it.
+      Eine Tabelle, ein Landesverband-Admin (oder — falls ernannt — der Liga-Admin dieser Liga),
+      vier mögliche Schritte. Eine Mannschaft entfernen geht nur, solange für sie noch keine Spiele
+      oder Tabellenwerte erfasst wurden — danach bleibt nur noch das Zurückziehen, damit die
+      bisherige Historie erhalten bleibt, statt gelöscht zu werden.
     </p>
     <div class="two-up">
       <div class="diagram-card">
 <pre class="mermaid">
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#e9f4ec', 'primaryBorderColor': '#0f7a3d', 'primaryTextColor': '#16211a', 'lineColor': '#7c8a78', 'background': 'transparent', 'edgeLabelBackground':'#f6f8f5'}}}%%
 flowchart TD
-    subgraph RA3["REGION ADMIN — or LEAGUE ADMIN"]
+    subgraph RA3["LANDESVERBAND-ADMIN — ODER LIGA-ADMIN"]
         direction TB
-        C0(["Placements table\nfor the season"])
-        C0 --> C1["Add a placement\nteam + league + group"]
-        C0 --> C2["Move a placement\npromote / relegate to another group"]
-        C0 --> C3{"Remove a placement"}
-        C3 -->|"No matches or\nstanding recorded yet"| C4(["Removed"])
-        C3 -->|"Already has\nmatch/standing history"| C5["Blocked —\nwithdraw instead"]
-        C0 --> C6["Withdraw the team"]
+        C0(["Platzierungstabelle\nder Saison"])
+        C0 --> C1["Platzierung hinzufügen\nMannschaft + Liga + Gruppe"]
+        C0 --> C2["Platzierung verschieben\nAuf- oder Abstieg in andere Gruppe"]
+        C0 --> C3{"Platzierung entfernen"}
+        C3 -->|"Noch keine Spiele oder\nTabellenwerte erfasst"| C4(["Entfernt"])
+        C3 -->|"Es liegen bereits Spiele\noder Tabellenwerte vor"| C5["Nicht möglich —\nstattdessen zurückziehen"]
+        C0 --> C6["Mannschaft zurückziehen"]
         C5 --> C6
-        C6 --> C7(["Status: WITHDRAWN —\nroster locked, history kept and skipped by future copy-forward"])
+        C6 --> C7(["Status: Zurückgezogen —\nKader gesperrt, Historie bleibt und wird beim nächsten Übernehmen übersprungen"])
     end
     class RA3 regionLane
     class C0 regionOutcome
@@ -521,17 +542,19 @@ flowchart TD
 </pre>
       </div>
       <div class="note-card">
-        <strong>Why withdraw exists</strong>
+        <strong>Warum es das Zurückziehen gibt</strong>
         <span>
-          <code>Match</code> and <code>Standing</code> rows point at the team directly, not at the
-          placement. Deleting a placement with history wouldn't even fail — it would just orphan
-          that history from the record of where the team was placed. Withdrawing keeps the row
-          instead of removing it, so the season's story stays intact.
+          Spiele und Tabellenwerte hängen direkt an der Mannschaft, nicht an der Platzierung. Eine
+          Platzierung mit Historie zu löschen, würde nicht einmal fehlschlagen — sie würde diese
+          Historie einfach verwaist zurücklassen, ohne Bezug mehr darauf, wo die Mannschaft
+          eingesetzt war. Zurückziehen lässt den Eintrag bestehen, statt ihn zu entfernen, damit der
+          Verlauf der Saison nachvollziehbar bleibt.
         </span>
-        <strong>What withdrawing does</strong>
+        <strong>Was das Zurückziehen bewirkt</strong>
         <span>
-          Flips the placement to <code>WITHDRAWN</code>. Its roster can no longer be edited, and
-          it's skipped the next time this season gets copied forward.
+          Setzt die Platzierung auf <code>Zurückgezogen</code>. Der Kader kann danach nicht mehr
+          bearbeitet werden, und die Mannschaft wird beim nächsten Übernehmen dieser Saison
+          automatisch übersprungen.
         </span>
       </div>
     </div>
@@ -540,70 +563,74 @@ flowchart TD
   <section class="phase">
     <div class="phase-head">
       <span class="phase-num">04</span>
-      <h2>Run the roster</h2>
+      <h2>Den Kader verwalten</h2>
     </div>
     <p class="desc">
-      The roster has its own small lifecycle, separate from the placement it belongs to. A
-      captain drafts and submits it; someone above the team — a region/club admin, or that
-      league's league admin, but never the person who submitted it — signs off. Any of them can
-      also step in and edit a roster at any time, registration window or not.
+      Der Kader hat einen eigenen, kleinen Ablauf, unabhängig von der Platzierung, zu der er
+      gehört. Ein Kapitän erstellt ihn und reicht ihn ein; jemand oberhalb der Mannschaft — ein
+      Landesverband-Admin, eine Vereinsmanagerin oder der zuständige Liga-Admin, aber nie die
+      Person, die selbst eingereicht hat — bestätigt ihn. Jede dieser Personen kann außerdem
+      jederzeit selbst eingreifen und den Kader bearbeiten, unabhängig von der Meldephase.
     </p>
     <div class="two-up">
       <div class="diagram-card">
 <pre class="mermaid">
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#e8f2f5', 'primaryBorderColor': '#1c6f8c', 'primaryTextColor': '#16211a', 'lineColor': '#7c8a78', 'background': 'transparent', 'edgeLabelBackground':'#f6f8f5', 'noteBkgColor': '#f7ecdf', 'noteBorderColor': '#a15b12', 'noteTextColor': '#16211a'}}}%%
 stateDiagram-v2
-    [*] --> DRAFT
-    DRAFT --> SUBMITTED: captain submits (minimum roster size met)
-    SUBMITTED --> CONFIRMED: region/club/league admin confirms — never the submitting captain
-    SUBMITTED --> DRAFT: region/club/league admin reopens
-    CONFIRMED --> DRAFT: region/club/league admin reopens
-    note right of DRAFT
-        Captain adds/removes players while in DRAFT. An admin above the team may add, remove or submit at any point — the registration window only binds a captain editing their own team's roster.
+    state "Entwurf" as ENTWURF
+    state "Eingereicht" as EINGEREICHT
+    state "Bestätigt" as BESTAETIGT
+    [*] --> ENTWURF
+    ENTWURF --> EINGEREICHT: Kapitän reicht ein (Mindestgröße erreicht)
+    EINGEREICHT --> BESTAETIGT: Landesverband-, Vereins- oder Liga-Admin bestätigt — nie die einreichende Person selbst
+    EINGEREICHT --> ENTWURF: Admin öffnet erneut
+    BESTAETIGT --> ENTWURF: Admin öffnet erneut
+    note right of ENTWURF
+        Der Kapitän fügt Spieler hinzu oder entfernt sie, solange der Kader im Entwurf ist. Ein Admin oberhalb der Mannschaft darf jederzeit hinzufügen, entfernen oder einreichen — die Meldephase bindet nur den Kapitän bei der eigenen Mannschaft.
     end note
     classDef draftState fill:#e8f2f5,stroke:#1c6f8c,color:#16211a
     classDef submittedState fill:#f7ecdf,stroke:#a15b12,color:#16211a
     classDef confirmedState fill:#0f7a3d,stroke:#0a5c2d,color:#ffffff,font-weight:700
-    class DRAFT draftState
-    class SUBMITTED submittedState
-    class CONFIRMED confirmedState
+    class ENTWURF draftState
+    class EINGEREICHT submittedState
+    class BESTAETIGT confirmedState
 </pre>
       </div>
       <div class="note-card">
-        <strong>Where confirmation happens</strong>
+        <strong>Wo die Bestätigung passiert</strong>
         <span>
-          The region's <code>Confirm rosters</code> view lists every <code>SUBMITTED</code>
-          roster in that region, waiting on a sign-off — but that queue is region/club-admin only.
-          A league admin doesn't see it; they confirm by opening their league's roster directly
-          from the Placements table instead.
+          Die Übersicht <code>Kader freigeben</code> des Landesverbands zeigt jeden eingereichten
+          Kader dieses Verbands, der auf eine Entscheidung wartet — aber diese Übersicht sehen nur
+          Landesverband- und Vereins-Admins. Ein Liga-Admin sieht sie nicht; er bestätigt stattdessen
+          direkt über den Kader in seiner eigenen Platzierungstabelle.
         </span>
-        <strong>Roster size</strong>
+        <strong>Kadergröße</strong>
         <span>
-          If the league's rule set sets a minimum or maximum, it's enforced here — a captain
-          can't submit under the minimum, and can't add past the maximum.
+          Legt das Regelwerk der Liga eine Mindest- oder Höchstzahl fest, wird das hier geprüft —
+          ein Kapitän kann weder unter die Mindestzahl noch über die Höchstzahl hinaus einreichen.
         </span>
       </div>
     </div>
   </section>
 
   <div class="gaps">
-    <h2>Not in the admin app yet</h2>
+    <h2>Noch nicht in der Verwaltung</h2>
     <ul>
-      <li><strong>League / tier / group structure.</strong> Creating or editing these directly (outside copy-forward) is API-only today — there's no admin-app page for it yet.</li>
-      <li><strong>Match day results.</strong> Submitting and confirming a fixture's score is built and authorized on the backend (a participating team's admin submits, the opponent confirms), but has no admin-app page yet.</li>
-      <li><strong>Self-service member registration.</strong> A public "claim your DTFB-ID account" flow is designed but parked — there's no backend endpoint for it yet.</li>
+      <li><strong>Liga-, Ligastufen- und Gruppenstruktur.</strong> Anlegen oder Bearbeiten außerhalb der Übernahme aus der Vorsaison ist heute nur direkt über die Programmierschnittstelle möglich — dafür gibt es noch keine eigene Seite in der Verwaltung.</li>
+      <li><strong>Spieltagsergebnisse.</strong> Ein Ergebnis einzutragen und zu bestätigen (die beteiligte Mannschaft trägt ein, die gegnerische Mannschaft bestätigt) ist im Hintergrundsystem bereits vorbereitet und erlaubt, hat aber noch keine Seite in der Verwaltung.</li>
+      <li><strong>Selbst-Registrierung von Mitgliedern.</strong> Ein öffentlicher Weg, den eigenen DTFB-ID-Account selbst zu übernehmen, ist entworfen, aber zurückgestellt — dafür gibt es im Hintergrundsystem noch keine Schnittstelle.</li>
     </ul>
   </div>
 
   <footer class="colophon">
-    Reflects the admin app + sportshub-backend as of 2026-07-23 — season registration windows,
-    team withdrawal, the admin roster-edit bypass, and the league admin role all shipped this
-    session.
+    Stand: 23. Juli 2026 — Meldezeiträume je Saison, das Zurückziehen von Mannschaften, die
+    Admin-Bearbeitung gesperrter Kader und die Rolle des Liga-Admins sind alle in dieser
+    Arbeitsphase hinzugekommen.
   </footer>
 
 </div>
 
-<script src="mermaid.min.js"></script>
+<script src="../mermaid.min.js"></script>
 <script>
   // Render only after the custom @font-face's (Big Shoulders / Public Sans) finish loading --
   // mermaid measures node text synchronously at render time, so rendering before the real font
