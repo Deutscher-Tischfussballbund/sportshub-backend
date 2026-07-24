@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * A {@code competition_organizer} appointed to one league is a full "league admin" scoped to that
+ * A {@code league_admin} appointed to one league is a full "league admin" scoped to that
  * league -- not just the Tier/Group/MatchDay data covered by {@code canOrganize*} (Tier C), but also
  * the league's own metadata, its placements, and roster confirm/edit -- everything a region admin
  * could do, narrowed to this one league. Exercises the REAL authorization stack (real JWT + role
@@ -81,11 +81,11 @@ class LeagueAdminIntegrationTest {
         participationAId = create("/v1/team-participations",
             "{\"teamId\":\"" + teamId + "\",\"leagueId\":\"" + leagueAId + "\"}");
 
-        // "organizer" is appointed competition_organizer of league A only.
+        // "organizer" is appointed league_admin of league A only.
         RoleAssignment grant = new RoleAssignment();
         grant.setPlayer(upsertPlayer("widen-organizer"));
-        grant.setRole(Role.COMPETITION_ORGANIZER);
-        grant.setScopeType(ScopeType.COMPETITION);
+        grant.setRole(Role.LEAGUE_ADMIN);
+        grant.setScopeType(ScopeType.LEAGUE);
         grant.setScopeId(leagueAId);
         grant.setCreatedAt(Instant.now());
         roleAssignmentRepository.save(grant);
@@ -161,7 +161,7 @@ class LeagueAdminIntegrationTest {
         String coOrganizerId = upsertPlayer("widen-co-organizer").getId();
         mockMvc.perform(post("/v1/admin/auth/roles").with(ORGANIZER)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"playerId\":\"" + coOrganizerId + "\",\"role\":\"competition_organizer\",\"scopeId\":\""
+                .content("{\"playerId\":\"" + coOrganizerId + "\",\"role\":\"league_admin\",\"scopeId\":\""
                     + leagueAId + "\"}"))
             .andExpect(status().isOk());
     }
@@ -171,7 +171,7 @@ class LeagueAdminIntegrationTest {
         String someoneElseId = upsertPlayer("widen-someone-else").getId();
         mockMvc.perform(post("/v1/admin/auth/roles").with(ORGANIZER)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"playerId\":\"" + someoneElseId + "\",\"role\":\"competition_organizer\",\"scopeId\":\""
+                .content("{\"playerId\":\"" + someoneElseId + "\",\"role\":\"league_admin\",\"scopeId\":\""
                     + leagueBId + "\"}"))
             .andExpect(status().isForbidden());
     }

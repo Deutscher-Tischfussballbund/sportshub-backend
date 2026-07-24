@@ -78,7 +78,7 @@ Enum Role {
   REGION_ADMIN
   CLUB_ADMIN
   TEAM_ADMIN
-  COMPETITION_ORGANIZER
+  LEAGUE_ADMIN
   TOURNAMENT_UPLOADER        [note: 'Deprecated']
   REGION_TOURNAMENT_UPLOADER [note: 'Deprecated']
 }
@@ -88,7 +88,7 @@ Enum ScopeType {
   REGION
   CLUB
   TEAM
-  COMPETITION [note: 'scope_id is a league id']
+  LEAGUE [note: 'scope_id is a league id']
 }
 
 // ==================== Identity & access ====================

@@ -9,8 +9,12 @@ public enum ScopeType {
     REGION("region"),
     CLUB("club"),
     TEAM("team"),
-    /** A single competition (league or tournament). Maps to {@code Competition.id}. */
-    COMPETITION("competition");
+    /**
+     * A single league. Maps to {@code League.id}. Named LEAGUE rather than the more generic
+     * COMPETITION because leagues are the only thing scoped this way today (tournaments are
+     * parked); revisit once a first-class Competition concept unifies both.
+     */
+    LEAGUE("league");
 
     private final String value;
 

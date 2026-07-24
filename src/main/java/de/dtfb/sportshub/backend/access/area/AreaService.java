@@ -7,7 +7,10 @@ import de.dtfb.sportshub.backend.club.Club;
 import de.dtfb.sportshub.backend.club.ClubRepository;
 import de.dtfb.sportshub.backend.federation.Federation;
 import de.dtfb.sportshub.backend.federation.FederationRepository;
+import de.dtfb.sportshub.backend.league.League;
+import de.dtfb.sportshub.backend.league.LeagueRepository;
 import de.dtfb.sportshub.backend.player.Player;
+import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamRepository;
 import org.springframework.stereotype.Service;
@@ -35,15 +38,18 @@ public class AreaService {
     private final FederationRepository federationRepository;
     private final ClubRepository clubRepository;
     private final TeamRepository teamRepository;
+    private final LeagueRepository leagueRepository;
 
     public AreaService(RoleAssignmentRepository roleAssignmentRepository,
                        FederationRepository federationRepository,
                        ClubRepository clubRepository,
-                       TeamRepository teamRepository) {
+                       TeamRepository teamRepository,
+                       LeagueRepository leagueRepository) {
         this.roleAssignmentRepository = roleAssignmentRepository;
         this.federationRepository = federationRepository;
         this.clubRepository = clubRepository;
         this.teamRepository = teamRepository;
+        this.leagueRepository = leagueRepository;
     }
 
     @Transactional(readOnly = true)
@@ -68,6 +74,14 @@ public class AreaService {
                 }
                 case CLUB -> clubRepository.findById(role.getScopeId()).ifPresent(c -> put(areas, clubArea(c)));
                 case TEAM -> teamRepository.findById(role.getScopeId()).ifPresent(t -> put(areas, teamArea(t)));
+                // A league admin (LEAGUE_ADMIN) reaches their league through the region area's
+                // Placements page (there's no dedicated league area) -- narrower than a REGION
+                // grant, though: only that region area is added, not every club in it, since their
+                // authority stays scoped to the one league (see AuthorizationService#canManageLeague).
+                case LEAGUE -> leagueRepository.findById(role.getScopeId())
+                    .map(League::getSeason)
+                    .map(Season::getFederation)
+                    .ifPresent(f -> put(areas, regionArea(f)));
             }
         }
         return new MeAreasResponseDto(new ArrayList<>(areas.values()));

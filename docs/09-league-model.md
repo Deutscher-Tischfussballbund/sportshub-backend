@@ -172,16 +172,18 @@ team's remaining scheduled fixtures (forfeit/walkover scoring) is a **separate, 
 (§7) — withdrawal only flags the participation; already-scheduled `MatchDay`s are left for an admin
 to resolve manually.
 
-**`competition_organizer` widened to a full league admin (added post-Phase-1):** previously this
-role only covered Tier C (running the competition tree -- tiers/groups/rounds/match days/results,
-via `canOrganize*`). It's now a complete "region admin, scoped to one league": `canManageLeague`
-(the league's own metadata), `canManageTier`, `canManageParticipation` (placements -- add/move/
-remove/withdraw), `canEditRoster`, and `canConfirmRoster` all accept a `competition_organizer`
-appointed to the relevant league, alongside the region/global admin who could already do all of
-this. `canManageScope`'s `COMPETITION` case (shared by `canManageLeague`/`canRegisterForLeague`/
-`canGrant`/`canRevoke`) was widened the same way, so an organizer can also appoint a co-organizer
-for their own league -- the same pattern a club admin already has for granting `team_admin` within
-their own club. A league admin still cannot create a *new* league (that's a season-level operation,
+**`league_admin` (renamed 2026-07-25 from `competition_organizer`; scope renamed `LEAGUE` from
+`COMPETITION` -- see `Role.java`/`ScopeType.java` -- since leagues are the only thing this scopes
+today, tournaments are parked, so the generic "competition" naming was premature) widened to a full
+league admin (added post-Phase-1):** previously this role only covered Tier C (running the
+competition tree -- tiers/groups/rounds/match days/results, via `canOrganize*`). It's now a complete
+"region admin, scoped to one league": `canManageLeague` (the league's own metadata), `canManageTier`,
+`canManageParticipation` (placements -- add/move/remove/withdraw), `canEditRoster`, and
+`canConfirmRoster` all accept a `league_admin` appointed to the relevant league, alongside the
+region/global admin who could already do all of this. `canManageScope`'s `LEAGUE` case (shared by
+`canManageLeague`/`canRegisterForLeague`/`canGrant`/`canRevoke`) was widened the same way, so an
+organizer can also appoint a co-admin for their own league -- the same pattern a club admin already
+has for granting `team_admin` within their own club. A league admin still cannot create a *new* league (that's a season-level operation,
 `canManageSeason`, since a not-yet-created league has no id to scope a grant to) and cannot edit a
 shared `LeagueRuleSet`'s own fields (that stays region-scoped, since one rule set can be referenced
 by several leagues/tiers). See `LeagueAdminIntegrationTest` for the real-authz coverage, including
