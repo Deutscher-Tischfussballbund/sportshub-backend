@@ -574,9 +574,9 @@ stateDiagram-v2
         <strong>Where confirmation happens</strong>
         <span>
           The region's <code>Confirm rosters</code> view lists every <code>SUBMITTED</code>
-          roster in that region, waiting on a sign-off — but that queue is region/club-admin only.
-          A league admin doesn't see it; they confirm by opening their league's roster directly
-          from the Placements table instead.
+          roster waiting on a sign-off. A region/club admin sees every league's queue; a league
+          admin sees the same view, scoped to just their own league(s) — or can confirm by opening
+          the roster directly from the Placements table instead.
         </span>
         <strong>Roster size</strong>
         <span>
@@ -597,9 +597,9 @@ stateDiagram-v2
   </div>
 
   <footer class="colophon">
-    Reflects the admin app + sportshub-backend as of 2026-07-23 — season registration windows,
-    team withdrawal, the admin roster-edit bypass, and the league admin role all shipped this
-    session.
+    Reflects the admin app + sportshub-backend as of 2026-07-25 — season registration windows,
+    team withdrawal, the admin roster-edit bypass, the league admin role, and league admins'
+    scoped access to the pending-approvals queue all shipped this session.
   </footer>
 
 </div>
