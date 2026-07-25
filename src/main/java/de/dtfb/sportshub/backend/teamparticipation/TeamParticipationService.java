@@ -61,11 +61,21 @@ public class TeamParticipationService {
         return mapper.toDtoList(participations);
     }
 
-    /** Rosters awaiting a region admin's confirmation: SUBMITTED participations in the federation. */
+    /**
+     * Rosters awaiting confirmation: SUBMITTED participations in the federation, optionally narrowed
+     * to {@code restrictToLeagueIds} -- {@code null} for a region admin (every league), a (possibly
+     * empty) list for a league_admin restricted to their own league(s).
+     */
     @Transactional(readOnly = true)
-    public List<TeamParticipationDto> getPendingApprovals(String federationId) {
-        return mapper.toDtoList(
-            repository.findVisibleByFederationIdAndRosterStatus(federationId, RosterStatus.SUBMITTED));
+    public List<TeamParticipationDto> getPendingApprovals(String federationId, List<String> restrictToLeagueIds) {
+        List<TeamParticipation> pending =
+            repository.findVisibleByFederationIdAndRosterStatus(federationId, RosterStatus.SUBMITTED);
+        if (restrictToLeagueIds != null) {
+            pending = pending.stream()
+                .filter(p -> restrictToLeagueIds.contains(p.getLeague().getId()))
+                .toList();
+        }
+        return mapper.toDtoList(pending);
     }
 
     @Transactional(readOnly = true)
