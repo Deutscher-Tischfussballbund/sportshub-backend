@@ -99,7 +99,83 @@ class LeagueRuleSetControllerTest extends de.dtfb.sportshub.backend.support.Auth
             .andExpect(status().isNotFound());
     }
 
+    @Test
+    void deleteLeagueRuleSet_blockedByLeague() throws Exception {
+        String ruleSetId = idFromUrl(url);
+        String seasonId = id(createSeason(federationId));
+        String categoryId = createCategory();
+        createLeague(seasonId, categoryId, ruleSetId);
+
+        mockMvc.perform(delete(url))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("RULE_SET_IN_USE"));
+
+        mockMvc.perform(get(url)).andExpect(status().isOk());
+    }
+
+    @Test
+    void deleteLeagueRuleSet_blockedByTier() throws Exception {
+        String ruleSetId = idFromUrl(url);
+        String seasonId = id(createSeason(federationId));
+        String categoryId = createCategory();
+        String leagueId = id(createLeague(seasonId, categoryId, null));
+        createTier(leagueId, ruleSetId);
+
+        mockMvc.perform(delete(url))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("RULE_SET_IN_USE"));
+    }
+
+    @Test
+    void deleteLeagueRuleSet_blockedByFederationDefault() throws Exception {
+        String ruleSetId = idFromUrl(url);
+        mockMvc.perform(put("/v1/federation/" + federationId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"name": "Testverband", "defaultRuleSetId": "%s"}
+                    """, ruleSetId)))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(delete(url))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("RULE_SET_IN_USE"));
+    }
+
     //region helpers
+    private String id(MvcResult result) throws Exception {
+        return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+    }
+
+    private String idFromUrl(String url) {
+        return url.substring(url.lastIndexOf('/') + 1);
+    }
+
+    private MvcResult createSeason(String federationId) throws Exception {
+        return mockMvc.perform(post("/v1/seasons")
+            .contentType(MediaType.APPLICATION_JSON).content(String.format("""
+                {"name": "2025", "federationId": "%s"}
+                """, federationId))).andReturn();
+    }
+
+    private MvcResult createLeague(String seasonId, String categoryId, String ruleSetId) throws Exception {
+        String ruleSet = ruleSetId == null ? "null" : "\"" + ruleSetId + "\"";
+        return mockMvc.perform(post("/v1/leagues")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"name": "Bayernliga", "seasonId": "%s", "categoryId": "%s", "ruleSetId": %s}
+                    """, seasonId, categoryId, ruleSet)))
+            .andExpect(status().isCreated()).andReturn();
+    }
+
+    private MvcResult createTier(String leagueId, String ruleSetId) throws Exception {
+        return mockMvc.perform(post("/v1/tiers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"name": "1. Bayernliga", "leagueId": "%s", "ruleSetId": "%s"}
+                    """, leagueId, ruleSetId)))
+            .andExpect(status().isCreated()).andReturn();
+    }
+
     private MvcResult createRuleSet(String federationId) throws Exception {
         return mockMvc.perform(post("/v1/league-rule-sets")
                 .contentType(MediaType.APPLICATION_JSON)
