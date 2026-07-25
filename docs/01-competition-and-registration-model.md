@@ -240,8 +240,11 @@ Each layer ships value on its own. Start with the rename so all later naming is 
   - Backend: `TeamParticipation` CRUD (add/drop = create/delete, promote/relegate = move `pool`);
     **copy-forward** operation (clone `Competition→Discipline→Stage→Pool` + placements from a source
     season; pools reset to `PLANNED`; fixtures/results not carried); authz. *Done.*
-  - Frontend: region placements view + copy-forward *(done)*; manual add/move/remove UI *(pending —
-    needs pool↔competition exposure in the DTOs)*.
+  - Frontend: region placements view + copy-forward *(done)*; manual add/move/remove UI *(done
+    2026-07-25 — shipped as a visual drag-and-drop board per
+    [`11-placement-board.md`](./11-placement-board.md), not the flat table originally
+    envisioned here; by then "pool"/"competition" in this doc had become `Group`/`League` per
+    [`09-league-model.md`](./09-league-model.md))*.
 - **L2 — Roster + hard rules** ✅ backend done
   - Backend: `RosterEntry` (soft-delete history); whole-roster lifecycle
     `DRAFT→SUBMITTED→CONFIRMED` on `TeamParticipation.rosterStatus`; edit/submit/confirm/reopen
