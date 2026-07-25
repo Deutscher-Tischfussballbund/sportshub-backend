@@ -11,12 +11,12 @@ import org.springframework.stereotype.Component;
 /**
  * Resolves the {@link LeagueRuleSet} that governs a group and reads its settings with sensible
  * defaults. Resolution order (docs/09-league-model.md §3): the group's tier's own rule set, else the
- * league's default, else the owning federation's default; {@code null} if none is set anywhere up
- * the chain.
+ * league's default, else the owning federation's default, else the seeded {@value
+ * #DTFB_STANDARD_ID} template row; {@code null} only if even that seeded row is missing.
  *
  * <p>Callers that only need a single setting use the {@code pointsX} helpers, which fall back to the
- * historical defaults (2/1/0) when no rule set resolves or a field is unset — so behaviour is
- * unchanged for leagues that have not configured a rule set.
+ * historical defaults (2/1/0) when no rule set resolves at all or a field is unset — an ultimate
+ * defensive fallback for a pathological unseeded environment, not the primary path.
  */
 @Component
 public class LeagueRuleResolver {
@@ -24,6 +24,15 @@ public class LeagueRuleResolver {
     static final int DEFAULT_POINTS_WIN = 2;
     static final int DEFAULT_POINTS_DRAW = 1;
     static final int DEFAULT_POINTS_LOSS = 0;
+
+    /** Well-known id of the seeded DTFB-global template rule set (access-seed.sql). */
+    static final String DTFB_STANDARD_ID = "rs-dtfb-std";
+
+    private final LeagueRuleSetRepository ruleSetRepository;
+
+    public LeagueRuleResolver(LeagueRuleSetRepository ruleSetRepository) {
+        this.ruleSetRepository = ruleSetRepository;
+    }
 
     /** The effective rule set for the group, or {@code null} if none is configured up the chain. */
     public LeagueRuleSet effectiveFor(Group group) {
@@ -67,14 +76,18 @@ public class LeagueRuleResolver {
         return league.getRuleSet() != null ? league.getRuleSet() : federationDefault(league);
     }
 
-    /** The owning federation's default rule set (via league → season → federation), or null. */
+    /**
+     * The owning federation's default rule set (via league → season → federation), falling through
+     * to the seeded DTFB-global template when the federation has not configured one of its own.
+     */
     private LeagueRuleSet federationDefault(League league) {
         Season season = league.getSeason();
-        if (season == null) {
-            return null;
+        Federation federation = season == null ? null : season.getFederation();
+        LeagueRuleSet federationDefault = federation == null ? null : federation.getDefaultRuleSet();
+        if (federationDefault != null) {
+            return federationDefault;
         }
-        Federation federation = season.getFederation();
-        return federation == null ? null : federation.getDefaultRuleSet();
+        return ruleSetRepository.findById(DTFB_STANDARD_ID).orElse(null);
     }
 
     public int pointsWin(LeagueRuleSet rules) {

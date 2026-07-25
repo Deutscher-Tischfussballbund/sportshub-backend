@@ -1,5 +1,7 @@
 package de.dtfb.sportshub.backend.exception;
 
+import de.dtfb.sportshub.backend.federation.FederationDefaultRuleSetChangeBlockedError;
+import de.dtfb.sportshub.backend.federation.FederationDefaultRuleSetChangeBlockedException;
 import de.dtfb.sportshub.backend.group.GroupDeletionBlockedError;
 import de.dtfb.sportshub.backend.group.GroupDeletionBlockedException;
 import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedError;
@@ -100,6 +102,16 @@ public class GlobalExceptionHandler {
         RuleSetDeletionBlockedException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new RuleSetDeletionBlockedError("RULE_SET_IN_USE", ex.getMessage()));
+    }
+
+    // Federation default rule-set change refused because a tier depending on it already has
+    // fixtures → 409, give the tier its own explicit rule set first.
+    @ExceptionHandler(FederationDefaultRuleSetChangeBlockedException.class)
+    public ResponseEntity<FederationDefaultRuleSetChangeBlockedError> handleFederationDefaultRuleSetChangeBlocked(
+        FederationDefaultRuleSetChangeBlockedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new FederationDefaultRuleSetChangeBlockedError(
+                "FEDERATION_DEFAULT_HAS_RUNNING_LEAGUES", ex.getMessage()));
     }
 
     // Failsafe
