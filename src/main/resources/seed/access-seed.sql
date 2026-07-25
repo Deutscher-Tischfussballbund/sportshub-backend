@@ -109,6 +109,11 @@ VALUES ('gp-by-1', 'rs-by-std', 1, 'DOUBLE'),
 -- inherit this (resolution order tier ?? league ?? federation default — docs/09-league-model.md §3).
 UPDATE federation SET default_rule_set_id = 'rs-by-std' WHERE id = 'fed-by';
 
+-- DTFB-global template (federation_id NULL): the resolver's last fallback for a federation with no
+-- default_rule_set_id of its own, in place of a bare hardcoded constant (docs/09-league-model.md §3).
+INSERT INTO league_rule_set (id, federation_id, name, play_system, points_win, points_draw, points_loss)
+VALUES ('rs-dtfb-std', NULL, 'DTFB Standard', 'ROUND_ROBIN', 2, 1, 0);
+
 -- ---------------------------------------------------------------------------
 -- Demo season WITH recorded results — to exercise the guarded-delete flow in the UI:
 -- deleting it must be refused (409 SEASON_HAS_RESULTS) and offer "archive instead".

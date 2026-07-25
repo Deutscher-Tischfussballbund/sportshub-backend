@@ -15,4 +15,13 @@ public interface RoundRepository extends JpaRepository<Round, String> {
 
     @Query("select e from Round e where e.id = :id and e.group.tier.league.season.archivedAt is null")
     Optional<Round> findVisibleById(String id);
+
+    /**
+     * Whether the federation has a tier with fixtures (a {@code Round}) that has no explicit rule
+     * set anywhere in its own chain (neither the tier nor its league) — i.e. is silently relying on
+     * the federation's default. Guards {@code Federation.defaultRuleSetId} changes.
+     */
+    @Query("select count(r) > 0 from Round r where r.group.tier.league.season.federation.id = :federationId "
+        + "and r.group.tier.ruleSet is null and r.group.tier.league.ruleSet is null")
+    boolean existsFixtureForFederationDefaultDependentTier(String federationId);
 }
