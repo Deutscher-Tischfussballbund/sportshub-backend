@@ -4,6 +4,8 @@ import de.dtfb.sportshub.backend.group.GroupDeletionBlockedError;
 import de.dtfb.sportshub.backend.group.GroupDeletionBlockedException;
 import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedError;
 import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedException;
+import de.dtfb.sportshub.backend.leaguerules.RuleSetDeletionBlockedError;
+import de.dtfb.sportshub.backend.leaguerules.RuleSetDeletionBlockedException;
 import de.dtfb.sportshub.backend.roster.RosterSizeError;
 import de.dtfb.sportshub.backend.roster.RosterSizeException;
 import de.dtfb.sportshub.backend.season.SeasonDeletionBlockedError;
@@ -89,6 +91,15 @@ public class GlobalExceptionHandler {
         GroupDeletionBlockedException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new GroupDeletionBlockedError("GROUP_HAS_PARTICIPATIONS", ex.getMessage()));
+    }
+
+    // Rule-set delete refused because a league/tier/federation still references it → 409,
+    // detach the reference(s) first.
+    @ExceptionHandler(RuleSetDeletionBlockedException.class)
+    public ResponseEntity<RuleSetDeletionBlockedError> handleRuleSetDeletionBlocked(
+        RuleSetDeletionBlockedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new RuleSetDeletionBlockedError("RULE_SET_IN_USE", ex.getMessage()));
     }
 
     // Failsafe

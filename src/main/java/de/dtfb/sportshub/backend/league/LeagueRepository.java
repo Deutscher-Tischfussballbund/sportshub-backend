@@ -14,4 +14,7 @@ public interface LeagueRepository extends JpaRepository<League, String> {
 
     /** Leagues of one season (used by copy-forward to walk the source subtree). */
     List<League> findBySeasonId(String seasonId);
+
+    /** Whether any league still references this rule set (rule-set delete guard). */
+    boolean existsByRuleSetId(String ruleSetId);
 }
