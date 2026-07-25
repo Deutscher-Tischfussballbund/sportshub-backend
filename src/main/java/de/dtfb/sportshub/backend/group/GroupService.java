@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.group;
 
+import de.dtfb.sportshub.backend.teamparticipation.TeamParticipationRepository;
 import de.dtfb.sportshub.backend.tier.Tier;
 import de.dtfb.sportshub.backend.tier.TierNotFoundException;
 import de.dtfb.sportshub.backend.tier.TierRepository;
@@ -13,11 +14,14 @@ public class GroupService {
     private final GroupRepository repository;
     private final GroupMapper mapper;
     private final TierRepository tierRepository;
+    private final TeamParticipationRepository teamParticipationRepository;
 
-    public GroupService(GroupRepository repository, GroupMapper mapper, TierRepository tierRepository) {
+    public GroupService(GroupRepository repository, GroupMapper mapper, TierRepository tierRepository,
+                        TeamParticipationRepository teamParticipationRepository) {
         this.repository = repository;
         this.mapper = mapper;
         this.tierRepository = tierRepository;
+        this.teamParticipationRepository = teamParticipationRepository;
     }
 
     @Transactional(readOnly = true)
@@ -59,10 +63,15 @@ public class GroupService {
         return mapper.toDto(savedGroup);
     }
 
+    /** A group blocks its own delete while a team is still placed in it. */
     @Transactional
     public void delete(String id) {
         Group group = repository.findById(id).orElseThrow(
             () -> new GroupNotFoundException(id));
+        if (teamParticipationRepository.existsByGroup_Id(id)) {
+            throw new GroupDeletionBlockedException(
+                "Group has team participations placed in it; move or unplace them before deleting the group");
+        }
         repository.delete(group);
     }
 }

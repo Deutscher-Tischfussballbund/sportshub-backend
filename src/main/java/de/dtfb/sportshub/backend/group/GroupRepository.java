@@ -13,6 +13,9 @@ public interface GroupRepository extends JpaRepository<Group, String> {
     /** Groups of one tier (copy-forward source walk). */
     List<Group> findByTierId(String tierId);
 
+    /** Whether the tier still has any group (tier delete guard). */
+    boolean existsByTierId(String tierId);
+
     /** All groups under a league, across its tiers (league structure read). */
     List<Group> findByTier_League_Id(String leagueId);
 

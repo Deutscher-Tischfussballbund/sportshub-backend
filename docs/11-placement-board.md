@@ -1,25 +1,30 @@
-# Placement board — visual rework of the region-admin placements view (proposed)
+# Placement board — visual rework of the region-admin placements view
 
-> **Kind: decision (proposed, not yet implemented).** Captures a design conversation
-> (2026-07-22) about replacing the flat `dtfb-table` in the frontend's region-placements
-> view with a visual, drag-and-drop board. Nothing in this doc is built yet — no schema
-> changes, no new endpoints. See [[next-frontend-priorities]] / `frontend-backend-migration`
-> memory (dtfb-frontend-ng repo) for the tracking note.
+> **Kind: decision (implemented 2026-07-25).** Captures a design conversation (2026-07-22)
+> about replacing the flat `dtfb-table` in the frontend's region-placements view with a
+> visual, drag-and-drop board, then the actual build a few days later — which refined the
+> original sketch in three ways, all noted inline below. No schema changes, no new endpoints;
+> everything here is frontend-only (`+region/region-placements.component.ts` +
+> `+region/components/placement-board/` in `dtfb-frontend-ng`). See the
+> `placement-board-built`/`league-tier-group-management-built` memories (dtfb-frontend-ng repo)
+> for the session write-up.
 
 ## 0. Why
 
-The current placements view (`+region/region-placements.component.ts` in `dtfb-frontend-ng`)
-is one flat table of `TeamParticipation` rows for a selected season — no visual grouping by
-tier or league, and no sense of level ordering. The ask: a board where a whole season's
-structure (which leagues, which tiers within each, which groups within each tier, which teams
-in each group) is visible at once, ordered by `Tier.level` (1 = top), with drag-and-drop to
-move teams between groups.
+The old placements view was one flat table of `TeamParticipation` rows for a selected season —
+no visual grouping by tier or league, no sense of level ordering. That fit a one-time preseason
+assignment; it stopped fitting once placements are managed for an **ongoing** league. The
+board shows one league's one tier at a time (groups as lanes, ordered by `Tier.level`), with
+drag-and-drop to move teams between groups.
 
-## 1. Layout
+## 1. Layout — **built as one tier at a time (dropdown-selected), not all tiers stacked**
 
-Per league, stacked vertically by tier level (1 on top), each tier's groups laid out as
-side-by-side lanes underneath it:
+The original sketch (below) proposed showing a whole league's tiers stacked vertically at
+once. **Built differently, by request:** Season → League → Tier selects, and the board shows
+only the selected tier's groups as lanes, plus one league-wide "Unplaced" lane. Simpler to
+build well, and it resolves the layout's own accessibility tension for free — see §2.
 
+Original sketch, for reference (not what shipped):
 ```
 League: Bayernliga Herren 2024/25
   Unplaced (registered, no group yet)        [team, team]
@@ -34,101 +39,92 @@ League: Bayernliga Herren 2024/25
     []
 ```
 
-A league with **zero** `Tier`/`Group` rows at all renders as just the "Unplaced" list, full
-width — no tier/group columns to show. This covers two distinct real cases that render
-identically for now:
+**The "intentionally groupless league" open question from the original design is now
+answered, indirectly:** [[league-tier-group-management-built]] (the League/Tier/Group CRUD
+view, built the same session) established that `TeamParticipation` has no tier reference at
+all — a team can only ever be placed via a `Group`. So "a league/tier with no groups" was never
+really a distinct state to model; it's just not-yet-configured. Creating a tier now
+auto-creates one default group (an undivided "pool"), so this ambiguity mostly doesn't arise
+in practice anymore.
 
-1. A **new league this season** that hasn't had its tier/group structure set up yet (that
-   setup is the separate, still-unbuilt League/Tier/Group CRUD work — the board only
-   *consumes* structure, never creates it).
-2. A **permanently groupless league** — a standing league type that intentionally never
-   subdivides into groups. Confirmed (2026-07-22): copy-forward never converts one type into
-   the other; a copied league keeps whatever tier/group setup its source had.
-
-**Open question, not resolved:** the domain model has no explicit way to say "this league is
-*intentionally* groupless" vs. "not configured yet" — both are just leagues with zero
-`Tier`/`Group` rows. Not needed for the board (both render the same), but the future
-League/Tier/Group CRUD work may want an explicit flag so an admin isn't nagged to add groups
-to a league that will never have them.
-
-**No new backend read planned.** Every value needed (`League`, `Tier.level`, `Group`,
-`TeamParticipation`) is already available via existing list endpoints; the client-side
-join-everything pattern already used throughout this app (`RegionPlacementsService` and
-effectively every other data service in `dtfb-frontend-ng`) is sufficient at the expected
-per-region data volumes. The deferred "placement-board read" endpoint idea (mentioned in
-`09-league-model.md`-adjacent notes) is not being built for this — revisit only if this
-specific client-side join becomes a real performance problem.
+**No new backend read was needed**, as planned: `getLeagueStructure` (tiers + groups,
+level-ordered) + `getAllTeamParticipations(seasonId?, leagueId?)` (already supports a `leagueId`
+filter) + `getAllTeams` + `getAllRounds`, joined client-side, same pattern as everywhere else in
+this app.
 
 ## 2. Team movement
 
-Three distinct actions, deliberately handled differently:
+- **Move within the current tier** (drag a team from one group lane to another, or to/from the
+  shared "Unplaced" lane): a plain `TeamParticipation.group` update (full-DTO `PUT`, preserving
+  every other field client-side — there's no partial-patch endpoint).
+- **Promote/relegate — built as dedicated quick-actions, not a cross-tier drag.** Since only one
+  tier's lanes are ever visible (§1), there's no lane to drag a team *into* for a different
+  tier. Instead: a Promote/Demote button per team card jumps to the tier one level above/below.
+  One click when that tier has exactly one group (the common case, per
+  [[league-tier-group-management-built]]'s default-single-group design) — fires the move
+  directly. A small group-picker dialog only when the adjacent tier is subdivided into more than
+  one group.
+- **Unplace** (drag into/out of the shared "Unplaced" lane): `group` set to `null` — a
+  pre-existing valid state, not new.
 
-- **Move within a tier** (drag a team from one group lane to another under the *same* tier
-  section): a plain `TeamParticipation.group` update to the target group.
-- **Promote/relegate** (drag a team's card from one tier's lane into a *different* tier's
-  lane): same underlying operation (`group` update to a group under the new tier) — the
-  tier-crossing drag *is* the promotion/relegation, no separate action needed.
-- **Unplace** (drag into/out of the league's "Unplaced" lane): `group` set to `null` — already
-  a valid, existing state (`TeamParticipation.group` is nullable; a team can be registered for
-  a league without a group assignment, e.g. seed's `tp-by25-4`).
+**Leaving the league entirely (delete vs. withdraw) — refined the same session, after the board
+shipped.** The original plan here was "deleting the `TeamParticipation` is a confirm-gated
+button, never a drag target" — still true, but the confirm dialog itself got smarter: it tries
+a hard delete first, and if the backend refuses (`409 PARTICIPATION_HAS_MATCHES` — a `MatchDay`
+already exists for that team, drawn/scheduled or played, doesn't matter which), the *same*
+dialog flips to offer withdrawing instead (keeps the row + history, locks the roster, excludes
+it from future copy-forward). Rationale, from the user directly: once a matchday is drawn,
+hard-deleting the placement would leave the schedule referencing a team that no longer exists —
+withdrawal is the only sound option past that point, and `MatchDayRepository.existsByLeagueIdAndTeamId`
+(existence, not "has a reported result") is the correct, precise, already-existing signal for
+exactly when that line is crossed. No draft/status flag exists on `Season`/`League`/`Tier` to
+check this ahead of time, nor is one needed — the per-team check is more precise than a
+per-league one would be anyway (a league can have fixtures for other teams while a given team
+still has none).
 
-**Leaving the league entirely** (deleting the `TeamParticipation`) is **not** a drag target —
-deliberately kept as an explicit, confirm-gated button per team card (reusing the existing
-`remove-placement-dialog` pattern), both because a stray drag shouldn't be able to trigger a
-delete, and to match this app's established convention that destructive actions get an
-explicit confirm step, not an implicit gesture.
+**Accessibility requirement, built as planned:** every drag-based move has a non-drag
+equivalent — a kebab menu per team card (Edit roster / Move to… / Promote / Demote / Remove),
+keyboard/screen-reader accessible via `@angular/cdk/menu`. The drag handle icon itself is
+`aria-hidden` — a mouse/touch-only convenience, never the only way to act.
 
-**Accessibility requirement, not optional:** every drag-based move needs a non-drag
-equivalent to meet this repo's WCAG-AA/axe bar — a "Move to…" affordance per team card
-(button/menu opening a group picker, reusing the existing move-dialog's picker logic) as the
-keyboard/screen-reader path, alongside the drag gesture for mouse users.
+## 3. Randomize (per-tier shuffle) — built as planned, plus a sibling "Clear tier" action
 
-## 3. Randomize (per-tier shuffle)
+A button, scoped to one tier at a time, that redistributes every **currently-placed** team in
+that tier's groups evenly at random across those same groups. Confirmed by choice: never pulls
+in already-unplaced teams, so it can't silently promote/relegate anyone as a side effect.
 
-A button, scoped to **one tier at a time** (not a whole league — mixing tiers would silently
-promote/relegate teams as a side effect of a "shuffle"), that redistributes every team
-currently in any of that tier's groups (plus, arguably, unplaced teams belonging to that
-league/tier) evenly at random across the tier's groups.
+**New, not in the original design: "Clear tier"** — unplaces every currently-placed team in the
+tier (moves them into the shared Unplaced lane) in one action. Added on request once the board
+was otherwise done. Given the same safety gate as Randomize (below) — reasoning: even though
+clearing doesn't scramble who-plays-whom the way a shuffle would, it's at least as disruptive to
+a tier that's already running.
 
-### Safety gate: when is a tier "safe" to randomize without confirmation?
+### Safety gate: when is a tier "safe" for Clear/Randomize?
 
-**Decided: check for the actual existence of `Round`/`MatchDay` rows under the tier's groups,
-not `Group.groupState`.**
+**Built exactly as decided:** check the actual existence of `Round` rows under the tier's
+groups, not `Group.groupState` (confirmed unreliable — see the original reasoning below,
+unchanged). `RoundDto.groupId` is present directly on every row, so this is one unfiltered
+`GET /v1/rounds` + a client-side membership check against the tier's group ids — no new
+backend query. Once a tier has any `Round`, Clear tier and Randomize are both disabled outright
+(not just confirm-gated) — matches the original "leaning towards disabling entirely" call.
 
-Investigated (2026-07-22) whether `Group.groupState` (`PLANNED → READY → RUNNING → FINISHED`,
-plus `CANCELED`) could gate this — it can't be trusted for this purpose:
+*(Original investigation, unchanged):* `GroupController.updateGroup` does no transition
+validation (`FINISHED → PLANNED` is accepted as readily as `PLANNED → READY`), and nothing
+automatically transitions `groupState` except `CopyForwardService` resetting a clone to
+`PLANNED` — so it's a manually-maintained label with no enforced link to reality, unusable as a
+safety gate.
 
-- `GroupController.updateGroup` (`PUT /v1/groups/{id}`) is a plain full-DTO overwrite with
-  **no transition validation at all** — any state can be written over any prior state
-  (`FINISHED → PLANNED` is accepted exactly as readily as `PLANNED → READY`).
-- **Nothing automatically transitions it.** `RoundService`/`MatchDayService` (fixture
-  generation) never touch `groupState`. The only automatic write anywhere is
-  `CopyForwardService` resetting a cloned group to `PLANNED`.
-- So `groupState` is a manually-maintained label with no enforced link to reality — a region
-  admin could generate fixtures and simply forget to flip the group's state. Gating a
-  data-destructive randomize on that label would only be as safe as everyone remembering to
-  keep it accurate.
+### Mechanics — built as planned
 
-Instead: a tier is "draft" (randomize fires immediately, no confirmation) exactly when **none
-of its groups have any `Round` or `MatchDay` rows yet** — a fact you can query directly, not a
-flag someone has to remember to set. Once a tier has any fixtures, randomizing would silently
-orphan the match/round data's team-composition assumptions, so at that point either require an
-explicit confirm step, or (leaning towards this) disable randomize for that tier entirely —
-there's no good reason to randomize a tier that's already live.
+No bulk-update endpoint: compute the new assignment client-side, fire one
+`PUT /v1/team-participations/{id}` per affected participation via `forkJoin`, same as every
+other multi-write action in this app.
 
-### Mechanics (once built)
+## 4. Summary of deviations from the original design
 
-No bulk-update endpoint needed — mirrors this app's established pattern (e.g. the roster
-editor's staged save, club-teams captain assignment): compute the new random assignment
-client-side, then fire one `PUT /v1/team-participations/{id}` per affected participation via
-`forkJoin`, matching every other multi-write action already in this codebase.
-
-## 4. Summary of what's NOT being built right now
-
-- No new backend read (hierarchical placement-board endpoint) — client-side join is enough.
-- No `Group` state-machine validation — out of scope; the randomize safety check
-  sidesteps `groupState` entirely by querying `Round`/`MatchDay` existence instead.
-- No explicit "this league is intentionally groupless" flag on `League` — deferred to
-  whenever League/Tier/Group CRUD gets built, if it turns out to matter there.
-- No bulk-update endpoint for randomize — N individual updates via `forkJoin`, same as
-  elsewhere.
+- **Layout**: one tier at a time via a dropdown, not every tier stacked (§1).
+- **Promote/relegate**: dedicated quick-action buttons, not a cross-tier drag (§2).
+- **New "Clear tier" bulk action**, gated the same as Randomize (§3).
+- **Remove/Withdraw merged** into one guarded action instead of two separate ones (§2).
+- Everything else (no new backend read, no `Group` state-machine validation, no bulk-update
+  endpoint, `Round`-existence as the safety gate) shipped exactly as originally decided.

@@ -1,5 +1,9 @@
 package de.dtfb.sportshub.backend.exception;
 
+import de.dtfb.sportshub.backend.group.GroupDeletionBlockedError;
+import de.dtfb.sportshub.backend.group.GroupDeletionBlockedException;
+import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedError;
+import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedException;
 import de.dtfb.sportshub.backend.roster.RosterSizeError;
 import de.dtfb.sportshub.backend.roster.RosterSizeException;
 import de.dtfb.sportshub.backend.season.SeasonDeletionBlockedError;
@@ -8,6 +12,8 @@ import de.dtfb.sportshub.backend.teamparticipation.ParticipationDeletionBlockedE
 import de.dtfb.sportshub.backend.teamparticipation.ParticipationDeletionBlockedException;
 import de.dtfb.sportshub.backend.teamparticipation.SeasonEndedError;
 import de.dtfb.sportshub.backend.teamparticipation.SeasonEndedException;
+import de.dtfb.sportshub.backend.tier.TierDeletionBlockedError;
+import de.dtfb.sportshub.backend.tier.TierDeletionBlockedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -58,6 +64,31 @@ public class GlobalExceptionHandler {
         ParticipationDeletionBlockedException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new ParticipationDeletionBlockedError("PARTICIPATION_HAS_MATCHES", ex.getMessage()));
+    }
+
+    // League delete refused because it still has a tier or a direct participation → 409, remove
+    // the structure/participations first, bottom-up.
+    @ExceptionHandler(LeagueDeletionBlockedException.class)
+    public ResponseEntity<LeagueDeletionBlockedError> handleLeagueDeletionBlocked(
+        LeagueDeletionBlockedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new LeagueDeletionBlockedError("LEAGUE_HAS_STRUCTURE_OR_PARTICIPATIONS", ex.getMessage()));
+    }
+
+    // Tier delete refused because it still has a group → 409, remove the groups first.
+    @ExceptionHandler(TierDeletionBlockedException.class)
+    public ResponseEntity<TierDeletionBlockedError> handleTierDeletionBlocked(
+        TierDeletionBlockedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new TierDeletionBlockedError("TIER_HAS_GROUPS", ex.getMessage()));
+    }
+
+    // Group delete refused because a team is still placed in it → 409, move/unplace it first.
+    @ExceptionHandler(GroupDeletionBlockedException.class)
+    public ResponseEntity<GroupDeletionBlockedError> handleGroupDeletionBlocked(
+        GroupDeletionBlockedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new GroupDeletionBlockedError("GROUP_HAS_PARTICIPATIONS", ex.getMessage()));
     }
 
     // Failsafe

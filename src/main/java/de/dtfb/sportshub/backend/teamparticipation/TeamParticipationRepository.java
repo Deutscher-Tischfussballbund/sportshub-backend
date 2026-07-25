@@ -32,4 +32,10 @@ public interface TeamParticipationRepository extends JpaRepository<TeamParticipa
 
     /** Whether any participation already exists in a season (copy-forward target guard). */
     boolean existsByLeague_Season_Id(String seasonId);
+
+    /** Whether the league still has any participation registered directly against it (league delete guard). */
+    boolean existsByLeague_Id(String leagueId);
+
+    /** Whether the group still has any team placed in it (group delete guard). */
+    boolean existsByGroup_Id(String groupId);
 }

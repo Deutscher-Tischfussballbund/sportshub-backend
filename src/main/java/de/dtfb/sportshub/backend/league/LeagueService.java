@@ -9,6 +9,8 @@ import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSetRepository;
 import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.season.SeasonNotFoundException;
 import de.dtfb.sportshub.backend.season.SeasonRepository;
+import de.dtfb.sportshub.backend.teamparticipation.TeamParticipationRepository;
+import de.dtfb.sportshub.backend.tier.TierRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,14 +23,19 @@ public class LeagueService {
     private final SeasonRepository seasonRepository;
     private final CategoryRepository categoryRepository;
     private final LeagueRuleSetRepository ruleSetRepository;
+    private final TierRepository tierRepository;
+    private final TeamParticipationRepository teamParticipationRepository;
 
     public LeagueService(LeagueRepository repository, LeagueMapper mapper, SeasonRepository seasonRepository,
-                         CategoryRepository categoryRepository, LeagueRuleSetRepository ruleSetRepository) {
+                         CategoryRepository categoryRepository, LeagueRuleSetRepository ruleSetRepository,
+                         TierRepository tierRepository, TeamParticipationRepository teamParticipationRepository) {
         this.repository = repository;
         this.mapper = mapper;
         this.seasonRepository = seasonRepository;
         this.categoryRepository = categoryRepository;
         this.ruleSetRepository = ruleSetRepository;
+        this.tierRepository = tierRepository;
+        this.teamParticipationRepository = teamParticipationRepository;
     }
 
     @Transactional(readOnly = true)
@@ -61,10 +68,19 @@ public class LeagueService {
         return mapper.toDto(repository.save(league));
     }
 
+    /**
+     * A league blocks its own delete while it still has a {@code Tier} or a {@code TeamParticipation}
+     * registered directly against it -- a groupless league's participations reference it with no tier
+     * at all. Delete the structure/participations first, bottom-up.
+     */
     @Transactional
     public void delete(String id) {
         League league = repository.findById(id).orElseThrow(
             () -> new LeagueNotFoundException(id));
+        if (tierRepository.existsByLeagueId(id) || teamParticipationRepository.existsByLeague_Id(id)) {
+            throw new LeagueDeletionBlockedException(
+                "League has tiers or team participations; remove them before deleting the league");
+        }
         repository.delete(league);
     }
 

@@ -84,6 +84,19 @@ class TierControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCon
             .andExpect(status().isNotFound());
     }
 
+    @Test
+    void deleteTier_blockedByGroup() throws Exception {
+        String tierId = url.substring(url.lastIndexOf('/') + 1);
+        createGroup(tierId);
+
+        mockMvc.perform(delete(url))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("TIER_HAS_GROUPS"));
+
+        // untouched -- still there, still deletable once the block is lifted (not exercised here)
+        mockMvc.perform(get(url)).andExpect(status().isOk());
+    }
+
     //region helpers
     private MvcResult createSeason() throws Exception {
         String federationId = createFederation();
@@ -109,6 +122,15 @@ class TierControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCon
                 .content(String.format("""
                             {"name": "1. Bayernliga", "leagueId": "%s"}
                     """, leagueId)))
+            .andExpect(status().isCreated()).andReturn();
+    }
+
+    private MvcResult createGroup(String tierId) throws Exception {
+        return mockMvc.perform(post("/v1/groups")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "Gruppe A", "tierId": "%s", "groupState": "PLANNED"}
+                    """, tierId)))
             .andExpect(status().isCreated()).andReturn();
     }
     //endregion
