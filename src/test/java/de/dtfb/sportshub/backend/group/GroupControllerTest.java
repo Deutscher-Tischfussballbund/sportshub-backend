@@ -15,13 +15,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class GroupControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
 
+    private String leagueId;
     private String tierId;
     private String url;
 
     @PostConstruct
     void setup() throws Exception {
         String seasonId = id(createSeason());
-        String leagueId = id(createLeague(seasonId));
+        leagueId = id(createLeague(seasonId));
         tierId = id(createTier(leagueId));
     }
 
@@ -88,6 +89,20 @@ class GroupControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCo
             .andExpect(status().isNotFound());
     }
 
+    @Test
+    void deleteGroup_blockedByParticipation() throws Exception {
+        String groupId = url.substring(url.lastIndexOf('/') + 1);
+        String teamId = id(createTeam("Testteam"));
+        createParticipation(teamId, leagueId, groupId);
+
+        mockMvc.perform(delete(url))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("GROUP_HAS_PARTICIPATIONS"));
+
+        // untouched -- still there, still deletable once the block is lifted (not exercised here)
+        mockMvc.perform(get(url)).andExpect(status().isOk());
+    }
+
     //region helpers
     private String id(MvcResult result) throws Exception {
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
@@ -126,6 +141,25 @@ class GroupControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCo
                 .content(String.format("""
                             {"name": "Gruppe A", "tierId": "%s", "groupState": "READY"}
                     """, tierId)))
+            .andExpect(status().isCreated()).andReturn();
+    }
+
+    private MvcResult createTeam(String name) throws Exception {
+        String clubId = createClub();
+        return mockMvc.perform(post("/v1/teams")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "%s", "clubId": "%s"}
+                    """, name, clubId)))
+            .andExpect(status().isCreated()).andReturn();
+    }
+
+    private MvcResult createParticipation(String teamId, String leagueId, String groupId) throws Exception {
+        return mockMvc.perform(post("/v1/team-participations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"teamId": "%s", "leagueId": "%s", "groupId": "%s"}
+                    """, teamId, leagueId, groupId)))
             .andExpect(status().isCreated()).andReturn();
     }
     //endregion

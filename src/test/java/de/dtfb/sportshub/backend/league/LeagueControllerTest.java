@@ -87,7 +87,39 @@ class LeagueControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
             .andExpect(status().isNotFound());
     }
 
+    @Test
+    void deleteLeague_blockedByTier() throws Exception {
+        String leagueId = idFromUrl(url);
+        createTier(leagueId);
+
+        mockMvc.perform(delete(url))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("LEAGUE_HAS_STRUCTURE_OR_PARTICIPATIONS"));
+
+        // untouched -- still there, still deletable once the block is lifted (not exercised here)
+        mockMvc.perform(get(url)).andExpect(status().isOk());
+    }
+
+    @Test
+    void deleteLeague_blockedByParticipation() throws Exception {
+        String leagueId = idFromUrl(url);
+        String teamId = id(createTeam("Testteam"));
+        createParticipation(teamId, leagueId);
+
+        mockMvc.perform(delete(url))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("LEAGUE_HAS_STRUCTURE_OR_PARTICIPATIONS"));
+    }
+
     //region helpers
+    private String id(MvcResult result) throws Exception {
+        return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+    }
+
+    private String idFromUrl(String url) {
+        return url.substring(url.lastIndexOf('/') + 1);
+    }
+
     private MvcResult createSeason() throws Exception {
         String federationId = createFederation();
         return mockMvc.perform(post("/v1/seasons")
@@ -102,6 +134,34 @@ class LeagueControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
                 .content(String.format("""
                             {"name": "Bayernliga", "seasonId": "%s", "categoryId": "%s"}
                     """, seasonId, categoryId)))
+            .andExpect(status().isCreated()).andReturn();
+    }
+
+    private MvcResult createTier(String leagueId) throws Exception {
+        return mockMvc.perform(post("/v1/tiers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "1. Bayernliga", "leagueId": "%s"}
+                    """, leagueId)))
+            .andExpect(status().isCreated()).andReturn();
+    }
+
+    private MvcResult createTeam(String name) throws Exception {
+        String clubId = createClub();
+        return mockMvc.perform(post("/v1/teams")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "%s", "clubId": "%s"}
+                    """, name, clubId)))
+            .andExpect(status().isCreated()).andReturn();
+    }
+
+    private MvcResult createParticipation(String teamId, String leagueId) throws Exception {
+        return mockMvc.perform(post("/v1/team-participations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"teamId": "%s", "leagueId": "%s"}
+                    """, teamId, leagueId)))
             .andExpect(status().isCreated()).andReturn();
     }
     //endregion

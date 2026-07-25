@@ -6,6 +6,7 @@ import de.dtfb.sportshub.backend.league.LeagueRepository;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSetNotFoundException;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSetRepository;
+import de.dtfb.sportshub.backend.group.GroupRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,15 +18,18 @@ public class TierService {
     private final TierMapper mapper;
     private final LeagueRepository leagueRepository;
     private final LeagueRuleSetRepository ruleSetRepository;
+    private final GroupRepository groupRepository;
 
     public TierService(TierRepository repository,
                        TierMapper mapper,
                        LeagueRepository leagueRepository,
-                       LeagueRuleSetRepository ruleSetRepository) {
+                       LeagueRuleSetRepository ruleSetRepository,
+                       GroupRepository groupRepository) {
         this.repository = repository;
         this.mapper = mapper;
         this.leagueRepository = leagueRepository;
         this.ruleSetRepository = ruleSetRepository;
+        this.groupRepository = groupRepository;
     }
 
     @Transactional(readOnly = true)
@@ -58,10 +62,14 @@ public class TierService {
         return mapper.toDto(repository.save(tier));
     }
 
+    /** A tier blocks its own delete while it still has a {@code Group} underneath it. */
     @Transactional
     public void delete(String id) {
         Tier tier = repository.findById(id).orElseThrow(
             () -> new TierNotFoundException(id));
+        if (groupRepository.existsByTierId(id)) {
+            throw new TierDeletionBlockedException("Tier has groups; remove them before deleting the tier");
+        }
         repository.delete(tier);
     }
 
