@@ -1,5 +1,9 @@
 package de.dtfb.sportshub.backend.teamparticipation;
 
+import de.dtfb.sportshub.backend.access.role.Role;
+import de.dtfb.sportshub.backend.access.role.ScopeType;
+import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignment;
+import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignmentRepository;
 import de.dtfb.sportshub.backend.club.Club;
 import de.dtfb.sportshub.backend.club.ClubRepository;
 import de.dtfb.sportshub.backend.federation.Federation;
@@ -19,6 +23,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -27,9 +32,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * The region approval queue: {@code GET /v1/team-participations/pending?federationId=} returns the
- * SUBMITTED rosters in that federation only — DRAFT/CONFIRMED and other regions are excluded — and is
- * gated by {@code canManageRegion} (a region/global admin of it).
+ * The approval queue: {@code GET /v1/team-participations/pending?federationId=} returns the
+ * SUBMITTED rosters in that federation only — DRAFT/CONFIRMED and other regions are excluded. A
+ * region/global admin (gated by {@code canManageRegion}) sees every league's queue; a
+ * {@code league_admin} sees only their own league(s) within the region, per
+ * {@code canViewPendingApprovals}/{@code leagueAdminLeagueIdsInRegion}.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -43,6 +50,7 @@ class TeamParticipationApprovalsIntegrationTest {
     @Autowired TeamRepository teamRepository;
     @Autowired TeamParticipationRepository participationRepository;
     @Autowired PlayerRepository playerRepository;
+    @Autowired RoleAssignmentRepository roleAssignmentRepository;
 
     @Test
     void pending_listsSubmittedRostersInTheRegionOnly() throws Exception {
@@ -72,6 +80,35 @@ class TeamParticipationApprovalsIntegrationTest {
             .andExpect(status().isForbidden());
     }
 
+    @Test
+    void pending_leagueAdminSeesOnlyTheirOwnLeague() throws Exception {
+        Federation fed = federation("Bayern");
+        Team team = team("TFC München 1", fed);
+        League ownLeague = league(season(fed));
+        League otherLeague = league(season(fed));
+        TeamParticipation ownSubmitted = participation(team, ownLeague, RosterStatus.SUBMITTED);
+        participation(team, otherLeague, RosterStatus.SUBMITTED); // a league they don't administer → excluded
+
+        RequestPostProcessor leagueAdmin = grantLeagueAdmin("liga-own", ownLeague.getId());
+        mockMvc.perform(get("/v1/team-participations/pending")
+                .param("federationId", fed.getId()).with(leagueAdmin))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].id").value(ownSubmitted.getId()));
+    }
+
+    @Test
+    void pending_leagueAdminOfAnotherRegionForbidden() throws Exception {
+        Federation fed = federation("Bayern");
+        Federation otherFed = federation("Hessen");
+        League leagueInOtherFed = league(season(otherFed));
+
+        RequestPostProcessor leagueAdmin = grantLeagueAdmin("liga-other-region", leagueInOtherFed.getId());
+        mockMvc.perform(get("/v1/team-participations/pending")
+                .param("federationId", fed.getId()).with(leagueAdmin))
+            .andExpect(status().isForbidden());
+    }
+
     // region helpers
     private static RequestPostProcessor jwtFor(String dtfbId) {
         return jwt().jwt(token -> token.claim("dtfb_id", dtfbId));
@@ -81,6 +118,19 @@ class TeamParticipationApprovalsIntegrationTest {
         Player player = new Player();
         player.setDtfbId(dtfbId);
         return player;
+    }
+
+    /** Seed a player with a single LEAGUE_ADMIN grant on {@code leagueId} and return its JWT. */
+    private RequestPostProcessor grantLeagueAdmin(String dtfbId, String leagueId) {
+        Player savedPlayer = playerRepository.save(player(dtfbId));
+        RoleAssignment grant = new RoleAssignment();
+        grant.setPlayer(savedPlayer);
+        grant.setRole(Role.LEAGUE_ADMIN);
+        grant.setScopeType(ScopeType.LEAGUE);
+        grant.setScopeId(leagueId);
+        grant.setCreatedAt(Instant.now());
+        roleAssignmentRepository.save(grant);
+        return jwtFor(dtfbId);
     }
 
     private Federation federation(String name) {

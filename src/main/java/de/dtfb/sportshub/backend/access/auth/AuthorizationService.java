@@ -35,6 +35,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Authorization checks exposed to {@code @PreAuthorize} SpEL as {@code @authz}
@@ -216,6 +218,38 @@ public class AuthorizationService {
         Federation region = season == null ? null : season.getFederation();
         return (region != null && isRegionAdmin(roles, region.getId()))
             || (league != null && isLeagueAdmin(roles, league.getId()));
+    }
+
+    /**
+     * May view the region's pending-roster-confirmation queue: the region's admin (or global),
+     * who sees every league, OR a {@code league_admin} of at least one league in the region, who
+     * sees just their own (see {@link #leagueAdminLeagueIdsInRegion}).
+     */
+    public boolean canViewPendingApprovals(String federationId) {
+        return canManageRegion(federationId) || !leagueAdminLeagueIdsInRegion(federationId).isEmpty();
+    }
+
+    /**
+     * League ids within {@code federationId} the caller is a {@code league_admin} of -- used to
+     * scope the pending-approvals queue down to a league admin's own leagues when they aren't a
+     * full region admin (who sees every league instead, unrestricted).
+     */
+    public List<String> leagueAdminLeagueIdsInRegion(String federationId) {
+        if (federationId == null) {
+            return List.of();
+        }
+        Set<String> leagueAdminLeagueIds = currentRoles().stream()
+            .filter(ra -> ra.getRole() == Role.LEAGUE_ADMIN)
+            .map(RoleAssignment::getScopeId)
+            .collect(Collectors.toSet());
+        if (leagueAdminLeagueIds.isEmpty()) {
+            return List.of();
+        }
+        return leagueRepository.findAllById(leagueAdminLeagueIds).stream()
+            .filter(league -> league.getSeason() != null && league.getSeason().getFederation() != null
+                && federationId.equals(league.getSeason().getFederation().getId()))
+            .map(League::getId)
+            .toList();
     }
 
     /**

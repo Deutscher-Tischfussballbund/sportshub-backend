@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.teamparticipation;
 
+import de.dtfb.sportshub.backend.access.auth.AuthorizationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -13,9 +14,11 @@ import java.util.List;
 public class TeamParticipationController {
 
     private final TeamParticipationService service;
+    private final AuthorizationService authz;
 
-    public TeamParticipationController(TeamParticipationService service) {
+    public TeamParticipationController(TeamParticipationService service, AuthorizationService authz) {
         this.service = service;
+        this.authz = authz;
     }
 
     @GetMapping
@@ -25,11 +28,17 @@ public class TeamParticipationController {
         return service.getAll(seasonId, leagueId, teamId);
     }
 
-    /** A region admin's approval queue: rosters submitted for confirmation in their federation. */
+    /**
+     * The approval queue: rosters submitted for confirmation in the federation. A region admin sees
+     * every league's queue; a league_admin sees only the league(s) they administer.
+     */
     @GetMapping("/pending")
-    @PreAuthorize("@authz.canManageRegion(#federationId)")
+    @PreAuthorize("@authz.canViewPendingApprovals(#federationId)")
     public List<TeamParticipationDto> getPendingTeamParticipations(@RequestParam String federationId) {
-        return service.getPendingApprovals(federationId);
+        List<String> restrictToLeagueIds = authz.canManageRegion(federationId)
+            ? null
+            : authz.leagueAdminLeagueIdsInRegion(federationId);
+        return service.getPendingApprovals(federationId, restrictToLeagueIds);
     }
 
     @PostMapping
