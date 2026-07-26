@@ -102,8 +102,7 @@ class FixtureGenerationServiceIntegrationTest extends AuthorizedControllerTest {
 
         Set<String> unorderedPairs = new HashSet<>();
         for (Object[] pair : pairs) {
-            Set<String> unordered = new HashSet<>(List.of((String) pair[0], (String) pair[1]));
-            unorderedPairs.add(unordered.toString());
+            unorderedPairs.add(unorderedKey((String) pair[0], (String) pair[1]));
         }
         Assertions.assertThat(unorderedPairs).hasSize(6);
     }
@@ -183,10 +182,17 @@ class FixtureGenerationServiceIntegrationTest extends AuthorizedControllerTest {
             String away = (String) pair[1];
             Assertions.assertThat(teamIds).contains(home, away);
             Assertions.assertThat(home).isNotEqualTo(away);
-            String key = Set.of(home, away).toString();
+            String key = unorderedKey(home, away);
             Assertions.assertThat(seen).doesNotContain(key);
             seen.add(key);
         }
+    }
+
+    /** A canonical, order-independent key for an unordered pair — {@code Set.toString()} is NOT
+     * safe for this: two equal-content sets built via different insertion order can iterate (and
+     * thus print) differently if their elements happen to hash-collide into the same bucket. */
+    private String unorderedKey(String a, String b) {
+        return a.compareTo(b) <= 0 ? a + "|" + b : b + "|" + a;
     }
 
     private List<Object[]> matchDayPairsForRounds(List<String> roundIds) throws Exception {
