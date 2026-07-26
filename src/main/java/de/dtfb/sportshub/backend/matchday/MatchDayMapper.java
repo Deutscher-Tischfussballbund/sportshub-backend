@@ -26,6 +26,10 @@ public interface MatchDayMapper {
     @Mapping(target = "resultState", ignore = true)
     @Mapping(target = "homeConfirmedAt", ignore = true)
     @Mapping(target = "awayConfirmedAt", ignore = true)
+    // Scheduling flow is likewise server-managed (FixtureGenerationService / propose+accept).
+    @Mapping(target = "schedulingState", ignore = true)
+    @Mapping(target = "scheduleProposedByDtfbId", ignore = true)
+    @Mapping(target = "scheduleConfirmedAt", ignore = true)
     MatchDay toEntity(MatchDayDto matchDayDto);
 
     @Mapping(target = "id", ignore = true)
@@ -36,6 +40,9 @@ public interface MatchDayMapper {
     @Mapping(target = "submittedByDtfbId", ignore = true)
     @Mapping(target = "homeConfirmedAt", ignore = true)
     @Mapping(target = "awayConfirmedAt", ignore = true)
+    @Mapping(target = "schedulingState", ignore = true)
+    @Mapping(target = "scheduleProposedByDtfbId", ignore = true)
+    @Mapping(target = "scheduleConfirmedAt", ignore = true)
     void updateEntityFromDto(MatchDayDto dto, @MappingTarget MatchDay entity);
 
     List<MatchDayDto> toDtoList(List<MatchDay> matchDays);

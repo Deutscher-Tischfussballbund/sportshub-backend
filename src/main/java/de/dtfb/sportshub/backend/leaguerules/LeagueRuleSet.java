@@ -55,4 +55,10 @@ public class LeagueRuleSet extends BaseEntity {
     // (unconstrained).
     private Integer minRosterSize;
     private Integer maxRosterSize;
+
+    // Fixture scheduling, read by FixtureGenerationService. Null schedulingMode = no scheduling
+    // convention configured yet (generation requires picking one explicitly).
+    @Enumerated(EnumType.STRING)
+    private SchedulingMode schedulingMode;
+    private Integer schedulingWindowDays; // only meaningful when schedulingMode = WINDOW
 }

@@ -136,10 +136,12 @@ VALUES ('group-res', 'tier-res', 'Gruppe A', 'FINISHED');
 INSERT INTO round (id, group_id, name)
 VALUES ('round-res', 'group-res', 'Runde 1');
 
--- One match-day with a confirmed result (-> matchDaysWithResults = 1), one still open.
-INSERT INTO match_day (id, round_id, name, start_date, result_state)
-VALUES ('md-res-1', 'round-res', 'Spieltag 1', TIMESTAMP '2023-10-01 10:00:00', 'CONFIRMED'),
-       ('md-res-2', 'round-res', 'Spieltag 2', TIMESTAMP '2023-10-08 10:00:00', 'OPEN');
+-- One match-day with a confirmed result (-> matchDaysWithResults = 1), one still open. Both
+-- fixtures' dates are already settled (seeded pre-scheduling-feature), so scheduling_state is
+-- CONFIRMED, not the generated-fixture DEFAULT.
+INSERT INTO match_day (id, round_id, name, start_date, result_state, scheduling_state)
+VALUES ('md-res-1', 'round-res', 'Spieltag 1', TIMESTAMP '2023-10-01 10:00:00', 'CONFIRMED', 'CONFIRMED'),
+       ('md-res-2', 'round-res', 'Spieltag 2', TIMESTAMP '2023-10-08 10:00:00', 'OPEN', 'CONFIRMED');
 
 -- Standings (-> standings = 2) — recorded results that block a hard delete.
 INSERT INTO standing (id, group_id, team_id, played, wins, draws, losses, points, sets_won, sets_lost)

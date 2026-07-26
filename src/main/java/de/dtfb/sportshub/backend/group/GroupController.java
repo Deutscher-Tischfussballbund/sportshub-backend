@@ -1,5 +1,8 @@
 package de.dtfb.sportshub.backend.group;
 
+import de.dtfb.sportshub.backend.round.FixtureGenerationService;
+import de.dtfb.sportshub.backend.round.GenerateFixturesRequest;
+import de.dtfb.sportshub.backend.round.RoundDto;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,9 +17,11 @@ import java.util.List;
 public class GroupController {
 
     private final GroupService service;
+    private final FixtureGenerationService fixtureGenerationService;
 
-    public GroupController(GroupService service) {
+    public GroupController(GroupService service, FixtureGenerationService fixtureGenerationService) {
         this.service = service;
+        this.fixtureGenerationService = fixtureGenerationService;
     }
 
     @GetMapping
@@ -49,5 +54,11 @@ public class GroupController {
     @PreAuthorize("@authz.canOrganizeGroup(#id)")
     public void deleteGroup(@PathVariable String id) {
         service.delete(id);
+    }
+
+    @PostMapping("/{id}/fixtures/generate")
+    @PreAuthorize("@authz.canOrganizeGroup(#id)")
+    public List<RoundDto> generateFixtures(@PathVariable String id, @RequestBody GenerateFixturesRequest request) {
+        return fixtureGenerationService.generate(id, request);
     }
 }

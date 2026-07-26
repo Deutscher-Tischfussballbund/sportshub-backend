@@ -10,6 +10,11 @@ import java.util.Optional;
 public interface RoundRepository extends JpaRepository<Round, String> {
     Optional<Round> findByGroupAndName(Group group, String name);
 
+    /** Guards fixture (re)generation — a group with any Round already has its fixtures drawn. */
+    boolean existsByGroupId(String groupId);
+
+    List<Round> findByGroupIdOrderByIndex(String groupId);
+
     @Query("select e from Round e where e.group.tier.league.season.archivedAt is null")
     List<Round> findAllVisible();
 

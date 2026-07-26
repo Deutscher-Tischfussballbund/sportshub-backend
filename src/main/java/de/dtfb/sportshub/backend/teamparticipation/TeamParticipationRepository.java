@@ -38,4 +38,7 @@ public interface TeamParticipationRepository extends JpaRepository<TeamParticipa
 
     /** Whether the group still has any team placed in it (group delete guard). */
     boolean existsByGroup_Id(String groupId);
+
+    /** The teams to pair up when generating a group's fixtures — withdrawn teams excluded. */
+    List<TeamParticipation> findByGroup_IdAndStatus(String groupId, ParticipationStatus status);
 }
