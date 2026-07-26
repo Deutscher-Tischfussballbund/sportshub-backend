@@ -19,4 +19,7 @@ public class MatchDayDto {
     private ResultState resultState;
     private Instant homeConfirmedAt;
     private Instant awayConfirmedAt;
+    private SchedulingState schedulingState;
+    private String scheduleProposedByDtfbId;
+    private Instant scheduleConfirmedAt;
 }

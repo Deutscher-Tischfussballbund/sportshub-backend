@@ -8,6 +8,8 @@ import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
+
 @Entity
 @Getter
 @Setter
@@ -18,4 +20,9 @@ public class Round extends BaseEntity {
 
     private String name;
     private Integer index;
+
+    // Only set under LeagueRuleSet.SchedulingMode.WINDOW — the period within which this round's
+    // fixtures should be played; see docs/12-matchday-scheduling.md.
+    private Instant windowStart;
+    private Instant windowEnd;
 }

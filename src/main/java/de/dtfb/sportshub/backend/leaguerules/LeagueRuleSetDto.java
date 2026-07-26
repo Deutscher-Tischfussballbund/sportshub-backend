@@ -30,6 +30,9 @@ public class LeagueRuleSetDto {
     private Integer minRosterSize;
     private Integer maxRosterSize;
 
+    private SchedulingMode schedulingMode;
+    private Integer schedulingWindowDays;
+
     /** Ordered matchday composition; replaced wholesale on update. */
     private List<GamePlanEntryDto> gamePlan;
 }

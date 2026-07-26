@@ -46,4 +46,14 @@ public class MatchDay extends BaseEntity {
     private Instant homeConfirmedAt;
 
     private Instant awayConfirmedAt;
+
+    // Scheduling lifecycle for startDate/location above — separate from the result lifecycle.
+    // See docs/12-matchday-scheduling.md.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private SchedulingState schedulingState = SchedulingState.DEFAULT;
+
+    private String scheduleProposedByDtfbId;
+
+    private Instant scheduleConfirmedAt;
 }

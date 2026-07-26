@@ -70,4 +70,23 @@ public class MatchDayController {
         String dtfbId = jwt.getClaimAsString("dtfb_id");
         return service.confirmResult(id, dtfbId);
     }
+
+    @PostMapping("/{id}/schedule/propose")
+    @PreAuthorize("@authz.canReportMatchDay(#id)")
+    public MatchDayDto proposeSchedule(
+            @PathVariable String id,
+            @RequestBody ScheduleProposalRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String dtfbId = jwt.getClaimAsString("dtfb_id");
+        return service.proposeSchedule(id, request, dtfbId);
+    }
+
+    @PostMapping("/{id}/schedule/accept")
+    @PreAuthorize("@authz.canReportMatchDay(#id)")
+    public MatchDayDto acceptSchedule(
+            @PathVariable String id,
+            @AuthenticationPrincipal Jwt jwt) {
+        String dtfbId = jwt.getClaimAsString("dtfb_id");
+        return service.acceptSchedule(id, dtfbId);
+    }
 }
