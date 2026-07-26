@@ -10,6 +10,8 @@ import de.dtfb.sportshub.backend.federation.Federation;
 import de.dtfb.sportshub.backend.federation.FederationDto;
 import de.dtfb.sportshub.backend.federation.FederationMapper;
 import de.dtfb.sportshub.backend.federation.FederationRepository;
+import de.dtfb.sportshub.backend.league.League;
+import de.dtfb.sportshub.backend.league.LeagueRepository;
 import de.dtfb.sportshub.backend.player.Player;
 import de.dtfb.sportshub.backend.player.PlayerNotFoundException;
 import de.dtfb.sportshub.backend.player.PlayerRepository;
@@ -39,6 +41,7 @@ public class RoleAdminService {
     private final PlayerRepository playerRepository;
     private final FederationRepository federationRepository;
     private final ClubRepository clubRepository;
+    private final LeagueRepository leagueRepository;
     private final RoleAssignmentMapper mapper;
     private final FederationMapper federationMapper;
     private final ClubMapper clubMapper;
@@ -47,6 +50,7 @@ public class RoleAdminService {
                             PlayerRepository playerRepository,
                             FederationRepository federationRepository,
                             ClubRepository clubRepository,
+                            LeagueRepository leagueRepository,
                             RoleAssignmentMapper mapper,
                             FederationMapper federationMapper,
                             ClubMapper clubMapper) {
@@ -54,6 +58,7 @@ public class RoleAdminService {
         this.playerRepository = playerRepository;
         this.federationRepository = federationRepository;
         this.clubRepository = clubRepository;
+        this.leagueRepository = leagueRepository;
         this.mapper = mapper;
         this.federationMapper = federationMapper;
         this.clubMapper = clubMapper;
@@ -76,13 +81,14 @@ public class RoleAdminService {
         List<RoleAssignment> rows = findFiltered(role, playerId);
         Map<String, Club> clubs = clubsByScopeId(rows);
         Map<String, Federation> federations = federationsByScopeId(rows);
+        Map<String, League> leagues = leaguesByScopeId(rows);
         Map<String, Player> granters = grantersByDtfbId(rows);
         String needle = q == null ? null : q.trim().toLowerCase();
 
         return rows.stream()
             .filter(ra -> regionId == null || matchesRegion(ra, regionId, clubs))
             .filter(ra -> needle == null || needle.isEmpty() || matchesQuery(ra, needle))
-            .map(ra -> mapper.toViewDto(ra, scopeName(ra, federations, clubs), granterName(ra, granters)))
+            .map(ra -> mapper.toViewDto(ra, scopeName(ra, federations, clubs, leagues), granterName(ra, granters)))
             .toList();
     }
 
@@ -180,6 +186,12 @@ public class RoleAdminService {
             .collect(Collectors.toMap(Federation::getId, Function.identity()));
     }
 
+    private Map<String, League> leaguesByScopeId(List<RoleAssignment> rows) {
+        List<String> ids = scopeIds(rows, ScopeType.LEAGUE);
+        return ids.isEmpty() ? Map.of()
+            : leagueRepository.findAllById(ids).stream().collect(Collectors.toMap(League::getId, Function.identity()));
+    }
+
     private List<String> scopeIds(List<RoleAssignment> rows, ScopeType type) {
         return rows.stream()
             .filter(ra -> ra.getScopeType() == type && ra.getScopeId() != null)
@@ -246,12 +258,14 @@ public class RoleAdminService {
         return value != null && value.toLowerCase().contains(needle);
     }
 
-    private String scopeName(RoleAssignment ra, Map<String, Federation> federations, Map<String, Club> clubs) {
+    private String scopeName(RoleAssignment ra, Map<String, Federation> federations, Map<String, Club> clubs,
+                              Map<String, League> leagues) {
         return switch (ra.getScopeType()) {
             case REGION -> Optional.ofNullable(federations.get(ra.getScopeId())).map(Federation::getName).orElse(null);
             case CLUB -> Optional.ofNullable(clubs.get(ra.getScopeId())).map(Club::getName).orElse(null);
-            // TEAM/LEAGUE scope names need a Team/League lookup — added with the enforcement work.
-            case GLOBAL, TEAM, LEAGUE -> null;
+            case LEAGUE -> Optional.ofNullable(leagues.get(ra.getScopeId())).map(League::getName).orElse(null);
+            // TEAM scope names need a Team lookup — added with the enforcement work.
+            case GLOBAL, TEAM -> null;
         };
     }
 

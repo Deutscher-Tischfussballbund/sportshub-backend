@@ -167,6 +167,18 @@ class LeagueAdminIntegrationTest {
     }
 
     @Test
+    void assignmentsList_resolvesTheLeagueNameAsScopeName() throws Exception {
+        String json = mockMvc.perform(get("/v1/admin/auth/assignments")
+                .param("role", "league_admin").with(ADMIN))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+
+        java.util.List<String> scopeNames =
+            JsonPath.read(json, "$[?(@.scopeId=='" + leagueAId + "')].scopeName");
+        org.assertj.core.api.Assertions.assertThat(scopeNames).containsExactly("Liga A");
+    }
+
+    @Test
     void organizer_cannotGrantForOtherLeague() throws Exception {
         String someoneElseId = upsertPlayer("widen-someone-else").getId();
         mockMvc.perform(post("/v1/admin/auth/roles").with(ORGANIZER)
