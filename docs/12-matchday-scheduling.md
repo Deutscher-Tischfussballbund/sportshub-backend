@@ -1,6 +1,6 @@
 # Matchday/fixture scheduling — generator + two scheduling conventions
 
-> **Kind: model + decision (backend implemented 2026-07-26; frontend not yet built).** Closes the
+> **Kind: model + decision (backend + frontend implemented 2026-07-26).** Closes the
 > biggest gap between what's built and a real admin's workflow: until now, a season's fixtures
 > could only be created one `MatchDay` at a time via direct API/seed — no pairing generator, no
 > way to turn a draw into real calendar dates. See the `matchday-round-creation-gap` memory
@@ -90,12 +90,22 @@ isn't blocked by them. The window itself lives on `Round`, which is already leag
 skips the lookup when none is given, so a freshly generated fixture doesn't need a placeholder
 venue before anyone has agreed on one.
 
-## 4. Not yet built (frontend)
+## 4. Frontend (built 2026-07-26, `dtfb-frontend-ng` commit `ff9ff17`)
 
-1. **Admin: generate fixtures** — a "Spielplan erstellen" action on the region-leagues tier/group
-   detail view, disabled once any `Round` exists.
-2. **Admin: `DAY_BATCH` bulk assignment** — an unscheduled-fixtures list with multi-select +
-   "assign date/location to selected," same client-compute + `forkJoin` mechanics as every other
-   bulk write in this app (no new bulk endpoint).
-3. **Team: `WINDOW` propose/accept UI** — a "Fixtures"/"Spielplan" nav item under `/team/:teamId`,
-   same area-agnostic component pattern as the roster editor.
+1. **Admin: generate fixtures** — `generate-fixtures-dialog.component.ts`, triggered from a row
+   action on `region-league-detail.component.ts`'s group rows, gated on `GroupRow.hasFixtures`
+   (mirrors the Round-existence check used elsewhere) and `participationCount >= 2`.
+2. **Admin: `DAY_BATCH` bulk assignment** — `assign-schedule-dialog.component.ts`: an
+   unscheduled-fixtures list using a new checkbox multi-select primitive added to `dtfb-table`
+   (`selectable`/`rowId`/`selected`/`selectedChange`, scoped to all filtered rows, not just the
+   current page) + a toolbar that applies a date/location to every checked fixture via
+   `forkJoin`'d `PUT`s — no new bulk endpoint.
+3. **Team: `WINDOW` propose/accept UI** — `propose-schedule-dialog.component.ts`, reached from a
+   new `+team/team-fixtures.{component,service}.ts` (mirrors `team-rosters.*`) mounted as a
+   `fixtures` sub-route under `/team/:teamId`.
+
+**Known gap:** true end-to-end click-through (generate → day-batch assign → team propose →
+opponent accept) was not exercised live — the dev seed has no fixture-free 2+-team group and no
+`MatchDay` rows for a team to test the propose/accept path against. TypeScript type-checks
+cleanly against the live regenerated API client; production build and `pnpm a11y` are clean on
+every new surface reachable in the current seed state.
