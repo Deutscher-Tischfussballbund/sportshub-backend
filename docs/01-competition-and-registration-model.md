@@ -251,7 +251,7 @@ Each layer ships value on its own. Start with the rename so all later naming is 
     endpoints; hard rule = `Season.registrationOpen` + `DRAFT` (no `RuleSet` — see §4); authz split
     (`canEditRoster` vs `canConfirmRoster`). *Done.* Further rule-settings (roster size, deadlines)
     added per-element as needed.
-  - Frontend: team roster editor (`TEAM_ADMIN`), open/closed indicator *(pending)*.
+  - Frontend: team roster editor (`TEAM_ADMIN`), open/closed indicator *(done — `shared/roster/roster-editor.component.ts`; admins get a `roster.state.draftClosedAdmin` hint and may edit regardless of `registrationOpen`, per the admin-bypass work in `09-league-model.md` §4)*.
 - **L3 — Approvals + richer rules** *(deferred; see §5/§8)*
   - Optional change-request entity + escalation (`CLUB_ADMIN → REGION_ADMIN`) if a real need appears;
     more rule-settings on the relevant elements.
