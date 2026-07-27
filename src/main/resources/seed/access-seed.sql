@@ -56,7 +56,9 @@ VALUES ('team-tfcm-1', 'TFC München 1', 'club-tfcm'),
        ('team-kck-1', '1. KC Köln 1', 'club-kck'),
        ('team-kck-2', '1. KC Köln 2', 'club-kck'),
        ('team-dtk-1', 'Dortmunder Tischkicker 1', 'club-dtk'),
-       ('team-ffc-1', 'Frankfurt Foosball Club 1', 'club-ffc');
+       ('team-ffc-1', 'Frankfurt Foosball Club 1', 'club-ffc'),
+       ('team-tfcm-3', 'TFC München 3', 'club-tfcm'),
+       ('team-kfa-3', 'Kickerfreunde Augsburg 3', 'club-kfa');
 
 -- Players. dtfb_id matches the Keycloak username (the dev login maps username -> dtfb_id).
 INSERT INTO player (id, dtfb_id, first_name, last_name, nationality, national_license, active)
@@ -94,16 +96,29 @@ VALUES ('cat-herren', 'Herren', 'H'),
        ('cat-open', 'Open', 'O');
 
 -- A reusable league rule set (fed-by), referenced by the showcase Herren league below. The
--- game plan (2 doubles + 1 single) is stored as ordered game_plan_entry rows.
+-- game plan (2 doubles + 1 single) is stored as ordered game_plan_entry rows. scheduling_mode
+-- DAY_BATCH (docs/12) means any fixture-free group resolving to this rule set -- e.g. g-by25-1a
+-- below, which already has 2 placed teams and zero Round rows -- can generate fixtures via the
+-- admin day-batch flow.
 INSERT INTO league_rule_set (id, federation_id, name, play_system, points_win, points_draw,
                              points_loss, sets_per_game, points_to_win_set, matchday_decision,
-                             side_switch_allowed)
-VALUES ('rs-by-std', 'fed-by', 'Bayern Standard 3:1', 'ROUND_ROBIN', 3, 1, 0, 3, 7, 'ALL_GAMES', TRUE);
+                             side_switch_allowed, scheduling_mode)
+VALUES ('rs-by-std', 'fed-by', 'Bayern Standard 3:1', 'ROUND_ROBIN', 3, 1, 0, 3, 7, 'ALL_GAMES', TRUE,
+        'DAY_BATCH');
 
 INSERT INTO game_plan_entry (id, rule_set_id, position, game_type)
 VALUES ('gp-by-1', 'rs-by-std', 1, 'DOUBLE'),
        ('gp-by-2', 'rs-by-std', 2, 'DOUBLE'),
        ('gp-by-3', 'rs-by-std', 3, 'SINGLE');
+
+-- A second rule set using the WINDOW convention instead -- attached to a tier below (not the
+-- league), so both scheduling conventions have a ready, fixture-free demo group without
+-- reusing the same rule set for each.
+INSERT INTO league_rule_set (id, federation_id, name, play_system, points_win, points_draw,
+                             points_loss, sets_per_game, points_to_win_set, matchday_decision,
+                             side_switch_allowed, scheduling_mode, scheduling_window_days)
+VALUES ('rs-by-window', 'fed-by', 'Bayern Fenster-Terminierung', 'ROUND_ROBIN', 3, 1, 0, 3, 7,
+        'ALL_GAMES', TRUE, 'WINDOW', 14);
 
 -- Bayern's federation-wide default rule set: groups whose tier/league set no rule set of their own
 -- inherit this (resolution order tier ?? league ?? federation default — docs/09-league-model.md §3).
@@ -221,6 +236,24 @@ VALUES ('re-1', 'tp-by25-1', 'player-p1', TIMESTAMP '2024-09-10 10:00:00', NULL)
        ('re-8', 'tp-by25-3', 'player-p2', TIMESTAMP '2024-09-15 10:00:00', TIMESTAMP '2024-10-01 10:00:00'),
        ('re-9', 'tp-by25-5', 'player-p7', TIMESTAMP '2024-09-11 10:00:00', NULL),
        ('re-10', 'tp-by25-5', 'player-p8', TIMESTAMP '2024-09-11 10:00:00', NULL);
+
+-- ---------------------------------------------------------------------------
+-- Fixture-free demo group (docs/12-matchday-scheduling.md): a 3rd Herren tier, ready to
+-- generate but never generated -- 2 placed teams, zero Round rows. Uses its own tier-level
+-- rule set (rs-by-window, WINDOW mode) so this group demos the team propose/accept flow,
+-- distinct from g-by25-1a above (DAY_BATCH, via the league's rs-by-std). Closes the gap noted
+-- in matchday-round-creation-gap: no fixture-free 2+-team group existed to test generation
+-- against once a scheduling_mode was actually required.
+-- ---------------------------------------------------------------------------
+INSERT INTO tier (id, league_id, name, level, rule_set_id)
+VALUES ('ti-by25-3', 'lg-by25-h', '3. Bayernliga', 4, 'rs-by-window');
+
+INSERT INTO comp_group (id, tier_id, name, group_state)
+VALUES ('g-by25-3', 'ti-by25-3', '3. Bayernliga', 'PLANNED');
+
+INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status, status)
+VALUES ('tp-by25-7', 'team-tfcm-3', 'lg-by25-h', 'g-by25-3', 'CONFIRMED', 'ACTIVE'),
+       ('tp-by25-8', 'team-kfa-3', 'lg-by25-h', 'g-by25-3', 'CONFIRMED', 'ACTIVE');
 
 -- League admin (player-liga) scoped to just lg-by25-h (Bayernliga Herren 2024/25). Simulates a
 -- region admin delegating one league's day-to-day running: player-liga gets region-admin-
