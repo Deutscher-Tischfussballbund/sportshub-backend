@@ -148,7 +148,18 @@ docker compose up -d   # build: . is already wired — build locally if no GHCR 
 `.env`: `API_BASE_PATH` (`https://sh-api-test.dtfb.de`), `KEYCLOAK_URL`
 (`https://sh-id-test.dtfb.de`), `KEYCLOAK_REALM=dtfb`, `KEYCLOAK_CLIENT_ID=dtfb-admin-web`,
 `SHOW_FEEDBACK_WIDGET=true`. nginx proxies straight to `127.0.0.1:${HOST_PORT:-8081}`, standard
-TLS vhost, no special header requirements.
+TLS vhost.
+
+**⚠️ `X-Frame-Options` must be `SAMEORIGIN`, not `DENY`, on this vhost specifically.** Keycloak's
+JS adapter loads `/silent-check-sso.html` (part of the app's own static assets) in a hidden,
+same-origin iframe on every page load to silently check for an existing session. A blanket
+`X-Frame-Options: DENY` — a common general hardening default, and fine on the Keycloak/backend
+vhosts — blocks even this same-origin frame, and the app never gets past a blank page (Firefox
+surfaces it as `NS_ERROR_XFO_VIOLATION` on the `silent-check-sso.html` request):
+
+```nginx
+add_header X-Frame-Options "SAMEORIGIN" always;
+```
 
 ## 6. Create the 12 Keycloak users
 
@@ -211,6 +222,12 @@ API, authenticated via ROPC as each region admin's own Keycloak account.
   an org member.
 - Keycloak Admin Console loads cleanly through the SSH tunnel (`http://localhost:8080/admin/`
   after `ssh -L 8080:localhost:8180 user@id-host`) — no blank "Something went wrong" screen.
+- Seeded federation/club/player names with umlauts (e.g. "Saarländischer",
+  "Nordrhein-Westfälischer", "Görlich", "Jürgen", "Köln") render correctly, not as "SaarlÃ¤ndisch".
+- Deleting a tracker issue shows no console error (client expects `204`, not an empty `200`).
+
+**Status: all of the above confirmed working on the first live rollout as of 2026-07-28**
+(`v0.2.2`), including admin login end-to-end after the `X-Frame-Options` fix above.
 
 ## Residual risks (accepted, not blocking for a short test window)
 
