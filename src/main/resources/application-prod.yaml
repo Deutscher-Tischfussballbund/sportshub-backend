@@ -54,6 +54,11 @@ springdoc:
             use-pkce-with-authorization-code-grant: true
 server:
     port: 8082
+    # Behind an nginx reverse proxy: without this, Spring builds absolute URLs (notably
+    # the GitHub OAuth2 client's redirect_uri) from the raw request it receives from
+    # nginx, not the public scheme/host — trust X-Forwarded-* instead. Requires nginx
+    # to set X-Forwarded-Proto/Host on the proxied vhost.
+    forward-headers-strategy: framework
 sportshub:
     bootstrap:
         # dtfb_id granted GLOBAL ADMIN on startup so a fresh prod DB has a first
