@@ -130,6 +130,6 @@ class TrackerIssueAdminControllerSecurityTest {
             .andExpect(jsonPath("$.githubIssueUrl").value("https://github.com/dtfb/sportshub-backend/issues/1"));
 
         mockMvc.perform(delete("/v1/tracker/issues/" + id).with(githubLogin))
-            .andExpect(status().isOk());
+            .andExpect(status().isNoContent());
     }
 }
