@@ -32,6 +32,11 @@ services:
       - SPORTSHUB_BOOTSTRAP_ADMIN_DTFB_ID=${SPORTSHUB_BOOTSTRAP_ADMIN_DTFB_ID:-}
       # Allowed CORS origin(s) for the admin console (comma-separated for several).
       - SPORTSHUB_CORS_ALLOWED_ORIGINS=${SPORTSHUB_CORS_ALLOWED_ORIGINS:-https://admin.dtfb.de}
+      # GitHub OAuth App gating the self-hosted tracker's convert/delete to org members —
+      # no default in application-prod.yaml, so these MUST be set or the app fails to boot.
+      - GITHUB_OAUTH_CLIENT_ID=${GITHUB_OAUTH_CLIENT_ID:?GITHUB_OAUTH_CLIENT_ID required}
+      - GITHUB_OAUTH_CLIENT_SECRET=${GITHUB_OAUTH_CLIENT_SECRET:?GITHUB_OAUTH_CLIENT_SECRET required}
+      - TRACKER_GITHUB_ORG=${TRACKER_GITHUB_ORG:-Deutscher-Tischfussballbund}
     ports:
       # Bind to localhost only — the host reverse-proxy forwards the public API here.
       - "127.0.0.1:8082:8082"
