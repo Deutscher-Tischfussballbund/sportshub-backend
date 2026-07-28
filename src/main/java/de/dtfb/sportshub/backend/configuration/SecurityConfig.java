@@ -3,6 +3,7 @@ package de.dtfb.sportshub.backend.configuration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -30,7 +31,10 @@ public class SecurityConfig {
         this.allowedOrigins = allowedOrigins;
     }
 
+    // Falls through from TrackerSecurityConfig's chain (@Order(1), matches only /tracker/** and
+    // /v1/tracker/issues/**) — this one must stay last since it matches every other request.
     @Bean
+    @Order(2)
     public SecurityFilterChain filterChain(HttpSecurity http) {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))

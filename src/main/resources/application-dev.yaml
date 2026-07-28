@@ -31,6 +31,17 @@ spring:
             resourceserver:
                 jwt:
                     issuer-uri: http://localhost:8080/realms/dtfb
+            client:
+                registration:
+                    github:
+                        # GitHub OAuth App not yet created — real login 401s at GitHub until these
+                        # are set. Callback to register: http://localhost:8082/login/oauth2/code/github
+                        client-id: ${GITHUB_OAUTH_CLIENT_ID:dev-placeholder-client-id}
+                        client-secret: ${GITHUB_OAUTH_CLIENT_SECRET:dev-placeholder-client-secret}
+                        # "repo" (not just read:* / public_repo) so the logged-in user's own token can
+                        # file the converted issue (GitHubIssueClient — see convertIssue()) in either
+                        # conversion target: sportshub-backend (public) or dtfb-frontend-ng (private).
+                        scope: read:user,read:org,repo
 springdoc:
     swagger-ui:
         # Keycloak login from the "Authorize" dialog (public SPA client, PKCE).
@@ -43,6 +54,9 @@ sportshub:
     cors:
         # Origin of the local admin console (the Angular dev server).
         allowed-origins: http://localhost:4200
+tracker:
+    # GitHub org whose members may convert/delete tracker issues (see GitHubOrgOAuth2UserService).
+    github-org: ${TRACKER_GITHUB_ORG:Deutscher-Tischfussballbund}
 logging:
     level:
         org.springframework.web: DEBUG

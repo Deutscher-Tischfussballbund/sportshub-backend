@@ -35,6 +35,18 @@ spring:
                     # Setting jwk-set-uri makes the decoder fetch keys lazily (on the
                     # first token), so the backend boots even if Keycloak is not up yet.
                     jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://keycloak:8080/realms/dtfb/protocol/openid-connect/certs}
+            client:
+                registration:
+                    github:
+                        # GitHub OAuth App client-id/secret gating convert/delete on the tracker to
+                        # members of tracker.github-org below. No defaults — unset means the tracker's
+                        # login is broken, not silently open or silently using a shared placeholder.
+                        client-id: ${GITHUB_OAUTH_CLIENT_ID}
+                        client-secret: ${GITHUB_OAUTH_CLIENT_SECRET}
+                        # "repo" (not just read:* / public_repo) so the logged-in user's own token can
+                        # file the converted issue (GitHubIssueClient — see convertIssue()) in either
+                        # conversion target: sportshub-backend (public) or dtfb-frontend-ng (private).
+                        scope: read:user,read:org,repo
 springdoc:
     swagger-ui:
         oauth:
@@ -52,3 +64,6 @@ sportshub:
         # Allowed CORS origins for the admin console(s). Comma-separated for several,
         # e.g. https://admin.dtfb.de,https://admin.stage.dtfb.de
         allowed-origins: ${SPORTSHUB_CORS_ALLOWED_ORIGINS:https://admin.dtfb.de}
+tracker:
+    # GitHub org whose members may convert/delete tracker issues (see GitHubOrgOAuth2UserService).
+    github-org: ${TRACKER_GITHUB_ORG:Deutscher-Tischfussballbund}

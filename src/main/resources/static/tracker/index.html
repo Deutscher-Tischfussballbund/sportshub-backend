@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tracker</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: system-ui, sans-serif;
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 4rem;
+    line-height: 1.4;
+  }
+  h1 { font-size: 1.4rem; }
+  .auth-bar { display: flex; justify-content: flex-end; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; font-size: 0.85rem; }
+  .auth-bar a { color: inherit; }
+  .name-bar { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1.5rem; font-size: 0.9rem; }
+  .name-bar input { flex: 0 0 12rem; }
+  #new-issue { border: 1px solid #8884; border-radius: 0.5rem; padding: 1rem; margin-bottom: 2rem; }
+  #new-issue h2 { margin-top: 0; font-size: 1.1rem; }
+  #new-issue label { display: block; font-weight: 600; margin: 0.75rem 0 0.25rem; font-size: 0.85rem; }
+  #new-issue input[type=text], #new-issue textarea, .name-bar input {
+    width: 100%; box-sizing: border-box; padding: 0.4rem; font: inherit;
+  }
+  #new-issue textarea { min-height: 5rem; resize: vertical; }
+  button { font: inherit; cursor: pointer; padding: 0.4rem 0.8rem; border-radius: 0.4rem; border: 1px solid #8888; background: #8881; }
+  button:hover { background: #8882; }
+  button.primary { background: #2a7a2a; color: white; border-color: #2a7a2a; }
+  .issue { border: 1px solid #8884; border-radius: 0.5rem; padding: 0.85rem 1rem; margin-bottom: 0.75rem; display: flex; gap: 1rem; }
+  .vote-col { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; flex: 0 0 3rem; }
+  .vote-count { font-weight: 700; font-size: 1.1rem; }
+  .issue-body { flex: 1; min-width: 0; }
+  .issue-title { font-weight: 600; }
+  .issue-meta { font-size: 0.8rem; opacity: 0.7; margin: 0.15rem 0 0.4rem; }
+  .issue-desc { white-space: pre-wrap; font-size: 0.9rem; margin: 0 0 0.5rem; }
+  .badge { display: inline-block; font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 1rem; }
+  .badge.open { background: #8884; }
+  .badge.approved { background: #2a7a2a; color: white; }
+  .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  #status { font-size: 0.85rem; min-height: 1.2rem; margin-bottom: 1rem; }
+  #status.error { color: #c0392b; }
+  a.github-link { font-size: 0.85rem; }
+  dialog { border: 1px solid #8888; border-radius: 0.5rem; padding: 1.25rem; max-width: 26rem; width: calc(100vw - 2rem); font-family: inherit; color: inherit; background: canvas; }
+  dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
+  dialog h2 { margin: 0 0 0.75rem; font-size: 1.05rem; }
+  dialog label { display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem; }
+  dialog input { width: 100%; box-sizing: border-box; padding: 0.4rem; font: inherit; }
+  dialog menu { display: flex; gap: 0.5rem; justify-content: flex-end; margin: 1rem 0 0; padding: 0; }
+</style>
+</head>
+<body>
+<div class="auth-bar" id="auth-bar"></div>
+
+<h1>Test-system tracker</h1>
+
+<div class="name-bar">
+  <label for="voter-name">Your name</label>
+  <input type="text" id="voter-name" placeholder="e.g. Marvin">
+</div>
+
+<p id="status" role="status" aria-live="polite"></p>
+
+<section id="new-issue">
+  <h2>Report something</h2>
+  <label for="issue-title">Title</label>
+  <input type="text" id="issue-title" maxlength="200">
+  <label for="issue-description">Description</label>
+  <textarea id="issue-description"></textarea>
+  <p><button class="primary" id="submit-issue">Add</button></p>
+</section>
+
+<section id="issues" aria-live="polite"></section>
+
+<dialog id="convert-dialog">
+  <form method="dialog" id="convert-form">
+    <h2>Convert to GitHub issue</h2>
+    <label for="convert-repo">Repository</label>
+    <input id="convert-repo" list="repo-choices" placeholder="owner/repo" autocomplete="off" required>
+    <datalist id="repo-choices">
+      <option value="Deutscher-Tischfussballbund/sportshub-backend">Backend</option>
+      <option value="Deutscher-Tischfussballbund/dtfb-frontend-ng">Frontend</option>
+    </datalist>
+    <menu>
+      <button value="cancel" formnovalidate>Cancel</button>
+      <button value="convert" class="primary">Convert</button>
+    </menu>
+  </form>
+</dialog>
+
+<script>
+(function () {
+  var API = '/v1/tracker/issues';
+  var nameInput = document.getElementById('voter-name');
+  var statusEl = document.getElementById('status');
+  var issuesEl = document.getElementById('issues');
+  var authBarEl = document.getElementById('auth-bar');
+  var me = { authenticated: false, login: null };
+  var convertDialog = document.getElementById('convert-dialog');
+  var convertRepoInput = document.getElementById('convert-repo');
+  var pendingConvertId = null;
+
+  nameInput.value = localStorage.getItem('tracker.voterName') || '';
+  nameInput.addEventListener('change', function () {
+    localStorage.setItem('tracker.voterName', nameInput.value.trim());
+    load();
+  });
+
+  function voterName() {
+    return nameInput.value.trim();
+  }
+
+  function renderAuthBar() {
+    authBarEl.innerHTML = me.authenticated
+      ? 'Logged in as <strong>' + escapeHtml(me.login || '?') + '</strong> &middot; <a href="#" id="logout-link">Log out</a>'
+      : '<a href="/oauth2/authorization/github">Log in with GitHub</a> to convert or delete issues';
+
+    if (me.authenticated) {
+      document.getElementById('logout-link').addEventListener('click', function (event) {
+        event.preventDefault();
+        fetch('/logout', { method: 'POST' }).then(function () { location.reload(); });
+      });
+    }
+  }
+
+  function loadMe() {
+    return fetch('/v1/tracker/me').then(function (res) { return res.json(); }).then(function (json) {
+      me = json;
+      renderAuthBar();
+    });
+  }
+
+  function setStatus(message, isError) {
+    statusEl.textContent = message || '';
+    statusEl.className = isError ? 'error' : '';
+  }
+
+  function api(path, options) {
+    options = options || {};
+    options.headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
+    return fetch(API + path, options).then(function (res) {
+      if (!res.ok) {
+        return res.json().catch(function () { return {}; }).then(function (body) {
+          throw new Error(body.message || (res.status + ' ' + res.statusText));
+        });
+      }
+      return res.status === 204 ? null : res.json();
+    });
+  }
+
+  function escapeHtml(value) {
+    var div = document.createElement('div');
+    div.textContent = value || '';
+    return div.innerHTML;
+  }
+
+  function render(issues) {
+    issuesEl.innerHTML = '';
+    if (!issues.length) {
+      issuesEl.innerHTML = '<p>No issues yet.</p>';
+      return;
+    }
+    issues.forEach(function (issue) {
+      var card = document.createElement('div');
+      card.className = 'issue';
+
+      var voteLabel = issue.votedByMe ? 'Unvote' : 'Vote';
+      var githubLink = issue.githubIssueUrl
+        ? '<div><a class="github-link" href="' + escapeHtml(issue.githubIssueUrl) + '" target="_blank" rel="noopener">View on GitHub ↗</a></div>'
+        : '';
+      var convertControl = (issue.status === 'OPEN' && me.authenticated)
+        ? '<button data-action="convert" data-id="' + issue.id + '">Convert to GitHub issue</button>'
+        : '';
+      var deleteControl = me.authenticated
+        ? '<button data-action="delete" data-id="' + issue.id + '">Delete</button>'
+        : '';
+
+      card.innerHTML =
+        '<div class="vote-col">' +
+          '<button data-action="' + (issue.votedByMe ? 'unvote' : 'vote') + '" data-id="' + issue.id + '" aria-label="' + voteLabel + ' for ' + escapeHtml(issue.title) + '">' + (issue.votedByMe ? '✓' : '⬆') + '</button>' +
+          '<span class="vote-count">' + issue.voteCount + '</span>' +
+        '</div>' +
+        '<div class="issue-body">' +
+          '<div class="issue-title">' + escapeHtml(issue.title) + ' <span class="badge ' + issue.status.toLowerCase() + '">' + issue.status + '</span></div>' +
+          '<div class="issue-meta">reported by ' + escapeHtml(issue.reportedBy || 'unknown') + '</div>' +
+          '<p class="issue-desc">' + escapeHtml(issue.description) + '</p>' +
+          githubLink +
+          '<div class="actions">' + convertControl + deleteControl + '</div>' +
+        '</div>';
+      issuesEl.appendChild(card);
+    });
+  }
+
+  function load() {
+    var name = voterName();
+    api('?' + (name ? 'voterName=' + encodeURIComponent(name) : ''))
+      .then(render)
+      .catch(function (err) { setStatus(err.message, true); });
+  }
+
+  document.getElementById('submit-issue').addEventListener('click', function () {
+    var title = document.getElementById('issue-title').value.trim();
+    var description = document.getElementById('issue-description').value.trim();
+    if (!title) {
+      setStatus('Title is required.', true);
+      return;
+    }
+    api('', {
+      method: 'POST',
+      body: JSON.stringify({ title: title, description: description, reportedBy: voterName() || 'unknown' })
+    }).then(function () {
+      document.getElementById('issue-title').value = '';
+      document.getElementById('issue-description').value = '';
+      setStatus('Added.');
+      load();
+    }).catch(function (err) { setStatus(err.message, true); });
+  });
+
+  issuesEl.addEventListener('click', function (event) {
+    var button = event.target.closest('button[data-action]');
+    if (!button) return;
+    var id = button.getAttribute('data-id');
+    var action = button.getAttribute('data-action');
+    var name = voterName();
+
+    if (!name && (action === 'vote' || action === 'unvote')) {
+      setStatus('Enter your name before voting.', true);
+      return;
+    }
+
+    if (action === 'vote') {
+      api('/' + id + '/votes', { method: 'POST', body: JSON.stringify({ voterName: name }) })
+        .then(load).catch(function (err) { setStatus(err.message, true); });
+    } else if (action === 'unvote') {
+      api('/' + id + '/votes?voterName=' + encodeURIComponent(name), { method: 'DELETE' })
+        .then(load).catch(function (err) { setStatus(err.message, true); });
+    } else if (action === 'convert') {
+      pendingConvertId = id;
+      convertRepoInput.value = localStorage.getItem('tracker.lastRepo') || '';
+      convertDialog.showModal();
+    } else if (action === 'delete') {
+      if (!confirm('Delete this issue permanently?')) return;
+      api('/' + id, { method: 'DELETE' })
+        .then(load).catch(function (err) { setStatus(err.message, true); });
+    }
+  });
+
+  convertDialog.addEventListener('close', function () {
+    var id = pendingConvertId;
+    pendingConvertId = null;
+    if (convertDialog.returnValue !== 'convert' || !id) return;
+
+    var repo = convertRepoInput.value.trim();
+    localStorage.setItem('tracker.lastRepo', repo);
+    api('/' + id + '/convert', { method: 'POST', body: JSON.stringify({ githubRepo: repo }) })
+      .then(function () { setStatus('Converted.'); load(); })
+      .catch(function (err) { setStatus(err.message, true); });
+  });
+
+  loadMe().then(load);
+})();
+</script>
+</body>
+</html>
