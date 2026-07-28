@@ -23,6 +23,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.oauth2.client.ClientAuthorizationRequiredException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -136,6 +137,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ApiError handleAccessDenied() {
+        return new ApiError(
+            "FORBIDDEN",
+            "You are not allowed to perform this action");
+    }
+
+    // @RegisteredOAuth2AuthorizedClient (tracker convert) resolves its argument BEFORE method
+    // security runs, so an anonymous/non-GitHub-logged-in request never reaches @PreAuthorize at
+    // all — it fails here instead. Map it to the same 403 that isAuthenticated() would have given.
+    @ExceptionHandler(ClientAuthorizationRequiredException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiError handleClientAuthorizationRequired() {
         return new ApiError(
             "FORBIDDEN",
             "You are not allowed to perform this action");

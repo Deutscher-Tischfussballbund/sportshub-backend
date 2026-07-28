@@ -28,6 +28,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client' // tracker's GitHub-org login
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.flywaydb:flyway-core'
     // Spring Boot 4 split Flyway auto-configuration into its own module (like h2console).
