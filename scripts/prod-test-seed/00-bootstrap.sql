@@ -16,6 +16,11 @@
 -- Usernames == dtfb_id claim, verbatim (Keycloak's `dtfb_id` protocol mapper maps username ->
 -- claim 1:1) — the Keycloak user's username MUST exactly match the dtfb_id values below, or the
 -- account logs in against a different (new, roleless) Player row instead of this seeded one.
+--
+-- Forces the session charset regardless of the invoking mysql client's own default — without
+-- this, a client defaulting to e.g. latin1 double-encodes every umlaut below on the way in
+-- (bit the first real rollout; see README.md's "Fixing already-corrupted data" for the repair).
+SET NAMES utf8mb4;
 
 -- ---------------------------------------------------------------------------
 -- Global admins — no region scope.

@@ -163,7 +163,11 @@ in). Full roster (2 global admins, 5 region admins each also getting a team-admi
 ```bash
 # 00-bootstrap.sql: Federation/Club/Team/Player/RoleAssignment rows that have no other creation
 # path (no create-club endpoint; players must exist before first login).
-docker compose exec -T sportshub-db mysql -u sportshub -p"$SPORTSHUB_DB_PASSWORD" sportshub \
+# --default-character-set=utf8mb4 is required — omitting it double-encodes every umlaut in the
+# seed data on insert (bit the first rollout: "Saarländisch" stored/displayed as "SaarlÃ¤ndisch").
+# The script also SET NAMES utf8mb4 itself, but that's not a substitute for the client flag.
+docker compose exec -T sportshub-db mysql -u sportshub -p"$SPORTSHUB_DB_PASSWORD" \
+  --default-character-set=utf8mb4 sportshub \
   < scripts/prod-test-seed/00-bootstrap.sql
 ```
 
