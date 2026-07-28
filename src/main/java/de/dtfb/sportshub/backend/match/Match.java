@@ -8,7 +8,11 @@ import lombok.Setter;
 
 import java.time.Instant;
 
+// Table name overridden — "match" is a reserved MySQL word (collides with MATCH()...AGAINST()
+// fulltext syntax when referenced in DDL, e.g. foreign key constraints); breaks on real MySQL
+// though silently fine on dev's H2.
 @Entity
+@Table(name = "match_game")
 @Getter
 @Setter
 public class Match extends BaseEntity {
