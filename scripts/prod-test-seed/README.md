@@ -40,9 +40,12 @@ git history for this file for the verification notes.
      the fixed-password plan and the ROPC login `seed-region.sh` uses)
    - **"Email Verified" checked** (the realm requires it; SMTP is off by default, so an
      unverified account can never log in)
-3. Run `00-bootstrap.sql` against the VPS's MySQL:
+3. Run `00-bootstrap.sql` against the VPS's MySQL — **always with `--default-character-set=utf8mb4`**
+   (the script also sets `SET NAMES utf8mb4;` itself as a first line of defense, but a client that
+   defaults to something else, e.g. `latin1`, will still double-encode every umlaut on the way in;
+   this bit the first real rollout — see "Fixing already-corrupted data" below):
    ```
-   mysql -h<host> -u<user> -p sportshub < 00-bootstrap.sql
+   mysql -h<host> -u<user> -p --default-character-set=utf8mb4 sportshub < 00-bootstrap.sql
    ```
 4. Run `seed-region.sh` (needs `curl`, `jq`, and the `dtfb-api` Keycloak client's secret —
    `dtfb-keycloak`'s `.env`, written there by `scripts/setup-keycloak.mts`):
@@ -83,3 +86,26 @@ it twice will fail on the primary-key/unique-constraint collisions. If you need 
 region, either delete that region's rows first or hand-edit the script for the one region you're
 re-running. `seed-region.sh` accepts an optional federation-id argument to target just one region
 (e.g. `./seed-region.sh fed-tfvhh`) for exactly this kind of retry.
+
+## Fixing already-corrupted data (umlauts double-encoded)
+
+If `00-bootstrap.sql` was run without `--default-character-set=utf8mb4` on a client whose own
+default charset isn't utf8mb4, every non-ASCII character gets double-encoded on the way in (e.g.
+"ä" — bytes `C3 A4` — is stored as `C3 83 C2 A4`, displaying as "Ã¤" everywhere downstream,
+including the admin frontend). All tables are correctly `utf8mb4` — this is purely an insert-time
+client-charset bug, not a schema issue. Repair the affected columns in place (safe to run more than
+once — the `LIKE '%Ã%'` guard only touches rows that are actually still corrupted):
+
+```sql
+UPDATE federation SET name = CONVERT(CAST(CONVERT(name USING latin1) AS BINARY) USING utf8mb4)
+  WHERE name LIKE '%Ã%';
+UPDATE club SET city = CONVERT(CAST(CONVERT(city USING latin1) AS BINARY) USING utf8mb4)
+  WHERE city LIKE '%Ã%';
+UPDATE player SET first_name = CONVERT(CAST(CONVERT(first_name USING latin1) AS BINARY) USING utf8mb4)
+  WHERE first_name LIKE '%Ã%';
+UPDATE player SET last_name = CONVERT(CAST(CONVERT(last_name USING latin1) AS BINARY) USING utf8mb4)
+  WHERE last_name LIKE '%Ã%';
+```
+
+Run this through a properly UTF-8 client too (`--default-character-set=utf8mb4`), otherwise the
+`'%Ã%'` literal in the `LIKE` pattern itself gets mangled on the way in and won't match anything.
