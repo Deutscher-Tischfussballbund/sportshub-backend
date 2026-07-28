@@ -2,6 +2,7 @@ package de.dtfb.sportshub.backend.round;
 
 import de.dtfb.sportshub.backend.base.BaseEntity;
 import de.dtfb.sportshub.backend.group.Group;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -19,6 +20,10 @@ public class Round extends BaseEntity {
     private Group group;
 
     private String name;
+
+    // Column name overridden — "index" is a reserved MySQL word (unquoted use breaks DDL on real
+    // MySQL, though it's silently fine on dev's H2). Java field/JSON API surface stay "index".
+    @Column(name = "round_index")
     private Integer index;
 
     // Only set under LeagueRuleSet.SchedulingMode.WINDOW — the period within which this round's
