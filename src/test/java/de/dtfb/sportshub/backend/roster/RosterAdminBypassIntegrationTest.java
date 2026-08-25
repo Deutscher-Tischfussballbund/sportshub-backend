@@ -7,10 +7,14 @@ import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignment;
 import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignmentRepository;
 import de.dtfb.sportshub.backend.club.Club;
 import de.dtfb.sportshub.backend.club.ClubRepository;
+import de.dtfb.sportshub.backend.clubmembership.ClubMembership;
+import de.dtfb.sportshub.backend.clubmembership.ClubMembershipRepository;
 import de.dtfb.sportshub.backend.player.Player;
 import de.dtfb.sportshub.backend.player.PlayerRepository;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamRepository;
+import de.dtfb.sportshub.backend.user.User;
+import de.dtfb.sportshub.backend.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +47,7 @@ class RosterAdminBypassIntegrationTest {
     MockMvc mockMvc;
 
     @Autowired
-    PlayerRepository playerRepository;
+    UserRepository userRepository;
 
     @Autowired
     RoleAssignmentRepository roleAssignmentRepository;
@@ -53,6 +57,12 @@ class RosterAdminBypassIntegrationTest {
 
     @Autowired
     TeamRepository teamRepository;
+
+    @Autowired
+    PlayerRepository playerRepository;
+
+    @Autowired
+    ClubMembershipRepository clubMembershipRepository;
 
     private static final RequestPostProcessor ADMIN = jwtFor("admin");
 
@@ -108,27 +118,33 @@ class RosterAdminBypassIntegrationTest {
         return jwt().jwt(token -> token.claim("dtfb_id", dtfbId));
     }
 
-    private Player upsertPlayer(String dtfbId) {
-        return playerRepository.findByDtfbId(dtfbId).orElseGet(() -> {
-            Player player = new Player();
-            player.setDtfbId(dtfbId);
-            return playerRepository.save(player);
+    private User upsertUser(String dtfbId) {
+        return userRepository.findByDtfbId(dtfbId).orElseGet(() -> {
+            User user = new User();
+            user.setDtfbId(dtfbId);
+            return userRepository.save(user);
         });
     }
 
-    /** Seed (or reuse) a player with a TEAM_ADMIN grant on {@code teamId} and return its JWT. */
+    /** Seed (or reuse) a user with a TEAM_ADMIN grant on the team's identity, and return its JWT. */
     private RequestPostProcessor teamAdmin(String dtfbId, String teamId) {
+        Team team = teamRepository.findById(teamId).orElseThrow();
         RoleAssignment grant = new RoleAssignment();
-        grant.setPlayer(upsertPlayer(dtfbId));
+        grant.setUser(upsertUser(dtfbId));
         grant.setRole(Role.TEAM_ADMIN);
         grant.setScopeType(ScopeType.TEAM);
-        grant.setScopeId(teamId);
+        grant.setScopeId(team.getTeamIdentityId());
         grant.setCreatedAt(Instant.now());
         roleAssignmentRepository.save(grant);
         return jwtFor(dtfbId);
     }
 
-    /** Clubs have no create endpoint (they arrive via import) -- seed directly, like AuthorizedControllerTest. */
+    /**
+     * Clubs have no create endpoint (they arrive via import) -- seed directly, like
+     * AuthorizedControllerTest. Also joins the seeded "player-test" (the only player {@code add}
+     * ever rosters here) to the club -- RosterService#addPlayer now requires active club
+     * membership before a roster add.
+     */
     private String seedTeam(String federationId) {
         Club club = new Club();
         club.setName("Testverein");
@@ -137,7 +153,16 @@ class RosterAdminBypassIntegrationTest {
         Team team = new Team();
         team.setName("Team");
         team.setClub(club);
-        return teamRepository.save(team).getId();
+        String teamId = teamRepository.save(team).getId();
+
+        Player player = playerRepository.findById("player-test").orElseThrow();
+        ClubMembership membership = new ClubMembership();
+        membership.setPlayer(player);
+        membership.setClub(club);
+        membership.setJoinedAt(Instant.now());
+        clubMembershipRepository.save(membership);
+
+        return teamId;
     }
 
     private String create(String path, String body) throws Exception {

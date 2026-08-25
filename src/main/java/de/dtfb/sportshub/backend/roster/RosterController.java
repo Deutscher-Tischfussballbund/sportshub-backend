@@ -1,6 +1,7 @@
 package de.dtfb.sportshub.backend.roster;
 
 import de.dtfb.sportshub.backend.access.auth.AuthorizationService;
+import de.dtfb.sportshub.backend.player.PlayerDto;
 import de.dtfb.sportshub.backend.teamparticipation.TeamParticipationDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +34,13 @@ public class RosterController {
     @GetMapping
     public List<RosterEntryDto> getRoster(@PathVariable String participationId) {
         return service.getRoster(participationId);
+    }
+
+    /** Season-aware athlete search for "add player" -- distinct from the role-granting user search. */
+    @GetMapping("/search")
+    public List<PlayerDto> searchPlayers(@PathVariable String participationId,
+                                         @RequestParam(required = false) String q) {
+        return service.searchPlayers(participationId, q);
     }
 
     @PostMapping

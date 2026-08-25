@@ -37,6 +37,15 @@ class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
     }
 
     @Test
+    void addPlayer_whenNotClubMember_isConflict() throws Exception {
+        // player-p4 is only a member of club-kfa (seeded), not this test's own club -- see
+        // participationUnderSeason/participationUnderLeague joining PLAYER_A/PLAYER_B only.
+        add(rosterUrl(openParticipationId), "player-p4")
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("PLAYER_NOT_CLUB_MEMBER"));
+    }
+
+    @Test
     void addListRemove_roundtrip() throws Exception {
         String url = rosterUrl(openParticipationId);
 
@@ -117,7 +126,8 @@ class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
     void addPlayer_beyondMaxRosterSize_isConflict() throws Exception {
         String federationId = createFederation();
         String ruleSetId = createRuleSet(federationId, 1, 2);
-        String url = rosterUrl(participationUnderLeague(federationId, true, ruleSetId));
+        String url = rosterUrl(participationUnderLeague(federationId, true, ruleSetId,
+            "player-p1", "player-p2", "player-p3"));
 
         add(url, "player-p1").andExpect(status().isCreated());
         add(url, "player-p2").andExpect(status().isCreated());
@@ -136,7 +146,8 @@ class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
     void submit_belowMinRosterSize_isConflict() throws Exception {
         String federationId = createFederation();
         String ruleSetId = createRuleSet(federationId, 2, null);
-        String url = rosterUrl(participationUnderLeague(federationId, true, ruleSetId));
+        String url = rosterUrl(participationUnderLeague(federationId, true, ruleSetId,
+            "player-p1", "player-p2"));
 
         add(url, "player-p1").andExpect(status().isCreated());
         mockMvc.perform(post(url + "/submit"))
@@ -164,14 +175,20 @@ class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
             .content(String.format("{\"playerId\": \"%s\"}", playerId)));
     }
 
-    /** Create a season (open or closed) with a league + team, and return a participation id. */
+    /**
+     * Create a season (open or closed) with a league + team, and return a participation id.
+     * PLAYER_A/PLAYER_B are joined to the team's club, since every test using this helper adds one
+     * or both of them to the resulting roster.
+     */
     private String participationUnderSeason(String federationId, boolean registrationOpen) throws Exception {
-        return participationUnderLeague(federationId, registrationOpen, null);
+        return participationUnderLeague(federationId, registrationOpen, null, PLAYER_A, PLAYER_B);
     }
 
-    /** Same as above, but the league uses the given rule set (for roster-size enforcement tests). */
-    private String participationUnderLeague(String federationId, boolean registrationOpen, String ruleSetId)
-            throws Exception {
+    /** Same as above, but the league uses the given rule set (for roster-size enforcement tests);
+     * {@code playerIdsToJoinClub} are joined to the created club before the participation is
+     * returned, since RosterService#addPlayer now requires club membership before a roster add. */
+    private String participationUnderLeague(String federationId, boolean registrationOpen, String ruleSetId,
+                                            String... playerIdsToJoinClub) throws Exception {
         // true -> opened long ago, no close date (stays open); false -> never opened (closed).
         String opensAt = registrationOpen ? "\"2020-01-01\"" : "null";
         MvcResult season = mockMvc.perform(post("/v1/seasons")
@@ -192,9 +209,15 @@ class RosterControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedC
             .andReturn();
         String leagueId = JsonPath.read(league.getResponse().getContentAsString(), "$.id");
 
+        String clubId = createClub(federationId);
+        for (String playerId : playerIdsToJoinClub) {
+            joinClub(playerId, clubId);
+        }
+
         MvcResult team = mockMvc.perform(post("/v1/teams")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(String.format("{\"name\": \"Team\", \"clubId\": \"%s\"}", createClub())))
+                .content(String.format("{\"name\": \"Team\", \"clubId\": \"%s\", \"seasonId\": \"%s\"}",
+                    clubId, seasonId)))
             .andExpect(status().isCreated())
             .andReturn();
         String teamId = JsonPath.read(team.getResponse().getContentAsString(), "$.id");

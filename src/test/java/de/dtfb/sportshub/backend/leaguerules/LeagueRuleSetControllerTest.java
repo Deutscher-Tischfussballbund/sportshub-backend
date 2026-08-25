@@ -141,6 +141,108 @@ class LeagueRuleSetControllerTest extends de.dtfb.sportshub.backend.support.Auth
             .andExpect(jsonPath("$.code").value("RULE_SET_IN_USE"));
     }
 
+    @Test
+    void updateLeagueRuleSet_blockedByLeagueInClosedSeason() throws Exception {
+        String ruleSetId = idFromUrl(url);
+        String seasonId = id(createSeason(federationId));
+        String categoryId = createCategory();
+        createLeague(seasonId, categoryId, ruleSetId);
+        mockMvc.perform(post("/v1/seasons/" + seasonId + "/archive")).andExpect(status().isOk());
+
+        mockMvc.perform(put(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"name": "Standard 3:1", "federationId": "%s",
+                     "playSystem": "ROUND_ROBIN", "pointsWin": 2, "pointsDraw": 1, "pointsLoss": 0}
+                    """, federationId)))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("RULE_SET_LOCKED_BY_CLOSED_SEASON"));
+    }
+
+    @Test
+    void updateLeagueRuleSet_blockedByTierInClosedSeason() throws Exception {
+        String ruleSetId = idFromUrl(url);
+        String seasonId = id(createSeason(federationId));
+        String categoryId = createCategory();
+        String leagueId = id(createLeague(seasonId, categoryId, null));
+        createTier(leagueId, ruleSetId);
+        mockMvc.perform(post("/v1/seasons/" + seasonId + "/archive")).andExpect(status().isOk());
+
+        mockMvc.perform(put(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"name": "Standard 3:1", "federationId": "%s",
+                     "playSystem": "ROUND_ROBIN", "pointsWin": 2, "pointsDraw": 1, "pointsLoss": 0}
+                    """, federationId)))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("RULE_SET_LOCKED_BY_CLOSED_SEASON"));
+    }
+
+    @Test
+    void updateLeagueRuleSet_allowsRenameWhenLocked() throws Exception {
+        String ruleSetId = idFromUrl(url);
+        String seasonId = id(createSeason(federationId));
+        String categoryId = createCategory();
+        createLeague(seasonId, categoryId, ruleSetId);
+        mockMvc.perform(post("/v1/seasons/" + seasonId + "/archive")).andExpect(status().isOk());
+
+        mockMvc.perform(put(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"name": "Renamed only", "federationId": "%s",
+                     "playSystem": "ROUND_ROBIN", "pointsWin": 3, "pointsDraw": 1, "pointsLoss": 0,
+                     "setsPerGame": 3, "pointsToWinSet": 7,
+                     "matchdayDecision": "ALL_GAMES", "sideSwitchAllowed": true,
+                     "gamePlan": [
+                       {"position": 1, "gameType": "DOUBLE"},
+                       {"position": 2, "gameType": "DOUBLE"},
+                       {"position": 3, "gameType": "SINGLE"}
+                     ]}
+                    """, federationId)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("Renamed only"));
+    }
+
+    @Test
+    void updateLeagueRuleSet_allowedWhenSeasonNotArchived() throws Exception {
+        String ruleSetId = idFromUrl(url);
+        String seasonId = id(createSeason(federationId));
+        String categoryId = createCategory();
+        createLeague(seasonId, categoryId, ruleSetId);
+
+        mockMvc.perform(put(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"name": "Standard 3:1", "federationId": "%s",
+                     "playSystem": "ROUND_ROBIN", "pointsWin": 2, "pointsDraw": 1, "pointsLoss": 0}
+                    """, federationId)))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void cloneLeagueRuleSet_createsEditableCopy() throws Exception {
+        String ruleSetId = idFromUrl(url);
+        String seasonId = id(createSeason(federationId));
+        String categoryId = createCategory();
+        createLeague(seasonId, categoryId, ruleSetId);
+        mockMvc.perform(post("/v1/seasons/" + seasonId + "/archive")).andExpect(status().isOk());
+
+        MvcResult cloneResult = mockMvc.perform(post(url + "/clone"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.name").value("Standard 3:1 (Kopie)"))
+            .andReturn();
+        String clonedUrl = cloneResult.getResponse().getHeader("Location");
+        assert clonedUrl != null;
+
+        mockMvc.perform(put(clonedUrl)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"name": "Standard 2:0", "federationId": "%s",
+                     "playSystem": "ROUND_ROBIN", "pointsWin": 2, "pointsDraw": 1, "pointsLoss": 0}
+                    """, federationId)))
+            .andExpect(status().isOk());
+    }
+
     //region helpers
     private String id(MvcResult result) throws Exception {
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");

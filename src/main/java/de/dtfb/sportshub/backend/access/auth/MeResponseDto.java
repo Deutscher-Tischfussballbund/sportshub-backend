@@ -1,12 +1,12 @@
 package de.dtfb.sportshub.backend.access.auth;
 
 import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignmentDto;
-import de.dtfb.sportshub.backend.player.PlayerDto;
+import de.dtfb.sportshub.backend.user.UserDto;
 
 import java.util.List;
 
 public record MeResponseDto(
-    PlayerDto player,
+    UserDto user,
     List<RoleAssignmentDto> roles
 ) {
 }

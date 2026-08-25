@@ -9,9 +9,7 @@ import de.dtfb.sportshub.backend.league.LeagueRepository;
 import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
 import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.standing.StandingRepository;
-import de.dtfb.sportshub.backend.team.Team;
-import de.dtfb.sportshub.backend.team.TeamNotFoundException;
-import de.dtfb.sportshub.backend.team.TeamRepository;
+import de.dtfb.sportshub.backend.team.TeamService;
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,26 +17,25 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 
 @Service
 public class TeamParticipationService {
     private final TeamParticipationRepository repository;
     private final TeamParticipationMapper mapper;
-    private final TeamRepository teamRepository;
+    private final TeamService teamService;
     private final LeagueRepository leagueRepository;
     private final GroupRepository groupRepository;
     private final MatchDayRepository matchDayRepository;
     private final StandingRepository standingRepository;
 
     public TeamParticipationService(TeamParticipationRepository repository, TeamParticipationMapper mapper,
-                                    TeamRepository teamRepository, LeagueRepository leagueRepository,
+                                    TeamService teamService, LeagueRepository leagueRepository,
                                     GroupRepository groupRepository, MatchDayRepository matchDayRepository,
                                     StandingRepository standingRepository) {
         this.repository = repository;
         this.mapper = mapper;
-        this.teamRepository = teamRepository;
+        this.teamService = teamService;
         this.leagueRepository = leagueRepository;
         this.groupRepository = groupRepository;
         this.matchDayRepository = matchDayRepository;
@@ -143,10 +140,15 @@ public class TeamParticipationService {
         }
     }
 
-    /** Resolve the team + league (required) and group (optional) referenced by the dto. */
+    /**
+     * Resolve the league (required), team (resolved-or-created into the league's season, since a
+     * {@code teamId} may reference any historical row belonging to that team's identity -- see
+     * {@link TeamService#resolveForSeason}), and group (optional) referenced by the dto.
+     */
     private void applyRelations(TeamParticipationDto dto, TeamParticipation participation) {
-        participation.setTeam(getTeam(dto.getTeamId()));
-        participation.setLeague(getLeague(dto.getLeagueId()));
+        League league = getLeague(dto.getLeagueId());
+        participation.setLeague(league);
+        participation.setTeam(teamService.resolveForSeason(dto.getTeamId(), league.getSeason()));
         participation.setGroup(dto.getGroupId() == null ? null : getGroup(dto.getGroupId()));
     }
 
@@ -161,20 +163,15 @@ public class TeamParticipationService {
      */
     private void requireSeasonNotEnded(League league) {
         Season season = league.getSeason();
-        LocalDate endDate = season == null ? null : season.getEndDate();
-        if (endDate != null && endDate.isBefore(LocalDate.now())) {
+        if (season != null && season.hasEnded()) {
             throw new SeasonEndedException(
-                "Cannot register for a season that has already ended (ended " + endDate + ")",
-                endDate.toString());
+                "Cannot register for a season that has already ended (ended " + season.getEndDate() + ")",
+                season.getEndDate().toString());
         }
     }
 
     private @NonNull TeamParticipation getParticipation(String id) {
         return repository.findById(id).orElseThrow(() -> new TeamParticipationNotFoundException(id));
-    }
-
-    private @NonNull Team getTeam(String teamId) {
-        return teamRepository.findById(teamId).orElseThrow(() -> new TeamNotFoundException(teamId));
     }
 
     private @NonNull League getLeague(String leagueId) {

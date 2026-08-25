@@ -240,8 +240,10 @@ class FixtureGenerationServiceIntegrationTest extends AuthorizedControllerTest {
             .andExpect(status().isCreated()).andReturn());
     }
 
-    /** Seeds a team, registers it into the group, and returns the TEAM id (fixtures pair teams,
-     * not participations). */
+    /** Seeds a team, registers it into the group, and returns the TEAM id the participation actually
+     * ends up with (fixtures pair teams, not participations) -- since the seeded team has no season
+     * of its own, TeamParticipationService resolves it into the league's season, which for a
+     * fresh team means a newly cloned row, not the seeded one. */
     private String placeTeam(String groupId, String name) throws Exception {
         Club club = new Club();
         club.setName(name + "-Verein");
@@ -252,12 +254,13 @@ class FixtureGenerationServiceIntegrationTest extends AuthorizedControllerTest {
         team.setClub(club);
         String teamId = teamRepository.save(team).getId();
 
-        mockMvc.perform(post("/v1/team-participations")
+        MvcResult result = mockMvc.perform(post("/v1/team-participations")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format(
                     "{\"teamId\":\"%s\",\"leagueId\":\"%s\",\"groupId\":\"%s\"}", teamId, leagueId, groupId)))
-            .andExpect(status().isCreated());
-        return teamId;
+            .andExpect(status().isCreated())
+            .andReturn();
+        return JsonPath.read(result.getResponse().getContentAsString(), "$.teamId");
     }
 
     private String id(MvcResult result) throws Exception {

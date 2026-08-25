@@ -6,7 +6,7 @@ public record RoleAssignmentDto(
     String id,
     Role role,
     ScopeType scopeType,
-    String playerId,
+    String userId,
     String scopeId,
     String grantedById,
     String createdAt

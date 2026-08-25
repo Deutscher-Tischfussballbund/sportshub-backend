@@ -5,8 +5,8 @@ import de.dtfb.sportshub.backend.access.role.Role;
 import de.dtfb.sportshub.backend.access.role.ScopeType;
 import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignment;
 import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignmentRepository;
-import de.dtfb.sportshub.backend.player.Player;
-import de.dtfb.sportshub.backend.player.PlayerRepository;
+import de.dtfb.sportshub.backend.user.User;
+import de.dtfb.sportshub.backend.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +42,7 @@ class LeagueAuthorizationIntegrationTest {
     MockMvc mockMvc;
 
     @Autowired
-    PlayerRepository playerRepository;
+    UserRepository userRepository;
 
     @Autowired
     RoleAssignmentRepository roleAssignmentRepository;
@@ -87,7 +87,7 @@ class LeagueAuthorizationIntegrationTest {
 
     @Test
     void outsider_withoutAnyRole_isForbidden() throws Exception {
-        playerRepository.save(player("outsider"));
+        userRepository.save(user("outsider"));
         mockMvc.perform(post("/v1/rounds").with(jwtFor("outsider")).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Nope\",\"index\":9,\"groupId\":\"" + groupId + "\"}"))
             .andExpect(status().isForbidden());
@@ -119,17 +119,17 @@ class LeagueAuthorizationIntegrationTest {
         return jwt().jwt(token -> token.claim("dtfb_id", dtfbId));
     }
 
-    private static Player player(String dtfbId) {
-        Player player = new Player();
-        player.setDtfbId(dtfbId);
-        return player;
+    private static User user(String dtfbId) {
+        User user = new User();
+        user.setDtfbId(dtfbId);
+        return user;
     }
 
-    /** Seed a player with a single LEAGUE_ADMIN grant on {@code leagueId} and return its JWT. */
+    /** Seed a user with a single LEAGUE_ADMIN grant on {@code leagueId} and return its JWT. */
     private RequestPostProcessor grantLeagueOrganizer(String dtfbId, String leagueId) {
-        Player player = playerRepository.save(player(dtfbId));
+        User user = userRepository.save(user(dtfbId));
         RoleAssignment grant = new RoleAssignment();
-        grant.setPlayer(player);
+        grant.setUser(user);
         grant.setRole(Role.LEAGUE_ADMIN);
         grant.setScopeType(ScopeType.LEAGUE);
         grant.setScopeId(leagueId);

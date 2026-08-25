@@ -17,4 +17,7 @@ public interface LeagueRepository extends JpaRepository<League, String> {
 
     /** Whether any league still references this rule set (rule-set delete guard). */
     boolean existsByRuleSetId(String ruleSetId);
+
+    /** Whether a league in a closed (archived) season still references this rule set (edit-lock guard). */
+    boolean existsByRuleSetIdAndSeason_ArchivedAtIsNotNull(String ruleSetId);
 }

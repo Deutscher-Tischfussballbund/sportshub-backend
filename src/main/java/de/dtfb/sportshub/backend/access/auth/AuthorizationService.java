@@ -17,16 +17,17 @@ import de.dtfb.sportshub.backend.location.Location;
 import de.dtfb.sportshub.backend.location.LocationRepository;
 import de.dtfb.sportshub.backend.matchday.MatchDay;
 import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
-import de.dtfb.sportshub.backend.player.Player;
-import de.dtfb.sportshub.backend.player.PlayerRegistryService;
 import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.season.SeasonRepository;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamRepository;
+import de.dtfb.sportshub.backend.team.TeamService;
 import de.dtfb.sportshub.backend.teamparticipation.TeamParticipation;
 import de.dtfb.sportshub.backend.teamparticipation.TeamParticipationRepository;
 import de.dtfb.sportshub.backend.tier.Tier;
 import de.dtfb.sportshub.backend.tier.TierRepository;
+import de.dtfb.sportshub.backend.user.User;
+import de.dtfb.sportshub.backend.user.UserRegistryService;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -52,16 +53,21 @@ import java.util.stream.Collectors;
  * that club's region). A region admin therefore administers every club and team within that region,
  * and a club admin administers the teams within that club.
  *
+ * <p>The {@code TEAM} scope is identity-keyed, not row-id-keyed: {@link Team} is season-scoped (a
+ * fresh row per season via copy-forward), so a role granted against one season's row must still
+ * match every other season's copy of the same team. See {@link Team#getTeamIdentityId()}.
+ *
  * <p>Note: the {@code LEAGUE} scope / {@code LEAGUE_ADMIN} role gate a {@link League} directly
  * (the scope's {@code scopeId} is a league id).
  */
 @Component("authz")
 public class AuthorizationService {
 
-    private final PlayerRegistryService registry;
+    private final UserRegistryService registry;
     private final RoleAssignmentRepository roleAssignmentRepository;
     private final ClubRepository clubRepository;
     private final TeamRepository teamRepository;
+    private final TeamService teamService;
     private final LeagueRepository leagueRepository;
     private final SeasonRepository seasonRepository;
     private final LocationRepository locationRepository;
@@ -71,10 +77,11 @@ public class AuthorizationService {
     private final LeagueRuleSetRepository leagueRuleSetRepository;
     private final CompetitionResolver competitionResolver;
 
-    public AuthorizationService(PlayerRegistryService registry,
+    public AuthorizationService(UserRegistryService registry,
                                 RoleAssignmentRepository roleAssignmentRepository,
                                 ClubRepository clubRepository,
                                 TeamRepository teamRepository,
+                                TeamService teamService,
                                 LeagueRepository leagueRepository,
                                 SeasonRepository seasonRepository,
                                 LocationRepository locationRepository,
@@ -87,6 +94,7 @@ public class AuthorizationService {
         this.roleAssignmentRepository = roleAssignmentRepository;
         this.clubRepository = clubRepository;
         this.teamRepository = teamRepository;
+        this.teamService = teamService;
         this.leagueRepository = leagueRepository;
         this.seasonRepository = seasonRepository;
         this.locationRepository = locationRepository;
@@ -112,9 +120,20 @@ public class AuthorizationService {
         return canManageScope(currentRoles(), ScopeType.CLUB, clubId);
     }
 
-    /** May administer the given team (global/region/club admin above it). */
+    /**
+     * May administer the given team (global/region/club admin above it). {@code teamId} is a
+     * specific row id (e.g. from a URL path); resolved to its {@link Team#getTeamIdentityId()} since
+     * {@code TEAM} scope is keyed by identity, not row id -- a team is season-scoped (a fresh row per
+     * season via copy-forward), so a role granted against one season's row must still match every
+     * other season's copy of the same team.
+     */
     public boolean canManageTeam(String teamId) {
-        return canManageScope(currentRoles(), ScopeType.TEAM, teamId);
+        List<RoleAssignment> roles = currentRoles();
+        if (AccessRoles.isGlobalAdmin(roles)) {
+            return true;
+        }
+        Team team = teamId == null ? null : teamRepository.findById(teamId).orElse(null);
+        return team != null && canManageScope(roles, ScopeType.TEAM, team.getTeamIdentityId());
     }
 
     /**
@@ -282,7 +301,7 @@ public class AuthorizationService {
             ? null : teamParticipationRepository.findById(participationId).orElse(null);
         Team team = participation == null ? null : participation.getTeam();
         League league = participation == null ? null : participation.getLeague();
-        boolean adminAboveTeam = team != null && canManageScope(roles, ScopeType.TEAM, team.getId());
+        boolean adminAboveTeam = team != null && canManageScope(roles, ScopeType.TEAM, team.getTeamIdentityId());
         return adminAboveTeam || (league != null && isLeagueAdmin(roles, league.getId()));
     }
 
@@ -378,14 +397,16 @@ public class AuthorizationService {
      * Whether the current player may act for {@code team}: its {@code team_admin}, or an admin above
      * it (club admin of its club, region admin of its region). Unlike {@link #canManageTeam} (team
      * CRUD - admins above only), this also accepts the {@code team_admin} role itself, which exists
-     * precisely to act for one team in the result flow.
+     * precisely to act for one team in the result flow. Compared by {@link Team#getTeamIdentityId()},
+     * not row id, so a role granted in one season keeps matching that team's copy in every other
+     * season.
      */
     private boolean canRepresent(List<RoleAssignment> roles, Team team) {
         if (team == null) {
             return false;
         }
         boolean teamAdmin = roles.stream().anyMatch(ra ->
-            ra.getRole() == Role.TEAM_ADMIN && Objects.equals(ra.getScopeId(), team.getId()));
+            ra.getRole() == Role.TEAM_ADMIN && Objects.equals(ra.getScopeId(), team.getTeamIdentityId()));
         Club club = team.getClub();
         return teamAdmin
             || (club != null && (isRegionAdmin(roles, club.getFederationId()) || isClubAdmin(roles, club.getId())));
@@ -426,7 +447,9 @@ public class AuthorizationService {
                     && (isRegionAdmin(roles, club.getFederationId()) || isClubAdmin(roles, club.getId()));
             }
             case TEAM -> {
-                Team team = scopeId == null ? null : teamRepository.findById(scopeId).orElse(null);
+                // scopeId is the team's teamIdentityId (stable across every season-copy), not a row id --
+                // any row sharing that identity resolves to the same club/region.
+                Team team = scopeId == null ? null : teamService.latestForIdentity(scopeId).orElse(null);
                 Club club = team == null ? null : team.getClub();
                 yield club != null
                     && (isRegionAdmin(roles, club.getFederationId()) || isClubAdmin(roles, club.getId()));
@@ -457,8 +480,8 @@ public class AuthorizationService {
     }
 
     private List<RoleAssignment> currentRoles() {
-        Player player = registry.currentPlayer(currentJwt());
-        return roleAssignmentRepository.findByPlayer(player);
+        User user = registry.currentUser(currentJwt());
+        return roleAssignmentRepository.findByUser(user);
     }
 
     private Jwt currentJwt() {

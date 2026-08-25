@@ -19,8 +19,8 @@ public class TeamController {
     }
 
     @GetMapping
-    public List<TeamDto> getAllTeams() {
-        return service.getAll();
+    public List<TeamDto> getAllTeams(@RequestParam(required = false) String seasonId) {
+        return service.getAll(seasonId);
     }
 
     @PostMapping

@@ -17,6 +17,7 @@ class CopyForwardControllerTest extends de.dtfb.sportshub.backend.support.Author
     private String sourceSeasonId;
     private String sourceGroupId;
     private String teamId;
+    private String clubId;
     private String sourceParticipationId;
     private String targetSeasonId;
 
@@ -28,8 +29,14 @@ class CopyForwardControllerTest extends de.dtfb.sportshub.backend.support.Author
         String leagueId = createLeague(sourceSeasonId);
         String tierId = createTier(leagueId);
         sourceGroupId = createGroup(tierId);
-        teamId = createTeam();
+        teamId = createTeam(sourceSeasonId);
         sourceParticipationId = createParticipation(leagueId, sourceGroupId);
+
+        // Every player any test here rosters -- RosterService#addPlayer now requires active club
+        // membership before a roster add.
+        joinClub("player-test", clubId);
+        joinClub("player-club", clubId);
+        joinClub("player-p1", clubId);
 
         // An empty target season in the SAME federation.
         targetSeasonId = createSeason(federationId);
@@ -42,12 +49,12 @@ class CopyForwardControllerTest extends de.dtfb.sportshub.backend.support.Author
             .andExpect(jsonPath("$.leagues").value(1))
             .andExpect(jsonPath("$.tiers").value(1))
             .andExpect(jsonPath("$.groups").value(1))
+            .andExpect(jsonPath("$.teams").value(1))
             .andExpect(jsonPath("$.participations").value(1));
 
         String json = mockMvc.perform(get("/v1/team-participations").param("seasonId", targetSeasonId))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(1))
-            .andExpect(jsonPath("$[0].teamId").value(teamId))
             .andExpect(jsonPath("$[0].seasonId").value(targetSeasonId))
             // the audit chain points back to the source placement
             .andExpect(jsonPath("$[0].copiedFromParticipationId").value(sourceParticipationId))
@@ -56,6 +63,18 @@ class CopyForwardControllerTest extends de.dtfb.sportshub.backend.support.Author
         // the placement is in a freshly cloned group, not the source group
         String clonedGroupId = JsonPath.read(json, "$[0].groupId");
         assert clonedGroupId != null && !clonedGroupId.equals(sourceGroupId);
+
+        // the placement's team is a freshly cloned season-copy: a different row sharing the
+        // source team's identity, not the source row itself (Team is season-scoped, like Group).
+        String clonedTeamId = JsonPath.read(json, "$[0].teamId");
+        assert clonedTeamId != null && !clonedTeamId.equals(teamId);
+        String originalIdentity = JsonPath.read(
+            mockMvc.perform(get("/v1/teams/" + teamId)).andReturn().getResponse().getContentAsString(),
+            "$.teamIdentityId");
+        String clonedIdentity = JsonPath.read(
+            mockMvc.perform(get("/v1/teams/" + clonedTeamId)).andReturn().getResponse().getContentAsString(),
+            "$.teamIdentityId");
+        org.assertj.core.api.Assertions.assertThat(clonedIdentity).isEqualTo(originalIdentity);
     }
 
     @Test
@@ -79,11 +98,15 @@ class CopyForwardControllerTest extends de.dtfb.sportshub.backend.support.Author
                 .andReturn().getResponse().getContentAsString(),
             "$[0].id");
 
-        mockMvc.perform(get(rosterUrl(clonedParticipationId)))
+        // Player is NOT duplicated (unlike Team) -- the cloned roster references the very same
+        // player rows as the source roster.
+        String rosterJson = mockMvc.perform(get(rosterUrl(clonedParticipationId)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(2))
-            .andExpect(jsonPath("$[*].playerId").value(org.hamcrest.Matchers.containsInAnyOrder(
-                "player-test", "player-club")));
+            .andReturn().getResponse().getContentAsString();
+        java.util.List<String> clonedPlayerIds = JsonPath.read(rosterJson, "$[*].playerId");
+        org.assertj.core.api.Assertions.assertThat(clonedPlayerIds)
+            .containsExactlyInAnyOrder("player-test", "player-club");
 
         // cloned participation stays editable — untouched by the copy
         mockMvc.perform(get("/v1/team-participations/" + clonedParticipationId))
@@ -195,13 +218,13 @@ class CopyForwardControllerTest extends de.dtfb.sportshub.backend.support.Author
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
     }
 
-    private String createTeam() throws Exception {
-        String clubId = createClub();
+    private String createTeam(String seasonId) throws Exception {
+        clubId = createClub();
         MvcResult result = mockMvc.perform(post("/v1/teams")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "TFC München 1", "clubId": "%s"}
-                    """, clubId)))
+                            {"name": "TFC München 1", "clubId": "%s", "seasonId": "%s"}
+                    """, clubId, seasonId)))
             .andExpect(status().isCreated())
             .andReturn();
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");

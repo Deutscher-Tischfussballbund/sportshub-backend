@@ -99,6 +99,17 @@ seed_one_region() {
     name: "Gruppe A", tierId: $tier, groupState: "RUNNING"
   }')" "${token}" | jq -r '.id')"
 
+  # RosterService#addPlayer now requires the player to already be an active member of the
+  # team's club (see ClubMembershipService) -- every filler player used below belongs to this
+  # region's one club (team1/2/3 all share it), so join them all to it once, up front. Idempotent
+  # (POST .../members is a no-op if already a member), so safe to call every run.
+  local club_id="club-${fed_id#fed-}"
+  echo "   joining filler players to ${club_id}..."
+  local filler_player
+  for filler_player in "${TEAM1_ROSTER[@]}" "${TEAM2_ROSTER[@]}" "${TEAM3_ROSTER[@]}"; do
+    api POST "/v1/admin/clubs/${club_id}/members" "$(jq -n --arg p "${filler_player}" '{playerId: $p}')" "${token}" > /dev/null
+  done
+
   echo "   placing teams + building rosters..."
   local teams=("${team1}" "${team2}" "${team3}")
   local rosters_json=("$(printf '%s\n' "${TEAM1_ROSTER[@]}" | jq -R . | jq -s .)"

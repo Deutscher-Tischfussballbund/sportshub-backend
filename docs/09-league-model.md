@@ -108,6 +108,13 @@ ruleset may apply to **multiple tiers, even multiple leagues**; a tier *may* (bu
 have its own. So it is referenced, not embedded — editing one ruleset intentionally affects
 every tier/league that references it (to diverge, clone it).
 
+**Edit lock (enforced):** once a ruleset is referenced by a League/Tier of a *closed* (archived)
+season, editing its rule-affecting fields is refused (`409 RULE_SET_LOCKED_BY_CLOSED_SEASON`) —
+editing it in place would silently rewrite the rules behind that season's finalized results.
+Renaming (`name`/`federationId`) stays allowed regardless (cosmetic, doesn't affect any computed
+result). `POST /v1/league-rule-sets/{id}/clone` copies a (possibly locked) ruleset into a new,
+unreferenced, immediately-editable row — the concrete way to "diverge" mentioned above.
+
 **Attachment & resolution:** referenced (nullable) from `Tier`, `League`, and — as the last
 fallback — `Federation.defaultRuleSet`.
 ```

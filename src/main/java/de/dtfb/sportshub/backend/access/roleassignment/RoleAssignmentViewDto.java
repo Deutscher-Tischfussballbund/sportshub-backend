@@ -2,7 +2,7 @@ package de.dtfb.sportshub.backend.access.roleassignment;
 import de.dtfb.sportshub.backend.access.role.Role;
 import de.dtfb.sportshub.backend.access.role.ScopeType;
 
-import de.dtfb.sportshub.backend.player.PlayerDto;
+import de.dtfb.sportshub.backend.user.UserDto;
 
 public record RoleAssignmentViewDto(
     String id,
@@ -10,7 +10,7 @@ public record RoleAssignmentViewDto(
     ScopeType scopeType,
     String scopeId,
     String scopeName,
-    PlayerDto player,
+    UserDto user,
     String grantedByName,
     String createdAt
 ) {

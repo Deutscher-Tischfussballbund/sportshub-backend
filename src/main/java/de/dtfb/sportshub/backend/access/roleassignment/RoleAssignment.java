@@ -3,7 +3,7 @@ import de.dtfb.sportshub.backend.access.role.Role;
 import de.dtfb.sportshub.backend.access.role.ScopeType;
 
 import de.dtfb.sportshub.backend.base.BaseEntity;
-import de.dtfb.sportshub.backend.player.Player;
+import de.dtfb.sportshub.backend.user.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,7 +11,8 @@ import lombok.Setter;
 import java.time.Instant;
 
 /**
- * A role granted to a {@link Player}, optionally scoped to a federation/club/team.
+ * A role granted to a {@link User} (the login identity, not a season-scoped
+ * {@link de.dtfb.sportshub.backend.player.Player} row), optionally scoped to a federation/club/team.
  * Nano-id keyed via {@link BaseEntity}.
  */
 @Entity
@@ -21,8 +22,8 @@ import java.time.Instant;
 public class RoleAssignment extends BaseEntity {
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "player_id")
-    private Player player;
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

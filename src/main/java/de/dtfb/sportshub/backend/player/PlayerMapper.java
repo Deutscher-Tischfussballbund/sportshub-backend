@@ -8,8 +8,9 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface PlayerMapper {
 
-    // Player↔club membership is not modelled yet → empty list rather than null.
-    @Mapping(target = "clubs", expression = "java(java.util.List.of())")
+    // clubs is set by the caller afterwards (ClubMembershipService.clubsByPlayerId), not mapped
+    // from the entity -- see PlayerDirectoryService/PlayerService.
+    @Mapping(target = "clubs", ignore = true)
     PlayerDto toDto(Player player);
 
     List<PlayerDto> toDtoList(List<Player> players);

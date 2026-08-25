@@ -9,10 +9,10 @@ import de.dtfb.sportshub.backend.club.Club;
 import de.dtfb.sportshub.backend.club.ClubRepository;
 import de.dtfb.sportshub.backend.federation.Federation;
 import de.dtfb.sportshub.backend.federation.FederationRepository;
-import de.dtfb.sportshub.backend.player.Player;
-import de.dtfb.sportshub.backend.player.PlayerRepository;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamRepository;
+import de.dtfb.sportshub.backend.user.User;
+import de.dtfb.sportshub.backend.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class TeamAreaIntegrationTest {
 
     @Autowired MockMvc mockMvc;
-    @Autowired PlayerRepository playerRepository;
+    @Autowired UserRepository userRepository;
     @Autowired RoleAssignmentRepository roleAssignmentRepository;
     @Autowired FederationRepository federationRepository;
     @Autowired ClubRepository clubRepository;
@@ -49,7 +49,7 @@ class TeamAreaIntegrationTest {
         Federation fed = federation("Bayern");
         Club club = club("TFC München", fed.getId());
         Team team = team("TFC München 1", club);
-        grantTeamAdmin("teamadmin", team.getId());
+        grantTeamAdmin("teamadmin", team.getTeamIdentityId());
 
         String json = mockMvc.perform(get("/v1/auth/me/areas").with(jwtFor("teamadmin")))
             .andExpect(status().isOk())
@@ -58,7 +58,7 @@ class TeamAreaIntegrationTest {
         List<String> teamIds = JsonPath.read(json, "$.areas[?(@.type=='team')].id");
         List<String> teamNames = JsonPath.read(json, "$.areas[?(@.type=='team')].name");
         List<String> regionIds = JsonPath.read(json, "$.areas[?(@.type=='team')].regionId");
-        assertThat(teamIds).containsExactly(team.getId());
+        assertThat(teamIds).containsExactly(team.getTeamIdentityId());
         assertThat(teamNames).containsExactly("TFC München 1");
         assertThat(regionIds).containsExactly(fed.getId());
     }
@@ -67,8 +67,8 @@ class TeamAreaIntegrationTest {
     void playerWithoutTeamGrant_getsNoTeamArea() throws Exception {
         // A region admin reaches rosters via the placement path, not a team area.
         Federation fed = federation("Hessen");
-        Player player = playerRepository.save(player("regionadmin"));
-        grant(player, Role.REGION_ADMIN, ScopeType.REGION, fed.getId());
+        User user = userRepository.save(user("regionadmin"));
+        grant(user, Role.REGION_ADMIN, ScopeType.REGION, fed.getId());
 
         String json = mockMvc.perform(get("/v1/auth/me/areas").with(jwtFor("regionadmin")))
             .andExpect(status().isOk())
@@ -83,10 +83,10 @@ class TeamAreaIntegrationTest {
         return jwt().jwt(token -> token.claim("dtfb_id", dtfbId));
     }
 
-    private static Player player(String dtfbId) {
-        Player player = new Player();
-        player.setDtfbId(dtfbId);
-        return player;
+    private static User user(String dtfbId) {
+        User user = new User();
+        user.setDtfbId(dtfbId);
+        return user;
     }
 
     private Federation federation(String name) {
@@ -110,13 +110,13 @@ class TeamAreaIntegrationTest {
         return teamRepository.save(team);
     }
 
-    private void grantTeamAdmin(String dtfbId, String teamId) {
-        grant(playerRepository.save(player(dtfbId)), Role.TEAM_ADMIN, ScopeType.TEAM, teamId);
+    private void grantTeamAdmin(String dtfbId, String teamIdentityId) {
+        grant(userRepository.save(user(dtfbId)), Role.TEAM_ADMIN, ScopeType.TEAM, teamIdentityId);
     }
 
-    private void grant(Player player, Role role, ScopeType scopeType, String scopeId) {
+    private void grant(User user, Role role, ScopeType scopeType, String scopeId) {
         RoleAssignment grant = new RoleAssignment();
-        grant.setPlayer(player);
+        grant.setUser(user);
         grant.setRole(role);
         grant.setScopeType(scopeType);
         grant.setScopeId(scopeId);
