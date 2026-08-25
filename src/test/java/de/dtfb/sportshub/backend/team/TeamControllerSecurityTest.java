@@ -45,7 +45,7 @@ class TeamControllerSecurityTest {
 
     @Test
     void create_whenNotClubManager_isForbidden() throws Exception {
-        Mockito.when(authz.canManageClub(any())).thenReturn(false);
+        Mockito.when(authz.canCreateTeam(any())).thenReturn(false);
         mockMvc.perform(post("/v1/teams").with(jwt()).contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {"name": "Foos Fighters", "clubId": "club-x"}
@@ -55,7 +55,7 @@ class TeamControllerSecurityTest {
 
     @Test
     void create_whenClubManager_passesGate() throws Exception {
-        Mockito.when(authz.canManageClub(any())).thenReturn(true);
+        Mockito.when(authz.canCreateTeam(any())).thenReturn(true);
         // Gate passes; the request then fails only because club "club-x" does not exist (404),
         // which confirms authorization let it through (a denied request would be 403). A real
         // seasonId (from the dev seed) is required so the season lookup itself doesn't 404 first.

@@ -49,4 +49,12 @@ public interface TeamParticipationRepository extends JpaRepository<TeamParticipa
 
     /** The teams to pair up when generating a group's fixtures — withdrawn teams excluded. */
     List<TeamParticipation> findByGroup_IdAndStatus(String groupId, ParticipationStatus status);
+
+    /**
+     * Whether the club already has a (non-withdrawn) team other than {@code excludingTeamId}
+     * registered in this league -- the one-team-per-club-per-root-league guard
+     * ({@code TeamParticipationService#requireSingleRootLeagueTeamPerClub}).
+     */
+    boolean existsByLeague_IdAndTeam_Club_IdAndTeam_IdNotAndStatusNot(
+        String leagueId, String clubId, String excludingTeamId, ParticipationStatus status);
 }

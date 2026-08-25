@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.teamparticipation;
 
+import de.dtfb.sportshub.backend.federation.Federation;
 import de.dtfb.sportshub.backend.group.Group;
 import de.dtfb.sportshub.backend.group.GroupNotFoundException;
 import de.dtfb.sportshub.backend.group.GroupRepository;
@@ -9,6 +10,7 @@ import de.dtfb.sportshub.backend.league.LeagueRepository;
 import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
 import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.standing.StandingRepository;
+import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamService;
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
@@ -86,6 +88,7 @@ public class TeamParticipationService {
         TeamParticipation participation = mapper.toEntity(dto);
         applyRelations(dto, participation);
         requireSeasonNotEnded(participation.getLeague());
+        requireSingleRootLeagueTeamPerClub(participation.getLeague(), participation.getTeam());
         return mapper.toDto(repository.save(participation));
     }
 
@@ -167,6 +170,25 @@ public class TeamParticipationService {
             throw new SeasonEndedException(
                 "Cannot register for a season that has already ended (ended " + season.getEndDate() + ")",
                 season.getEndDate().toString());
+        }
+    }
+
+    /**
+     * A club may field only one team in a given ROOT-level league (e.g. it can't register two
+     * teams in the same Bundesliga) -- regional leagues stay unrestricted, and a club may still
+     * field one team each in several different root-level leagues (e.g. men's and women's
+     * Bundesliga). See docs/16-root-federation.md.
+     */
+    private void requireSingleRootLeagueTeamPerClub(League league, Team team) {
+        Federation federation = league.getSeason() == null ? null : league.getSeason().getFederation();
+        if (federation == null || !federation.isRoot()) {
+            return;
+        }
+        boolean alreadyRegistered = repository.existsByLeague_IdAndTeam_Club_IdAndTeam_IdNotAndStatusNot(
+            league.getId(), team.getClub().getId(), team.getId(), ParticipationStatus.WITHDRAWN);
+        if (alreadyRegistered) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "This club already has a team registered in this league");
         }
     }
 

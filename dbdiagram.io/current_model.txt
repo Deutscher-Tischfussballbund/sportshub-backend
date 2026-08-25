@@ -126,9 +126,10 @@ Enum ScopeType {
 // ==================== Identity & access ====================
 
 Table federation {
-  id varchar(14) [pk, note: 'A Landesverband / region']
+  id varchar(14) [pk, note: 'A Landesverband / region, or the root federation (DTFB)']
   name varchar
   default_rule_set_id varchar [note: 'null = fall back to historical 2/1/0; last tier in rule resolution']
+  parent_federation_id varchar [note: 'self-referencing tree; null = the single root federation (docs/16)']
 }
 
 Table club {
@@ -392,6 +393,7 @@ Table game_plan_entry {
 // column itself is nullable.
 
 Ref: federation.default_rule_set_id >? league_rule_set.id
+Ref: federation.parent_federation_id >? federation.id
 // club.federation_id is deliberately NOT drawn as a relationship: it's a plain String field in
 // the JPA entity (no @ManyToOne), per the column note above.
 Ref: team.season_id >? season.id

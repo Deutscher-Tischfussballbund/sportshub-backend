@@ -24,9 +24,12 @@ public class TeamController {
     }
 
     @PostMapping
-    // Admin of the target club (or its region / global). Every team belongs to a club
-    // (the service rejects a missing clubId), so there is no clubless path here.
-    @PreAuthorize("@authz.canManageClub(#teamDto.clubId)")
+    // Admin of the target club (or its region / global), OR a region admin of the target season's
+    // OWN federation -- lets a root-federation (Bundesliga) organizer field a team for any club,
+    // narrowly, without granting general authority over that club (docs/16-root-federation.md).
+    // Every team belongs to a club (the service rejects a missing clubId), so there is no
+    // clubless path here.
+    @PreAuthorize("@authz.canCreateTeam(#teamDto)")
     public ResponseEntity<TeamDto> createTeam(@RequestBody TeamDto teamDto) {
         TeamDto returnedDto = service.create(teamDto);
 
