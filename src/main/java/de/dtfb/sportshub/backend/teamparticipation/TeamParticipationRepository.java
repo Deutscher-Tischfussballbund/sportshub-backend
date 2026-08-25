@@ -17,7 +17,15 @@ public interface TeamParticipationRepository extends JpaRepository<TeamParticipa
     @Query("select p from TeamParticipation p where p.league.id = :leagueId and p.league.season.archivedAt is null")
     List<TeamParticipation> findVisibleByLeagueId(String leagueId);
 
-    @Query("select p from TeamParticipation p where p.team.id = :teamId and p.league.season.archivedAt is null")
+    /**
+     * {@code teamId} may be either a specific team row's id, or a team's stable
+     * {@code teamIdentityId} (the value the frontend's nav-area/route always carries, since a team's
+     * row id changes per season-copy) -- matching either lets one filter surface every season's
+     * participation for "this team" regardless of which id shape the caller has on hand.
+     */
+    @Query("select p from TeamParticipation p"
+        + " where (p.team.id = :teamId or p.team.teamIdentityId = :teamId)"
+        + " and p.league.season.archivedAt is null")
     List<TeamParticipation> findVisibleByTeamId(String teamId);
 
     @Query("select p from TeamParticipation p where p.league.season.federation.id = :federationId"

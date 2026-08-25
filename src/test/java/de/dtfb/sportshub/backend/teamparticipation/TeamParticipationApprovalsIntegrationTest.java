@@ -10,12 +10,12 @@ import de.dtfb.sportshub.backend.federation.Federation;
 import de.dtfb.sportshub.backend.federation.FederationRepository;
 import de.dtfb.sportshub.backend.league.League;
 import de.dtfb.sportshub.backend.league.LeagueRepository;
-import de.dtfb.sportshub.backend.player.Player;
-import de.dtfb.sportshub.backend.player.PlayerRepository;
 import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.season.SeasonRepository;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamRepository;
+import de.dtfb.sportshub.backend.user.User;
+import de.dtfb.sportshub.backend.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -49,7 +49,7 @@ class TeamParticipationApprovalsIntegrationTest {
     @Autowired ClubRepository clubRepository;
     @Autowired TeamRepository teamRepository;
     @Autowired TeamParticipationRepository participationRepository;
-    @Autowired PlayerRepository playerRepository;
+    @Autowired UserRepository userRepository;
     @Autowired RoleAssignmentRepository roleAssignmentRepository;
 
     @Test
@@ -74,7 +74,7 @@ class TeamParticipationApprovalsIntegrationTest {
     @Test
     void pending_forbiddenWithoutRegionAuthority() throws Exception {
         Federation fed = federation("NRW");
-        playerRepository.save(player("outsider"));
+        userRepository.save(user("outsider"));
         mockMvc.perform(get("/v1/team-participations/pending")
                 .param("federationId", fed.getId()).with(jwtFor("outsider")))
             .andExpect(status().isForbidden());
@@ -114,17 +114,17 @@ class TeamParticipationApprovalsIntegrationTest {
         return jwt().jwt(token -> token.claim("dtfb_id", dtfbId));
     }
 
-    private static Player player(String dtfbId) {
-        Player player = new Player();
-        player.setDtfbId(dtfbId);
-        return player;
+    private static User user(String dtfbId) {
+        User user = new User();
+        user.setDtfbId(dtfbId);
+        return user;
     }
 
-    /** Seed a player with a single LEAGUE_ADMIN grant on {@code leagueId} and return its JWT. */
+    /** Seed a user with a single LEAGUE_ADMIN grant on {@code leagueId} and return its JWT. */
     private RequestPostProcessor grantLeagueAdmin(String dtfbId, String leagueId) {
-        Player savedPlayer = playerRepository.save(player(dtfbId));
+        User savedUser = userRepository.save(user(dtfbId));
         RoleAssignment grant = new RoleAssignment();
-        grant.setPlayer(savedPlayer);
+        grant.setUser(savedUser);
         grant.setRole(Role.LEAGUE_ADMIN);
         grant.setScopeType(ScopeType.LEAGUE);
         grant.setScopeId(leagueId);

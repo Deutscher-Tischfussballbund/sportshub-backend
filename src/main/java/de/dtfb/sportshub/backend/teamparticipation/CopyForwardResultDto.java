@@ -5,6 +5,7 @@ public record CopyForwardResultDto(
     int leagues,
     int tiers,
     int groups,
+    int teams,
     int participations,
     int rosterEntries
 ) {

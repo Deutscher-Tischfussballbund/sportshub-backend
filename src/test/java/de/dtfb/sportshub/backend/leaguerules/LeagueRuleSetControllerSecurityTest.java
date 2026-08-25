@@ -73,4 +73,11 @@ class LeagueRuleSetControllerSecurityTest {
         mockMvc.perform(get("/v1/league-rule-sets").with(jwt()))
             .andExpect(status().isOk());
     }
+
+    @Test
+    void clone_whenNotRuleSetManager_isForbidden() throws Exception {
+        Mockito.when(authz.canManageRuleSetById(any())).thenReturn(false);
+        mockMvc.perform(post("/v1/league-rule-sets/rule-set-x/clone").with(jwt()))
+            .andExpect(status().isForbidden());
+    }
 }

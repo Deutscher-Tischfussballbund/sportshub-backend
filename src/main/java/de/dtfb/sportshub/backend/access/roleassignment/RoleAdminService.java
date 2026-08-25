@@ -12,9 +12,9 @@ import de.dtfb.sportshub.backend.federation.FederationMapper;
 import de.dtfb.sportshub.backend.federation.FederationRepository;
 import de.dtfb.sportshub.backend.league.League;
 import de.dtfb.sportshub.backend.league.LeagueRepository;
-import de.dtfb.sportshub.backend.player.Player;
-import de.dtfb.sportshub.backend.player.PlayerNotFoundException;
-import de.dtfb.sportshub.backend.player.PlayerRepository;
+import de.dtfb.sportshub.backend.user.User;
+import de.dtfb.sportshub.backend.user.UserNotFoundException;
+import de.dtfb.sportshub.backend.user.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 public class RoleAdminService {
 
     private final RoleAssignmentRepository roleAssignmentRepository;
-    private final PlayerRepository playerRepository;
+    private final UserRepository userRepository;
     private final FederationRepository federationRepository;
     private final ClubRepository clubRepository;
     private final LeagueRepository leagueRepository;
@@ -47,7 +47,7 @@ public class RoleAdminService {
     private final ClubMapper clubMapper;
 
     public RoleAdminService(RoleAssignmentRepository roleAssignmentRepository,
-                            PlayerRepository playerRepository,
+                            UserRepository userRepository,
                             FederationRepository federationRepository,
                             ClubRepository clubRepository,
                             LeagueRepository leagueRepository,
@@ -55,7 +55,7 @@ public class RoleAdminService {
                             FederationMapper federationMapper,
                             ClubMapper clubMapper) {
         this.roleAssignmentRepository = roleAssignmentRepository;
-        this.playerRepository = playerRepository;
+        this.userRepository = userRepository;
         this.federationRepository = federationRepository;
         this.clubRepository = clubRepository;
         this.leagueRepository = leagueRepository;
@@ -65,24 +65,24 @@ public class RoleAdminService {
     }
 
     @Transactional(readOnly = true)
-    public List<RoleAssignmentDto> myRoleDtos(Player player) {
-        return toDtos(roleAssignmentRepository.findByPlayer(player));
+    public List<RoleAssignmentDto> myRoleDtos(User user) {
+        return toDtos(roleAssignmentRepository.findByUser(user));
     }
 
     @Transactional(readOnly = true)
-    public List<RoleAssignmentDto> rolesForPlayer(String playerId) {
-        return playerRepository.findById(playerId)
+    public List<RoleAssignmentDto> rolesForUser(String userId) {
+        return userRepository.findById(userId)
             .map(this::myRoleDtos)
             .orElse(List.of());
     }
 
     @Transactional(readOnly = true)
-    public List<RoleAssignmentViewDto> assignments(Role role, String regionId, String q, String playerId) {
-        List<RoleAssignment> rows = findFiltered(role, playerId);
+    public List<RoleAssignmentViewDto> assignments(Role role, String regionId, String q, String userId) {
+        List<RoleAssignment> rows = findFiltered(role, userId);
         Map<String, Club> clubs = clubsByScopeId(rows);
         Map<String, Federation> federations = federationsByScopeId(rows);
         Map<String, League> leagues = leaguesByScopeId(rows);
-        Map<String, Player> granters = grantersByDtfbId(rows);
+        Map<String, User> granters = grantersByDtfbId(rows);
         String needle = q == null ? null : q.trim().toLowerCase();
 
         return rows.stream()
@@ -93,8 +93,8 @@ public class RoleAdminService {
     }
 
     @Transactional(readOnly = true)
-    public GrantableScopesDto grantableScopes(Player player) {
-        List<RoleAssignment> roles = roleAssignmentRepository.findByPlayer(player);
+    public GrantableScopesDto grantableScopes(User user) {
+        List<RoleAssignment> roles = roleAssignmentRepository.findByUser(user);
 
         if (AccessRoles.isGlobalAdmin(roles)) {
             List<FederationDto> regions = federationRepository.findAll().stream().map(federationMapper::toDto).toList();
@@ -124,14 +124,14 @@ public class RoleAdminService {
 
     @Transactional
     public RoleAssignmentDto grant(GrantRoleDto dto, String grantedByDtfbId) {
-        Player player = playerRepository.findById(dto.playerId())
-            .orElseThrow(() -> new PlayerNotFoundException(dto.playerId()));
+        User user = userRepository.findById(dto.userId())
+            .orElseThrow(() -> new UserNotFoundException(dto.userId()));
 
         ScopeType scopeType = dto.role().scopeType();
         String scopeId = scopeType == ScopeType.GLOBAL ? null : dto.scopeId();
 
         // Idempotent: a matching grant already present is returned as-is.
-        Optional<RoleAssignment> existing = roleAssignmentRepository.findByPlayer(player).stream()
+        Optional<RoleAssignment> existing = roleAssignmentRepository.findByUser(user).stream()
             .filter(ra -> ra.getRole() == dto.role() && Objects.equals(ra.getScopeId(), scopeId))
             .findFirst();
         if (existing.isPresent()) {
@@ -139,7 +139,7 @@ public class RoleAdminService {
         }
 
         RoleAssignment assignment = new RoleAssignment();
-        assignment.setPlayer(player);
+        assignment.setUser(user);
         assignment.setRole(dto.role());
         assignment.setScopeType(scopeType);
         assignment.setScopeId(scopeId);
@@ -158,15 +158,15 @@ public class RoleAdminService {
 
     // --- querying ------------------------------------------------------------
 
-    private List<RoleAssignment> findFiltered(Role role, String playerId) {
-        if (role != null && playerId != null) {
-            return roleAssignmentRepository.findByRoleAndPlayer_Id(role, playerId);
+    private List<RoleAssignment> findFiltered(Role role, String userId) {
+        if (role != null && userId != null) {
+            return roleAssignmentRepository.findByRoleAndUser_Id(role, userId);
         }
         if (role != null) {
             return roleAssignmentRepository.findByRole(role);
         }
-        if (playerId != null) {
-            return roleAssignmentRepository.findByPlayer_Id(playerId);
+        if (userId != null) {
+            return roleAssignmentRepository.findByUser_Id(userId);
         }
         return roleAssignmentRepository.findAll();
     }
@@ -200,21 +200,21 @@ public class RoleAdminService {
             .toList();
     }
 
-    private Map<String, Player> grantersByDtfbId(List<RoleAssignment> rows) {
+    private Map<String, User> grantersByDtfbId(List<RoleAssignment> rows) {
         List<String> dtfbIds = rows.stream()
             .map(RoleAssignment::getGrantedByDtfbId)
             .filter(Objects::nonNull)
             .distinct()
             .toList();
         return dtfbIds.isEmpty() ? Map.of()
-            : playerRepository.findByDtfbIdIn(dtfbIds).stream()
-            .collect(Collectors.toMap(Player::getDtfbId, Function.identity()));
+            : userRepository.findByDtfbIdIn(dtfbIds).stream()
+            .collect(Collectors.toMap(User::getDtfbId, Function.identity()));
     }
 
     // --- mapping helpers -----------------------------------------------------
 
     private List<RoleAssignmentDto> toDtos(List<RoleAssignment> rows) {
-        Map<String, Player> granters = grantersByDtfbId(rows);
+        Map<String, User> granters = grantersByDtfbId(rows);
         return rows.stream().map(ra -> mapper.toDto(ra, granterId(ra, granters))).toList();
     }
 
@@ -222,17 +222,17 @@ public class RoleAdminService {
         return toDtos(List.of(ra)).getFirst();
     }
 
-    private String granterId(RoleAssignment ra, Map<String, Player> granters) {
-        Player granter = granter(ra, granters);
+    private String granterId(RoleAssignment ra, Map<String, User> granters) {
+        User granter = granter(ra, granters);
         return granter == null ? null : granter.getId();
     }
 
-    private String granterName(RoleAssignment ra, Map<String, Player> granters) {
-        Player granter = granter(ra, granters);
+    private String granterName(RoleAssignment ra, Map<String, User> granters) {
+        User granter = granter(ra, granters);
         return granter == null ? null : displayName(granter);
     }
 
-    private Player granter(RoleAssignment ra, Map<String, Player> granters) {
+    private User granter(RoleAssignment ra, Map<String, User> granters) {
         return ra.getGrantedByDtfbId() == null ? null : granters.get(ra.getGrantedByDtfbId());
     }
 
@@ -248,10 +248,10 @@ public class RoleAdminService {
     }
 
     private boolean matchesQuery(RoleAssignment ra, String needle) {
-        Player p = ra.getPlayer();
-        return contains(p.getFirstName(), needle)
-            || contains(p.getLastName(), needle)
-            || contains(p.getNationalId(), needle);
+        User u = ra.getUser();
+        return contains(u.getFirstName(), needle)
+            || contains(u.getLastName(), needle)
+            || contains(u.getEmail(), needle);
     }
 
     private boolean contains(String value, String needle) {
@@ -264,14 +264,14 @@ public class RoleAdminService {
             case REGION -> Optional.ofNullable(federations.get(ra.getScopeId())).map(Federation::getName).orElse(null);
             case CLUB -> Optional.ofNullable(clubs.get(ra.getScopeId())).map(Club::getName).orElse(null);
             case LEAGUE -> Optional.ofNullable(leagues.get(ra.getScopeId())).map(League::getName).orElse(null);
-            // TEAM scope names need a Team lookup — added with the enforcement work.
+            // TEAM scope names need a Team lookup by identity id — added with the enforcement work.
             case GLOBAL, TEAM -> null;
         };
     }
 
-    private String displayName(Player p) {
-        String name = ((p.getFirstName() == null ? "" : p.getFirstName()) + " "
-            + (p.getLastName() == null ? "" : p.getLastName())).trim();
-        return name.isEmpty() ? p.getDtfbId() : name;
+    private String displayName(User u) {
+        String name = ((u.getFirstName() == null ? "" : u.getFirstName()) + " "
+            + (u.getLastName() == null ? "" : u.getLastName())).trim();
+        return name.isEmpty() ? u.getDtfbId() : name;
     }
 }

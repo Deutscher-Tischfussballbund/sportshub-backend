@@ -7,10 +7,14 @@ import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignment;
 import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignmentRepository;
 import de.dtfb.sportshub.backend.club.Club;
 import de.dtfb.sportshub.backend.club.ClubRepository;
+import de.dtfb.sportshub.backend.clubmembership.ClubMembership;
+import de.dtfb.sportshub.backend.clubmembership.ClubMembershipRepository;
 import de.dtfb.sportshub.backend.player.Player;
 import de.dtfb.sportshub.backend.player.PlayerRepository;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamRepository;
+import de.dtfb.sportshub.backend.user.User;
+import de.dtfb.sportshub.backend.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +46,7 @@ class LeagueAdminIntegrationTest {
     MockMvc mockMvc;
 
     @Autowired
-    PlayerRepository playerRepository;
+    UserRepository userRepository;
 
     @Autowired
     RoleAssignmentRepository roleAssignmentRepository;
@@ -52,6 +56,12 @@ class LeagueAdminIntegrationTest {
 
     @Autowired
     TeamRepository teamRepository;
+
+    @Autowired
+    PlayerRepository playerRepository;
+
+    @Autowired
+    ClubMembershipRepository clubMembershipRepository;
 
     private static final RequestPostProcessor ADMIN = jwtFor("admin");
     private static final RequestPostProcessor ORGANIZER = jwtFor("widen-organizer");
@@ -83,7 +93,7 @@ class LeagueAdminIntegrationTest {
 
         // "organizer" is appointed league_admin of league A only.
         RoleAssignment grant = new RoleAssignment();
-        grant.setPlayer(upsertPlayer("widen-organizer"));
+        grant.setUser(upsertUser("widen-organizer"));
         grant.setRole(Role.LEAGUE_ADMIN);
         grant.setScopeType(ScopeType.LEAGUE);
         grant.setScopeId(leagueAId);
@@ -158,10 +168,10 @@ class LeagueAdminIntegrationTest {
 
     @Test
     void organizer_canGrantCoOrganizerForOwnLeague() throws Exception {
-        String coOrganizerId = upsertPlayer("widen-co-organizer").getId();
+        String coOrganizerId = upsertUser("widen-co-organizer").getId();
         mockMvc.perform(post("/v1/admin/auth/roles").with(ORGANIZER)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"playerId\":\"" + coOrganizerId + "\",\"role\":\"league_admin\",\"scopeId\":\""
+                .content("{\"userId\":\"" + coOrganizerId + "\",\"role\":\"league_admin\",\"scopeId\":\""
                     + leagueAId + "\"}"))
             .andExpect(status().isOk());
     }
@@ -180,10 +190,10 @@ class LeagueAdminIntegrationTest {
 
     @Test
     void organizer_cannotGrantForOtherLeague() throws Exception {
-        String someoneElseId = upsertPlayer("widen-someone-else").getId();
+        String someoneElseId = upsertUser("widen-someone-else").getId();
         mockMvc.perform(post("/v1/admin/auth/roles").with(ORGANIZER)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"playerId\":\"" + someoneElseId + "\",\"role\":\"league_admin\",\"scopeId\":\""
+                .content("{\"userId\":\"" + someoneElseId + "\",\"role\":\"league_admin\",\"scopeId\":\""
                     + leagueBId + "\"}"))
             .andExpect(status().isForbidden());
     }
@@ -194,15 +204,19 @@ class LeagueAdminIntegrationTest {
         return jwt().jwt(token -> token.claim("dtfb_id", dtfbId));
     }
 
-    private Player upsertPlayer(String dtfbId) {
-        return playerRepository.findByDtfbId(dtfbId).orElseGet(() -> {
-            Player player = new Player();
-            player.setDtfbId(dtfbId);
-            return playerRepository.save(player);
+    private User upsertUser(String dtfbId) {
+        return userRepository.findByDtfbId(dtfbId).orElseGet(() -> {
+            User user = new User();
+            user.setDtfbId(dtfbId);
+            return userRepository.save(user);
         });
     }
 
     /** Clubs have no create endpoint (they arrive via import) -- seed directly. */
+    /**
+     * Also joins the seeded "player-test" (the only player rostered in this file) to the club --
+     * RosterService#addPlayer now requires active club membership before a roster add.
+     */
     private String seedTeam(String federationId) {
         Club club = new Club();
         club.setName("Testverein");
@@ -211,7 +225,16 @@ class LeagueAdminIntegrationTest {
         Team team = new Team();
         team.setName("Team");
         team.setClub(club);
-        return teamRepository.save(team).getId();
+        String teamId = teamRepository.save(team).getId();
+
+        Player player = playerRepository.findById("player-test").orElseThrow();
+        ClubMembership membership = new ClubMembership();
+        membership.setPlayer(player);
+        membership.setClub(club);
+        membership.setJoinedAt(Instant.now());
+        clubMembershipRepository.save(membership);
+
+        return teamId;
     }
 
     private String create(String path, String body) throws Exception {

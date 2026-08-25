@@ -1,8 +1,14 @@
 package de.dtfb.sportshub.backend.roster;
 
+import de.dtfb.sportshub.backend.club.Club;
+import de.dtfb.sportshub.backend.clubmembership.ClubMembershipService;
+import de.dtfb.sportshub.backend.history.EntityHistoryService;
+import de.dtfb.sportshub.backend.history.HistoryEntityType;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleResolver;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
 import de.dtfb.sportshub.backend.player.Player;
+import de.dtfb.sportshub.backend.player.PlayerDirectoryService;
+import de.dtfb.sportshub.backend.player.PlayerDto;
 import de.dtfb.sportshub.backend.player.PlayerNotFoundException;
 import de.dtfb.sportshub.backend.player.PlayerRepository;
 import de.dtfb.sportshub.backend.season.Season;
@@ -20,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Roster management (L2): the players on a team's roster for one participation, plus the whole
@@ -43,24 +50,69 @@ public class RosterService {
     private final TeamParticipationRepository participationRepository;
     private final TeamParticipationMapper participationMapper;
     private final PlayerRepository playerRepository;
+    private final PlayerDirectoryService playerDirectoryService;
+    private final EntityHistoryService historyService;
+    private final ClubMembershipService clubMembershipService;
     private final LeagueRuleResolver ruleResolver;
 
     public RosterService(RosterEntryRepository rosterRepository, RosterEntryMapper rosterMapper,
                          TeamParticipationRepository participationRepository,
                          TeamParticipationMapper participationMapper, PlayerRepository playerRepository,
-                         LeagueRuleResolver ruleResolver) {
+                         PlayerDirectoryService playerDirectoryService, EntityHistoryService historyService,
+                         ClubMembershipService clubMembershipService, LeagueRuleResolver ruleResolver) {
         this.rosterRepository = rosterRepository;
         this.rosterMapper = rosterMapper;
         this.participationRepository = participationRepository;
         this.participationMapper = participationMapper;
         this.playerRepository = playerRepository;
+        this.playerDirectoryService = playerDirectoryService;
+        this.historyService = historyService;
+        this.clubMembershipService = clubMembershipService;
         this.ruleResolver = ruleResolver;
     }
 
     @Transactional(readOnly = true)
     public List<RosterEntryDto> getRoster(String participationId) {
         getParticipation(participationId); // 404 if the participation is unknown
-        return rosterMapper.toDtoList(rosterRepository.findByParticipationIdAndRemovedAtIsNull(participationId));
+        return rosterRepository.findByParticipationIdAndRemovedAtIsNull(participationId).stream()
+            .map(this::toDtoAsOfAdded)
+            .toList();
+    }
+
+    /**
+     * Maps a roster entry, resolving its player's display name. For an ENDED season, this freezes
+     * the name as it stood when the player was added to THIS roster ({@link RosterEntry#getAddedAt()})
+     * -- not today's name -- since Player is a single, un-duplicated row and a later rename must not
+     * rewrite a past season's historical display. A current/future season's roster is still live, so
+     * it always shows today's name instead -- otherwise a rename would incorrectly freeze the
+     * in-progress season at whatever name was current when the player was added, hiding the update.
+     * See {@link EntityHistoryService#fieldsAsOf}.
+     */
+    private RosterEntryDto toDtoAsOfAdded(RosterEntry entry) {
+        RosterEntryDto dto = rosterMapper.toDto(entry);
+        Player player = entry.getPlayer();
+        if (seasonHasEnded(entry.getParticipation())) {
+            Map<String, String> historical = historyService.fieldsAsOf(
+                HistoryEntityType.PLAYER, player.getId(), List.of("firstName", "lastName"), entry.getAddedAt());
+            dto.setFirstName(historical.getOrDefault("firstName", player.getFirstName()));
+            dto.setLastName(historical.getOrDefault("lastName", player.getLastName()));
+        } else {
+            dto.setFirstName(player.getFirstName());
+            dto.setLastName(player.getLastName());
+        }
+        return dto;
+    }
+
+    private boolean seasonHasEnded(TeamParticipation participation) {
+        Season season = participation.getLeague() == null ? null : participation.getLeague().getSeason();
+        return season != null && season.hasEnded();
+    }
+
+    /** Athlete search for "add player", across the whole player directory. */
+    @Transactional(readOnly = true)
+    public List<PlayerDto> searchPlayers(String participationId, String q) {
+        getParticipation(participationId); // 404 if the participation is unknown
+        return playerDirectoryService.search(q);
     }
 
     @Transactional
@@ -69,6 +121,7 @@ public class RosterService {
         requireEditable(participation, actingAsAdmin);
         Player player = playerRepository.findById(playerId)
             .orElseThrow(() -> new PlayerNotFoundException(playerId));
+        requireClubMember(participation, playerId);
         rosterRepository.findByParticipationIdAndPlayerIdAndRemovedAtIsNull(participationId, playerId)
             .ifPresent(existing -> {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Player is already on the roster");
@@ -143,6 +196,18 @@ public class RosterService {
         requireStatus(participation, RosterStatus.DRAFT);
         if (!actingAsAdmin) {
             requireRegistrationOpen(participation);
+        }
+    }
+
+    /**
+     * A player must be an active member of the team's club before joining its roster -- club
+     * membership is the precondition, team rosters are downstream of it (see ClubMembershipService).
+     */
+    private void requireClubMember(TeamParticipation participation, String playerId) {
+        Club club = participation.getTeam() == null ? null : participation.getTeam().getClub();
+        if (club == null || !clubMembershipService.isActiveMember(playerId, club.getId())) {
+            throw new PlayerNotClubMemberException(
+                "Player must be an active member of the team's club before joining its roster");
         }
     }
 

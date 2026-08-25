@@ -1,5 +1,7 @@
 package de.dtfb.sportshub.backend.exception;
 
+import de.dtfb.sportshub.backend.club.ClubDeletionBlockedError;
+import de.dtfb.sportshub.backend.club.ClubDeletionBlockedException;
 import de.dtfb.sportshub.backend.federation.FederationDefaultRuleSetChangeBlockedError;
 import de.dtfb.sportshub.backend.federation.FederationDefaultRuleSetChangeBlockedException;
 import de.dtfb.sportshub.backend.group.GroupDeletionBlockedError;
@@ -8,6 +10,10 @@ import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedError;
 import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedException;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetDeletionBlockedError;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetDeletionBlockedException;
+import de.dtfb.sportshub.backend.leaguerules.RuleSetEditBlockedError;
+import de.dtfb.sportshub.backend.leaguerules.RuleSetEditBlockedException;
+import de.dtfb.sportshub.backend.roster.PlayerNotClubMemberError;
+import de.dtfb.sportshub.backend.roster.PlayerNotClubMemberException;
 import de.dtfb.sportshub.backend.roster.RosterSizeError;
 import de.dtfb.sportshub.backend.roster.RosterSizeException;
 import de.dtfb.sportshub.backend.season.SeasonDeletionBlockedError;
@@ -52,6 +58,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<RosterSizeError> handleRosterSize(RosterSizeException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new RosterSizeError(ex.getCode(), ex.getMessage(), ex.getLimit(), ex.getCurrent()));
+    }
+
+    // Roster addPlayer refused because the player isn't an active member of the team's club yet →
+    // 409, join the club first (see ClubMembershipService).
+    @ExceptionHandler(PlayerNotClubMemberException.class)
+    public ResponseEntity<PlayerNotClubMemberError> handlePlayerNotClubMember(PlayerNotClubMemberException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new PlayerNotClubMemberError("PLAYER_NOT_CLUB_MEMBER", ex.getMessage()));
     }
 
     // Registering a team into a league whose season has already ended → structured 409
@@ -103,6 +117,21 @@ public class GlobalExceptionHandler {
         RuleSetDeletionBlockedException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new RuleSetDeletionBlockedError("RULE_SET_IN_USE", ex.getMessage()));
+    }
+
+    // Club delete refused because it still has teams and/or active members -- deactivate instead.
+    @ExceptionHandler(ClubDeletionBlockedException.class)
+    public ResponseEntity<ClubDeletionBlockedError> handleClubDeletionBlocked(ClubDeletionBlockedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ClubDeletionBlockedError("CLUB_HAS_TEAMS_OR_MEMBERS", ex.getMessage()));
+    }
+
+    // Rule-set edit refused because it's used by a closed (archived) season's league/tier -- clone it
+    // instead of rewriting history.
+    @ExceptionHandler(RuleSetEditBlockedException.class)
+    public ResponseEntity<RuleSetEditBlockedError> handleRuleSetEditBlocked(RuleSetEditBlockedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new RuleSetEditBlockedError("RULE_SET_LOCKED_BY_CLOSED_SEASON", ex.getMessage()));
     }
 
     // Federation default rule-set change refused because a tier depending on it already has

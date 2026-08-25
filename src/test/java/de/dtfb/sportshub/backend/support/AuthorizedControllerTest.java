@@ -62,10 +62,41 @@ public abstract class AuthorizedControllerTest {
      * test that needs one — e.g. a team, which always belongs to a club — persists it directly.
      */
     protected String createClub() throws Exception {
+        return createClub(createFederation());
+    }
+
+    /** Seed a club under a caller-supplied federation (e.g. so a team and its season share one). */
+    protected String createClub(String federationId) {
         Club club = new Club();
         club.setName("Testverein");
-        club.setFederationId(createFederation());
+        club.setFederationId(federationId);
         return clubRepository.save(club).getId();
+    }
+
+    /**
+     * Join a player to a club — the precondition {@code RosterService#addPlayer} now enforces
+     * before a player can be added to one of that club's team rosters. Call this before every
+     * roster-add in a test that wasn't already doing so.
+     */
+    protected void joinClub(String playerId, String clubId) throws Exception {
+        mockMvc.perform(post("/v1/admin/clubs/" + clubId + "/members")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"playerId": "%s"}
+                    """, playerId)))
+            .andExpect(status().isCreated());
+    }
+
+    /** Create a season under {@code federationId} and return its id — a team now requires one. */
+    protected String createSeasonId(String federationId) throws Exception {
+        MvcResult result = mockMvc.perform(post("/v1/seasons")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"name": "2025", "federationId": "%s"}
+                    """, federationId)))
+            .andExpect(status().isCreated())
+            .andReturn();
+        return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
     }
 
     /** Create a category and return its id — a discipline requires a category. */

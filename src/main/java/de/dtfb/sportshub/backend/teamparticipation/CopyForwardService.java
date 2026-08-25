@@ -11,6 +11,8 @@ import de.dtfb.sportshub.backend.roster.RosterEntryRepository;
 import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.season.SeasonNotFoundException;
 import de.dtfb.sportshub.backend.season.SeasonRepository;
+import de.dtfb.sportshub.backend.team.Team;
+import de.dtfb.sportshub.backend.team.TeamService;
 import de.dtfb.sportshub.backend.tier.Tier;
 import de.dtfb.sportshub.backend.tier.TierRepository;
 import org.springframework.http.HttpStatus;
@@ -24,15 +26,20 @@ import java.util.Map;
 
 /**
  * Copy-forward (L1b): seeds a target season from a source season by deep-cloning the league
- * structure (League -> Tier -> Group), the team placements ({@link TeamParticipation}), and
- * (unless opted out) each placement's active roster ({@link RosterEntry}). Cloned groups reset to
- * {@link GroupState#PLANNED}; last season's fixtures/results (Round/MatchDay/Match/Standing) are
- * NOT carried, and the shared Category / LeagueRuleSet are referenced, not cloned. Each new
- * participation records its {@code copiedFromParticipationId} -- the promotion/relegation audit
- * chain the region admin then edits via the placement CRUD. Cloned participations stay DRAFT and
- * roster entries are copied with a direct save (no {@code RosterService} validation) -- this is a
- * starting point for the new registration period, not an enforced invariant, so it doesn't matter
- * that a new season's roster-size rules may not yet be satisfied. A source participation with
+ * structure (League -> Tier -> Group), the teams themselves ({@link Team}, season-scoped like
+ * League/Tier/Group -- see {@link TeamService#resolveForSeason}), the team placements
+ * ({@link TeamParticipation}), and (unless opted out) each placement's active roster. Club and
+ * Player are NOT season-scoped (a rename is tracked via
+ * {@link de.dtfb.sportshub.backend.history.EntityHistoryService} instead of duplicating the row),
+ * so a cloned team keeps pointing at the very same club row, and a cloned roster entry keeps
+ * pointing at the very same player row. Cloned groups reset to {@link GroupState#PLANNED}; last
+ * season's fixtures/results (Round/MatchDay/Match/Standing) are NOT carried, and the shared
+ * Category / LeagueRuleSet are referenced, not cloned. Each new participation records its
+ * {@code copiedFromParticipationId} -- the promotion/relegation audit chain the region admin then
+ * edits via the placement CRUD. Cloned participations stay DRAFT and roster entries are copied
+ * with a direct save (no {@code RosterService} validation) -- this is a starting point for the new
+ * registration period, not an enforced invariant, so it doesn't matter that a new season's
+ * roster-size rules may not yet be satisfied. A source participation with
  * {@link ParticipationStatus#WITHDRAWN} is skipped entirely -- a team that dropped out doesn't
  * automatically re-enter next season.
  */
@@ -45,17 +52,19 @@ public class CopyForwardService {
     private final GroupRepository groupRepository;
     private final TeamParticipationRepository participationRepository;
     private final RosterEntryRepository rosterEntryRepository;
+    private final TeamService teamService;
 
     public CopyForwardService(SeasonRepository seasonRepository, LeagueRepository leagueRepository,
                               TierRepository tierRepository, GroupRepository groupRepository,
                               TeamParticipationRepository participationRepository,
-                              RosterEntryRepository rosterEntryRepository) {
+                              RosterEntryRepository rosterEntryRepository, TeamService teamService) {
         this.seasonRepository = seasonRepository;
         this.leagueRepository = leagueRepository;
         this.tierRepository = tierRepository;
         this.groupRepository = groupRepository;
         this.participationRepository = participationRepository;
         this.rosterEntryRepository = rosterEntryRepository;
+        this.teamService = teamService;
     }
 
     @Transactional
@@ -72,6 +81,8 @@ public class CopyForwardService {
         Map<String, Group> groupBySourceId = new HashMap<>();
         // old league id -> cloned league, for the participation's league link
         Map<String, League> leagueBySourceId = new HashMap<>();
+        // old team id -> this season's copy, deduped since a team may hold several participations
+        Map<String, Team> teamBySourceId = new HashMap<>();
         int leagues = 0, tiers = 0, groups = 0;
 
         for (League sourceLeague : leagueRepository.findBySeasonId(sourceSeasonId)) {
@@ -117,8 +128,12 @@ public class CopyForwardService {
             if (newLeague == null) {
                 continue; // participation outside the cloned tree; nothing to attach it to
             }
+            Team sourceTeam = source0.getTeam();
+            Team newTeam = teamBySourceId.computeIfAbsent(sourceTeam.getId(),
+                id -> teamService.resolveForSeason(id, target));
+
             TeamParticipation clone = new TeamParticipation();
-            clone.setTeam(source0.getTeam());
+            clone.setTeam(newTeam);
             clone.setLeague(newLeague);
             clone.setGroup(source0.getGroup() == null ? null : groupBySourceId.get(source0.getGroup().getId()));
             clone.setCopiedFromParticipationId(source0.getId());
@@ -130,7 +145,7 @@ public class CopyForwardService {
             }
         }
 
-        return new CopyForwardResultDto(leagues, tiers, groups, participations, rosterEntries);
+        return new CopyForwardResultDto(leagues, tiers, groups, teamBySourceId.size(), participations, rosterEntries);
     }
 
     /** Clones the active (non-removed) roster from the source participation onto its clone. */

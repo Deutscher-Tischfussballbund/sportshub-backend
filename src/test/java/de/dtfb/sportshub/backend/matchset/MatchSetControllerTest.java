@@ -162,12 +162,14 @@ class MatchSetControllerTest extends de.dtfb.sportshub.backend.support.Authorize
     }
 
     private MvcResult createTeam(String name) throws Exception {
-        String clubId = createClub();
+        String federationId = createFederation();
+        String clubId = createClub(federationId);
+        String seasonId = createSeasonId(federationId);
         return mockMvc.perform(post("/v1/teams")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "%s", "clubId": "%s"}
-                    """, name, clubId)))
+                            {"name": "%s", "clubId": "%s", "seasonId": "%s"}
+                    """, name, clubId, seasonId)))
             .andExpect(status().isCreated()).andReturn();
     }
 

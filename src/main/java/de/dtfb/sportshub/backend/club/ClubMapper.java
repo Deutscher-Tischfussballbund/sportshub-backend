@@ -13,4 +13,8 @@ public interface ClubMapper {
     ClubDto toDto(Club club);
 
     List<ClubDto> toDtoList(List<Club> clubs);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "federationId", source = "regionId")
+    Club toEntity(ClubDto dto);
 }

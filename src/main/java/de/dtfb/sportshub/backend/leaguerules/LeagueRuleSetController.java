@@ -49,4 +49,16 @@ public class LeagueRuleSetController {
     public void deleteLeagueRuleSet(@PathVariable String id) {
         service.delete(id);
     }
+
+    /** Copies a (possibly locked) rule set into a new, unreferenced, immediately-editable row. */
+    @PostMapping("/{id}/clone")
+    @PreAuthorize("@authz.canManageRuleSetById(#id)")
+    public ResponseEntity<LeagueRuleSetDto> cloneLeagueRuleSet(@PathVariable String id) {
+        LeagueRuleSetDto cloned = service.clone(id);
+
+        URI location = ServletUriComponentsBuilder.fromCurrentContextPath()
+            .path("/v1/league-rule-sets/{id}").buildAndExpand(cloned.getId()).toUri();
+
+        return ResponseEntity.created(location).body(cloned);
+    }
 }

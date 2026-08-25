@@ -69,6 +69,20 @@ class TeamParticipationControllerTest extends de.dtfb.sportshub.backend.support.
             .andExpect(jsonPath("$.length()").value(0));
     }
 
+    /**
+     * The nav-area/route only ever carries a team's stable {@code teamIdentityId}, never a specific
+     * season-row id -- filtering by it must resolve the same way filtering by the row id does.
+     */
+    @Test
+    void getAllParticipations_filteredByTeamIdentityId() throws Exception {
+        String teamIdentityId = teamRepository.findById(teamId).orElseThrow().getTeamIdentityId();
+
+        mockMvc.perform(get("/v1/team-participations").param("teamId", teamIdentityId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].teamId").value(teamId));
+    }
+
     @Test
     void getParticipation_expectException() throws Exception {
         mockMvc.perform(get("/v1/team-participations/" + NanoIdUtils.randomNanoId()))
@@ -260,13 +274,16 @@ class TeamParticipationControllerTest extends de.dtfb.sportshub.backend.support.
             .andExpect(status().isCreated()).andReturn();
     }
 
+    /** Uses the test's own {@link #seasonId} (the league's season) -- so the team a test creates
+     *  is the exact row a participation resolves to, not a same-identity clone under a mismatched
+     *  season (TeamParticipationService resolves teamId into the league's season on create). */
     private MvcResult createTeam(String name) throws Exception {
         String clubId = createClub();
         return mockMvc.perform(post("/v1/teams")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "%s", "clubId": "%s"}
-                    """, name, clubId)))
+                            {"name": "%s", "clubId": "%s", "seasonId": "%s"}
+                    """, name, clubId, seasonId)))
             .andExpect(status().isCreated()).andReturn();
     }
 

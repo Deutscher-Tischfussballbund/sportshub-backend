@@ -1,8 +1,8 @@
 package de.dtfb.sportshub.backend.access.roleassignment;
 import de.dtfb.sportshub.backend.access.role.Role;
 
-import de.dtfb.sportshub.backend.player.PlayerDto;
-import de.dtfb.sportshub.backend.player.PlayerRegistryService;
+import de.dtfb.sportshub.backend.user.UserDto;
+import de.dtfb.sportshub.backend.user.UserRegistryService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -18,10 +18,10 @@ import java.util.List;
 @RequestMapping("/v1/admin/auth")
 public class RoleAdminController {
 
-    private final PlayerRegistryService registry;
+    private final UserRegistryService registry;
     private final RoleAdminService roleAdminService;
 
-    public RoleAdminController(PlayerRegistryService registry, RoleAdminService roleAdminService) {
+    public RoleAdminController(UserRegistryService registry, RoleAdminService roleAdminService) {
         this.registry = registry;
         this.roleAdminService = roleAdminService;
     }
@@ -31,20 +31,20 @@ public class RoleAdminController {
         @RequestParam(required = false) String role,
         @RequestParam(required = false) String regionId,
         @RequestParam(required = false) String q,
-        @RequestParam(required = false) String playerId) {
+        @RequestParam(required = false) String userId) {
         // Query-param enums arrive as wire values (e.g. "region_admin"); convert via Jackson semantics.
         Role parsedRole = role == null || role.isBlank() ? null : Role.fromValue(role);
-        return roleAdminService.assignments(parsedRole, regionId, q, playerId);
+        return roleAdminService.assignments(parsedRole, regionId, q, userId);
     }
 
     @GetMapping("/grantable-scopes")
     public GrantableScopesDto grantableScopes(@AuthenticationPrincipal Jwt jwt) {
-        return roleAdminService.grantableScopes(registry.currentPlayer(jwt));
+        return roleAdminService.grantableScopes(registry.currentUser(jwt));
     }
 
     @GetMapping("/roles")
-    public List<RoleAssignmentDto> listRoles(@RequestParam String playerId) {
-        return roleAdminService.rolesForPlayer(playerId);
+    public List<RoleAssignmentDto> listRoles(@RequestParam String userId) {
+        return roleAdminService.rolesForUser(userId);
     }
 
     @PostMapping("/roles")
@@ -59,8 +59,10 @@ public class RoleAdminController {
         roleAdminService.revoke(id);
     }
 
-    @GetMapping("/player-search")
-    public List<PlayerDto> playerSearch(@RequestParam(required = false) String q) {
+    /** Identity search for granting roles -- searches {@link de.dtfb.sportshub.backend.user.User}s, not
+     *  the {@code Player} directory. The roster "add player" flow uses a separate search. */
+    @GetMapping("/user-search")
+    public List<UserDto> userSearch(@RequestParam(required = false) String q) {
         return registry.search(q);
     }
 }

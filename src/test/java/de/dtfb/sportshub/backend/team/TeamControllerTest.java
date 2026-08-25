@@ -45,6 +45,21 @@ class TeamControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCon
             .andExpect(jsonPath("$.name").value("Hand und Foos"));
     }
 
+    /**
+     * The nav-area/route only ever carries a team's stable {@code teamIdentityId}, never a specific
+     * season-row id -- {@code GET /v1/teams/{id}} must resolve either shape.
+     */
+    @Test
+    void getTeam_byTeamIdentityId() throws Exception {
+        MvcResult response = mockMvc.perform(get(url)).andReturn();
+        String teamIdentityId = com.jayway.jsonpath.JsonPath.read(
+            response.getResponse().getContentAsString(), "$.teamIdentityId");
+
+        mockMvc.perform(get("/v1/teams/" + teamIdentityId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("Hand und Foos"));
+    }
+
     @Test
     void updateTeam() throws Exception {
         mockMvc.perform(put(url)
@@ -102,12 +117,14 @@ class TeamControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCon
 
     //region helpers
     private MvcResult createTeam() throws Exception {
-        String clubId = createClub();
+        String federationId = createFederation();
+        String clubId = createClub(federationId);
+        String seasonId = createSeasonId(federationId);
         return mockMvc.perform(post("/v1/teams")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                            {"name": "Hand und Foos", "clubId": "%s"}
-                    """, clubId)))
+                            {"name": "Hand und Foos", "clubId": "%s", "seasonId": "%s"}
+                    """, clubId, seasonId)))
             .andExpect(status().isCreated())
             .andReturn();
     }

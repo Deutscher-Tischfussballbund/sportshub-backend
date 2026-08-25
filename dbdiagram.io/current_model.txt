@@ -2,6 +2,27 @@
 // Season -> League -> Tier -> Group -> Round -> MatchDay -> Match -> Set/Event
 // plus placement (TeamParticipation) / roster (RosterEntry), rule sets, and scoped RBAC.
 // All ids are 14-char nano-ids (varchar). Every parent link is a child-side FK (@ManyToOne).
+//
+// Team versioning + entity history (docs/14-team-player-versioning.md): `team` is season-scoped,
+// copied fresh into every season by CopyForwardService (same pattern as league/tier/comp_group),
+// so a rename never rewrites a past season's display; it links its season-copies via
+// `team_identity_id` (a new synthetic field). `player` and `club` are NOT season-scoped -- each
+// stays a single row, and a rename is instead recorded in `entity_history` (old/new value +
+// timestamp per field), reconstructible "as of" a point in time. `app_user` is the permanent,
+// season-independent Keycloak login identity split out of the old `player` table —
+// `role_assignment` now points there instead: a role belongs to a login identity, not the
+// competitor record itself. `club_membership` is a first-class player<->club relationship,
+// independent of team rosters: a player must be an active member of a club (joined_at set,
+// left_at null) before RosterService#addPlayer will roster them onto one of that club's teams.
+//
+// Relationships are declared as standalone `Ref:` statements at the bottom, not inline on the
+// column, since almost every FK here is nullable (a team can exist before being placed, a
+// season can be archived without every child set, etc.) — dbdiagram.io's inline
+// `[ref: > ...]` column attribute requires the column to be NOT NULL, which most of these
+// genuinely aren't.
+//
+// The few FKs actually declared `@ManyToOne(optional = false)` in code use plain `>` below:
+// role_assignment.user_id and standing.group_id/team_id.
 
 // ============================ Enums ============================
 
@@ -73,6 +94,17 @@ Enum MatchdayDecision {
   FIRST_TO  [note: 'Decided once a team reaches matchday_target game wins']
 }
 
+Enum SchedulingMode {
+  DAY_BATCH [note: 'An admin assigns real calendar dates directly, in batches per day']
+  WINDOW    [note: 'Each round gets a date window; the two teams of a fixture agree within it']
+}
+
+Enum SchedulingState {
+  DEFAULT   [note: 'start_date/location are just the generated default']
+  PROPOSED  [note: 'One side has proposed a real date/location']
+  CONFIRMED [note: 'Both sides have agreed']
+}
+
 Enum Role {
   ADMIN
   REGION_ADMIN
@@ -96,11 +128,11 @@ Enum ScopeType {
 Table federation {
   id varchar(14) [pk, note: 'A Landesverband / region']
   name varchar
-  default_rule_set_id varchar [ref: > league_rule_set.id, note: 'null = fall back to historical 2/1/0; last tier in rule resolution']
+  default_rule_set_id varchar [note: 'null = fall back to historical 2/1/0; last tier in rule resolution']
 }
 
 Table club {
-  id varchar(14) [pk]
+  id varchar(14) [pk, note: 'A single row per club, not season-scoped; a rename is tracked in entity_history']
   name varchar [not null]
   short_name varchar
   city varchar
@@ -109,15 +141,25 @@ Table club {
 }
 
 Table team {
-  id varchar(14) [pk, note: 'Standing team identity (not per-season)']
+  id varchar(14) [pk, note: 'One season-copy of a team; a fresh row per season via CopyForwardService']
+  season_id varchar [note: 'Nullable: a team can exist before being placed into any season']
   name varchar
-  club_id varchar [ref: > club.id]
+  club_id varchar
+  team_identity_id varchar [not null, note: 'Stable across every season-copy of this team; carried forward verbatim by copy-forward']
+  copied_from_team_id varchar [note: 'Audit pointer to the row this was cloned from, not a FK']
+}
+
+Table app_user {
+  id varchar(14) [pk, note: 'The permanent, season-independent Keycloak login identity']
+  dtfb_id varchar [unique, not null, note: 'Keycloak username -> dtfb_id']
+  email varchar
+  first_name varchar
+  last_name varchar
 }
 
 Table player {
-  id varchar(14) [pk]
-  dtfb_id varchar [unique, not null, note: 'Keycloak username -> dtfb_id']
-  email varchar
+  id varchar(14) [pk, note: 'A single row per competitor, not season-scoped; a rename is tracked in entity_history']
+  user_id varchar [note: 'Nullable: a captain-entered athlete may never log in themselves']
   first_name varchar
   last_name varchar
   national_id varchar
@@ -127,6 +169,29 @@ Table player {
   gender varchar
   national_license varchar
   active boolean [not null, default: true]
+}
+
+Table club_membership {
+  id varchar(14) [pk, note: 'A player belonging to a club -- the precondition for rostering them onto one of the club team rows via RosterService#addPlayer']
+  player_id varchar
+  club_id varchar
+  joined_at datetime [not null]
+  left_at datetime [note: 'Null = active; set = soft-removed (left the club)']
+}
+
+Table entity_history {
+  id varchar(14) [pk]
+  entity_type varchar [note: 'PLAYER | CLUB -- which table entity_id refers to']
+  entity_id varchar [note: 'plain id, not a FK -- history survives even if the entity is later deleted']
+  field_name varchar
+  old_value text
+  new_value text
+  changed_at datetime [not null]
+  changed_by_dtfb_id varchar
+
+  Indexes {
+    (entity_type, entity_id)
+  }
 }
 
 Table category {
@@ -139,15 +204,15 @@ Table location {
   id varchar(14) [pk]
   name varchar
   address varchar
-  federation_id varchar [ref: > federation.id, note: 'null = global venue']
+  federation_id varchar [note: 'null = global venue']
 }
 
 Table role_assignment {
   id varchar(14) [pk]
-  player_id varchar [ref: > player.id]
+  user_id varchar [not null, note: 'A role belongs to the login identity, not a season-scoped Player row']
   role Role [not null]
   scope_type ScopeType [not null]
-  scope_id varchar [note: 'id of the scoped entity (null for GLOBAL)']
+  scope_id varchar [note: 'id of the scoped entity (null for GLOBAL); for TEAM this is team_identity_id, not a row id, so a grant survives copy-forward; for CLUB it is the plain club row id (Club is not season-scoped)']
   granted_by_dtfb_id varchar
   created_at datetime [not null]
 }
@@ -157,7 +222,7 @@ Table role_assignment {
 Table season {
   id varchar(14) [pk, note: 'League time container']
   name varchar
-  federation_id varchar [ref: > federation.id]
+  federation_id varchar
   start_date date
   end_date date
   registration_opens_at date [note: 'Required for registration to ever be open']
@@ -167,41 +232,43 @@ Table season {
 
 Table league {
   id varchar(14) [pk, note: 'One category ladder in a season (was Competition)']
-  season_id varchar [ref: > season.id]
-  category_id varchar [ref: > category.id]
-  rule_set_id varchar [ref: > league_rule_set.id, note: 'nullable default rule set']
+  season_id varchar
+  category_id varchar
+  rule_set_id varchar [note: 'nullable default rule set']
   name varchar
   import_id varchar
 }
 
 Table tier {
   id varchar(14) [pk, note: 'Promotion/relegation level, e.g. 1./2. Bayernliga']
-  league_id varchar [ref: > league.id]
-  rule_set_id varchar [ref: > league_rule_set.id, note: 'null = inherit league/federation']
+  league_id varchar
+  rule_set_id varchar [note: 'null = inherit league/federation']
   name varchar
   level int [note: 'Ordinal ladder position, 1 = top tier; orders promote/relegate']
 }
 
 Table comp_group {
   id varchar(14) [pk, note: 'The Group entity (one round-robin table); table name comp_group']
-  tier_id varchar [ref: > tier.id]
+  tier_id varchar
   name varchar
   group_state GroupState [not null]
 }
 
 Table round {
   id varchar(14) [pk, note: 'A matchday number (Spieltag)']
-  group_id varchar [ref: > comp_group.id]
+  group_id varchar
   name varchar
-  index int
+  round_index int [note: 'Java/API field is "index"; column renamed -- "index" is a reserved MySQL word']
+  window_start datetime [note: 'Only set under LeagueRuleSet.scheduling_mode = WINDOW (docs/12-matchday-scheduling.md)']
+  window_end datetime
 }
 
 Table match_day {
   id varchar(14) [pk, note: 'A team-vs-team fixture']
-  round_id varchar [ref: > round.id]
-  location_id varchar [ref: > location.id]
-  team_home_id varchar [ref: > team.id]
-  team_away_id varchar [ref: > team.id]
+  round_id varchar
+  location_id varchar
+  team_home_id varchar
+  team_away_id varchar
   name varchar
   start_date datetime [not null]
   end_date datetime
@@ -209,13 +276,18 @@ Table match_day {
   submitted_by_dtfb_id varchar
   home_confirmed_at datetime
   away_confirmed_at datetime
+  // Scheduling lifecycle for start_date/location -- independent of result_state above; see
+  // docs/12-matchday-scheduling.md.
+  scheduling_state SchedulingState [not null, default: 'DEFAULT']
+  schedule_proposed_by_dtfb_id varchar
+  schedule_confirmed_at datetime
 }
 
 // ==================== Match detail ====================
 
-Table match {
-  id varchar(14) [pk, note: 'An individual game within a match day']
-  match_day_id varchar [ref: > match_day.id]
+Table match_game {
+  id varchar(14) [pk, note: 'An individual game within a match day; JPA entity is Match, table is match_game -- "match" is a reserved MySQL word (collides with MATCH()...AGAINST())']
+  match_day_id varchar
   position int [note: '1-based order within the match day; maps to game_plan_entry.position']
   start_time datetime [not null]
   end_time datetime
@@ -228,7 +300,7 @@ Table match {
 
 Table match_set {
   id varchar(14) [pk]
-  match_id varchar [ref: > match.id]
+  match_id varchar
   set_number int
   home_score int
   away_score int
@@ -236,8 +308,8 @@ Table match_set {
 
 Table match_event {
   id varchar(14) [pk]
-  match_id varchar [ref: > match.id]
-  team_id varchar [ref: > team.id]
+  match_id varchar
+  team_id varchar
   player_id varchar [note: 'plain id, not a FK']
   timestamp datetime
   type MatchEventType
@@ -248,8 +320,8 @@ Table match_event {
 
 Table standing {
   id varchar(14) [pk, note: 'A league-table row; unique (group_id, team_id)']
-  group_id varchar [ref: > comp_group.id]
-  team_id varchar [ref: > team.id]
+  group_id varchar
+  team_id varchar
   played int
   wins int
   draws int
@@ -267,9 +339,9 @@ Table standing {
 
 Table team_participation {
   id varchar(14) [pk, note: 'A team placed in a league (season derived from league)']
-  team_id varchar [ref: > team.id]
-  league_id varchar [ref: > league.id]
-  group_id varchar [ref: > comp_group.id, note: 'null = registered but unplaced']
+  team_id varchar
+  league_id varchar
+  group_id varchar [note: 'null = registered but unplaced']
   copied_from_participation_id varchar [note: 'copy-forward / promotion-relegation chain']
   roster_status RosterStatus [not null, default: 'DRAFT']
   status ParticipationStatus [not null, default: 'ACTIVE']
@@ -278,8 +350,8 @@ Table team_participation {
 
 Table roster_entry {
   id varchar(14) [pk]
-  participation_id varchar [ref: > team_participation.id]
-  player_id varchar [ref: > player.id]
+  participation_id varchar
+  player_id varchar
   added_at datetime [not null]
   removed_at datetime [note: 'null = active; set = soft-removed']
 }
@@ -287,8 +359,8 @@ Table roster_entry {
 // ==================== Rule sets ====================
 
 Table league_rule_set {
-  id varchar(14) [pk, note: 'Reusable, typed league rules; shared across tiers/leagues']
-  federation_id varchar [ref: > federation.id, note: 'null = DTFB-global template']
+  id varchar(14) [pk, note: 'Reusable, typed league rules; shared across tiers/leagues. Enforced (no new column): editing a rule-affecting field is refused once any League/Tier of a closed (season.archived_at set) season references this row -- clone it instead via POST .../{id}/clone']
+  federation_id varchar [note: 'null = DTFB-global template']
   name varchar
   play_system PlaySystem
   points_win int
@@ -301,11 +373,55 @@ Table league_rule_set {
   side_switch_allowed boolean
   min_roster_size int [note: 'Enforced by RosterService on submit; null = unconstrained']
   max_roster_size int [note: 'Enforced by RosterService on addPlayer; null = unconstrained']
+  scheduling_mode SchedulingMode [note: 'Read by FixtureGenerationService; null = no convention configured yet (generation requires picking one)']
+  scheduling_window_days int [note: 'Only meaningful when scheduling_mode = WINDOW']
 }
 
 Table game_plan_entry {
   id varchar(14) [pk, note: 'One ordered slot in a rule set matchday game plan']
-  rule_set_id varchar [ref: > league_rule_set.id]
+  rule_set_id varchar
   position int
   game_type MatchType
 }
+
+// ============================ Relationships ============================
+// Declared standalone (not inline on the column) for readability at this scale. Almost every FK
+// here is nullable at the JPA/DB level (plain @ManyToOne, not `optional = false`) even where the
+// service layer enforces "required" at the application level -- so the relationship operator
+// uses the `?` optional modifier (`>?`, optional side = the column/left side) wherever the
+// column itself is nullable.
+
+Ref: federation.default_rule_set_id >? league_rule_set.id
+// club.federation_id is deliberately NOT drawn as a relationship: it's a plain String field in
+// the JPA entity (no @ManyToOne), per the column note above.
+Ref: team.season_id >? season.id
+Ref: team.club_id >? club.id
+Ref: player.user_id >? app_user.id
+Ref: club_membership.player_id >? player.id
+Ref: club_membership.club_id >? club.id
+Ref: location.federation_id >? federation.id
+Ref: role_assignment.user_id > app_user.id
+Ref: season.federation_id >? federation.id
+Ref: league.season_id >? season.id
+Ref: league.category_id >? category.id
+Ref: league.rule_set_id >? league_rule_set.id
+Ref: tier.league_id >? league.id
+Ref: tier.rule_set_id >? league_rule_set.id
+Ref: comp_group.tier_id >? tier.id
+Ref: round.group_id >? comp_group.id
+Ref: match_day.round_id >? round.id
+Ref: match_day.location_id >? location.id
+Ref: match_day.team_home_id >? team.id
+Ref: match_day.team_away_id >? team.id
+Ref: match_game.match_day_id >? match_day.id
+Ref: match_set.match_id >? match_game.id
+Ref: match_event.match_id >? match_game.id
+Ref: match_event.team_id >? team.id
+Ref: standing.group_id > comp_group.id
+Ref: standing.team_id > team.id
+Ref: team_participation.team_id >? team.id
+Ref: team_participation.league_id >? league.id
+Ref: team_participation.group_id >? comp_group.id
+Ref: roster_entry.participation_id >? team_participation.id
+Ref: roster_entry.player_id >? player.id
+Ref: game_plan_entry.rule_set_id >? league_rule_set.id

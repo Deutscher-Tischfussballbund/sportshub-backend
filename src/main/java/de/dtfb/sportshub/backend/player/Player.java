@@ -1,15 +1,20 @@
 package de.dtfb.sportshub.backend.player;
 
 import de.dtfb.sportshub.backend.base.BaseEntity;
+import de.dtfb.sportshub.backend.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
- * The federation member behind a Keycloak identity. Created on first login from the
- * JWT ({@code dtfb_id} + {@code email}). Nano-id keyed via {@link BaseEntity}.
+ * A competitor record. {@link #user}, if set, is the login identity (see {@link User}) this
+ * competitor record belongs to; nullable because a captain-entered athlete may never log in
+ * themselves. A rename is tracked via
+ * {@link de.dtfb.sportshub.backend.history.EntityHistoryService} rather than duplicating the row.
  */
 @Entity
 @Table(name = "player")
@@ -17,10 +22,9 @@ import lombok.Setter;
 @Setter
 public class Player extends BaseEntity {
 
-    @Column(unique = true, nullable = false)
-    private String dtfbId;
-
-    private String email;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
     private String firstName;
     private String lastName;

@@ -5,9 +5,11 @@ import de.dtfb.sportshub.backend.access.role.Role;
 import de.dtfb.sportshub.backend.access.role.ScopeType;
 import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignment;
 import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignmentRepository;
-import de.dtfb.sportshub.backend.player.Player;
-import de.dtfb.sportshub.backend.player.PlayerRepository;
 import de.dtfb.sportshub.backend.support.AuthorizedControllerTest;
+import de.dtfb.sportshub.backend.team.Team;
+import de.dtfb.sportshub.backend.team.TeamRepository;
+import de.dtfb.sportshub.backend.user.User;
+import de.dtfb.sportshub.backend.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -35,10 +37,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class StandingComputationTest extends AuthorizedControllerTest {
 
     @Autowired
-    PlayerRepository playerRepository;
+    UserRepository userRepository;
 
     @Autowired
     RoleAssignmentRepository roleAssignmentRepository;
+
+    @Autowired
+    TeamRepository teamRepository;
 
     @Test
     void standings_useLeagueRuleSetPoints() throws Exception {
@@ -97,8 +102,10 @@ class StandingComputationTest extends AuthorizedControllerTest {
         String roundId = create("/v1/rounds", "{\"name\":\"Runde1\",\"index\":1,\"groupId\":\"" + groupId + "\"}");
         String locationId = create("/v1/locations", "{\"name\":\"Halle\",\"address\":\"Musterstr 1\"}");
 
-        String homeTeamId = create("/v1/teams", "{\"name\":\"Heim\",\"clubId\":\"" + createClub() + "\"}");
-        String awayTeamId = create("/v1/teams", "{\"name\":\"Gast\",\"clubId\":\"" + createClub() + "\"}");
+        String homeTeamId = create("/v1/teams",
+            "{\"name\":\"Heim\",\"clubId\":\"" + createClub() + "\",\"seasonId\":\"" + seasonId + "\"}");
+        String awayTeamId = create("/v1/teams",
+            "{\"name\":\"Gast\",\"clubId\":\"" + createClub() + "\",\"seasonId\":\"" + seasonId + "\"}");
         String matchDayId = create("/v1/matchdays", String.format(
             "{\"name\":\"Spieltag\",\"roundId\":\"%s\",\"locationId\":\"%s\",\"teamHomeId\":\"%s\","
                 + "\"teamAwayId\":\"%s\",\"startDate\":\"2025-01-01T00:00:00Z\"}",
@@ -165,21 +172,22 @@ class StandingComputationTest extends AuthorizedControllerTest {
     }
 
     /**
-     * Seed (or reuse) a player with a TEAM_ADMIN grant on {@code teamId} and return its JWT
+     * Seed (or reuse) a user with a TEAM_ADMIN grant on the team's identity, and return its JWT
      * post-processor. {@code dtfb_id} is unique, and the DB is shared across test methods, so the
-     * player is upserted rather than blindly inserted.
+     * user is upserted rather than blindly inserted.
      */
     private RequestPostProcessor teamAdmin(String dtfbId, String teamId) {
-        Player player = playerRepository.findByDtfbId(dtfbId).orElseGet(() -> {
-            Player p = new Player();
-            p.setDtfbId(dtfbId);
-            return playerRepository.save(p);
+        User user = userRepository.findByDtfbId(dtfbId).orElseGet(() -> {
+            User u = new User();
+            u.setDtfbId(dtfbId);
+            return userRepository.save(u);
         });
+        Team team = teamRepository.findById(teamId).orElseThrow();
         RoleAssignment grant = new RoleAssignment();
-        grant.setPlayer(player);
+        grant.setUser(user);
         grant.setRole(Role.TEAM_ADMIN);
         grant.setScopeType(ScopeType.TEAM);
-        grant.setScopeId(teamId);
+        grant.setScopeId(team.getTeamIdentityId());
         grant.setCreatedAt(Instant.now());
         roleAssignmentRepository.save(grant);
         return jwt().jwt(token -> token.claim("dtfb_id", dtfbId));

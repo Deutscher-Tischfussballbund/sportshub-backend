@@ -17,6 +17,9 @@ public interface TierRepository extends JpaRepository<Tier, String> {
     /** Whether any tier still references this rule set (rule-set delete guard). */
     boolean existsByRuleSetId(String ruleSetId);
 
+    /** Whether a tier in a closed (archived) season still references this rule set (edit-lock guard). */
+    boolean existsByRuleSetIdAndLeague_Season_ArchivedAtIsNotNull(String ruleSetId);
+
     @Query("select e from Tier e where e.league.season.archivedAt is null")
     List<Tier> findAllVisible();
 

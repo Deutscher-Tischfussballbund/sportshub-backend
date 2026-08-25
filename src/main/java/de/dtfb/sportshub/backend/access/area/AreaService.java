@@ -9,10 +9,10 @@ import de.dtfb.sportshub.backend.federation.Federation;
 import de.dtfb.sportshub.backend.federation.FederationRepository;
 import de.dtfb.sportshub.backend.league.League;
 import de.dtfb.sportshub.backend.league.LeagueRepository;
-import de.dtfb.sportshub.backend.player.Player;
 import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.team.Team;
-import de.dtfb.sportshub.backend.team.TeamRepository;
+import de.dtfb.sportshub.backend.team.TeamService;
+import de.dtfb.sportshub.backend.user.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,24 +37,24 @@ public class AreaService {
     private final RoleAssignmentRepository roleAssignmentRepository;
     private final FederationRepository federationRepository;
     private final ClubRepository clubRepository;
-    private final TeamRepository teamRepository;
+    private final TeamService teamService;
     private final LeagueRepository leagueRepository;
 
     public AreaService(RoleAssignmentRepository roleAssignmentRepository,
                        FederationRepository federationRepository,
                        ClubRepository clubRepository,
-                       TeamRepository teamRepository,
+                       TeamService teamService,
                        LeagueRepository leagueRepository) {
         this.roleAssignmentRepository = roleAssignmentRepository;
         this.federationRepository = federationRepository;
         this.clubRepository = clubRepository;
-        this.teamRepository = teamRepository;
+        this.teamService = teamService;
         this.leagueRepository = leagueRepository;
     }
 
     @Transactional(readOnly = true)
-    public MeAreasResponseDto getAreas(Player player) {
-        List<RoleAssignment> roles = roleAssignmentRepository.findByPlayer(player);
+    public MeAreasResponseDto getAreas(User user) {
+        List<RoleAssignment> roles = roleAssignmentRepository.findByUser(user);
         Map<String, AreaDto> areas = new LinkedHashMap<>();
 
         if (AccessRoles.isGlobalAdmin(roles)) {
@@ -73,7 +73,10 @@ public class AreaService {
                     clubRepository.findByFederationId(role.getScopeId()).forEach(c -> put(areas, clubArea(c)));
                 }
                 case CLUB -> clubRepository.findById(role.getScopeId()).ifPresent(c -> put(areas, clubArea(c)));
-                case TEAM -> teamRepository.findById(role.getScopeId()).ifPresent(t -> put(areas, teamArea(t)));
+                // role.getScopeId() is the team's teamIdentityId, not a row id -- resolve to the latest
+                // season's copy for display, and use that identity id (not a row id) as the area's own
+                // stable id so it doesn't go stale after the next copy-forward.
+                case TEAM -> teamService.latestForIdentity(role.getScopeId()).ifPresent(t -> put(areas, teamArea(t)));
                 // A league admin (LEAGUE_ADMIN) reaches their league through the region area's
                 // Placements page (there's no dedicated league area) -- narrower than a REGION
                 // grant, though: only that region area is added, not every club in it, since their
@@ -109,6 +112,8 @@ public class AreaService {
         String regionId = club == null ? null : club.getFederationId();
         String regionName = regionId == null ? null
             : federationRepository.findById(regionId).map(Federation::getName).orElse(null);
-        return new AreaDto("team", team.getId(), team.getName(), regionId, regionName);
+        // teamIdentityId, not row id -- stays stable across copy-forward so a bookmarked/routed team
+        // area doesn't go stale once the team's next season-copy exists.
+        return new AreaDto("team", team.getTeamIdentityId(), team.getName(), regionId, regionName);
     }
 }

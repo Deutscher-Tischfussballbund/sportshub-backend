@@ -4,9 +4,9 @@ import de.dtfb.sportshub.backend.access.area.AreaService;
 import de.dtfb.sportshub.backend.access.area.MeAreasResponseDto;
 import de.dtfb.sportshub.backend.access.roleassignment.RoleAdminService;
 import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignmentDto;
-import de.dtfb.sportshub.backend.player.Player;
-import de.dtfb.sportshub.backend.player.PlayerMapper;
-import de.dtfb.sportshub.backend.player.PlayerRegistryService;
+import de.dtfb.sportshub.backend.user.User;
+import de.dtfb.sportshub.backend.user.UserMapper;
+import de.dtfb.sportshub.backend.user.UserRegistryService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,40 +17,40 @@ import java.util.List;
 
 /**
  * Identity surface consumed by the admin frontend's AuthService/AreaService.
- * Every call resolves (and lazily persists) the player behind the bearer token.
+ * Every call resolves (and lazily persists) the login identity behind the bearer token.
  */
 @RestController
 @RequestMapping("/v1/auth")
 public class AuthMeController {
 
-    private final PlayerRegistryService registry;
+    private final UserRegistryService registry;
     private final RoleAdminService roleAdminService;
     private final AreaService areaService;
-    private final PlayerMapper playerMapper;
+    private final UserMapper userMapper;
 
-    public AuthMeController(PlayerRegistryService registry,
+    public AuthMeController(UserRegistryService registry,
                            RoleAdminService roleAdminService,
                            AreaService areaService,
-                           PlayerMapper playerMapper) {
+                           UserMapper userMapper) {
         this.registry = registry;
         this.roleAdminService = roleAdminService;
         this.areaService = areaService;
-        this.playerMapper = playerMapper;
+        this.userMapper = userMapper;
     }
 
     @GetMapping("/me")
     public MeResponseDto me(@AuthenticationPrincipal Jwt jwt) {
-        Player player = registry.currentPlayer(jwt);
-        return new MeResponseDto(playerMapper.toDto(player), roleAdminService.myRoleDtos(player));
+        User user = registry.currentUser(jwt);
+        return new MeResponseDto(userMapper.toDto(user), roleAdminService.myRoleDtos(user));
     }
 
     @GetMapping("/me/areas")
     public MeAreasResponseDto myAreas(@AuthenticationPrincipal Jwt jwt) {
-        return areaService.getAreas(registry.currentPlayer(jwt));
+        return areaService.getAreas(registry.currentUser(jwt));
     }
 
     @GetMapping("/me/roles")
     public List<RoleAssignmentDto> myRoles(@AuthenticationPrincipal Jwt jwt) {
-        return roleAdminService.myRoleDtos(registry.currentPlayer(jwt));
+        return roleAdminService.myRoleDtos(registry.currentUser(jwt));
     }
 }

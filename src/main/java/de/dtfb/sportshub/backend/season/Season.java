@@ -49,4 +49,14 @@ public class Season extends BaseEntity {
         }
         return registrationClosesAt == null || !today.isAfter(registrationClosesAt);
     }
+
+    /**
+     * Whether this season is over (its {@code endDate} has passed). Used to decide when a
+     * point-in-time history lookup applies -- an ended season's display should stay frozen at
+     * whatever it showed while the season was live, but a current/future season must always show
+     * today's live data, since it can still change.
+     */
+    public boolean hasEnded() {
+        return endDate != null && endDate.isBefore(LocalDate.now());
+    }
 }

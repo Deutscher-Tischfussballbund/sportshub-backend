@@ -7,7 +7,9 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-/** A Verein, belonging to a Federation (Landesverband). Nano-id keyed via {@link BaseEntity}. */
+/**
+ * A Verein, belonging to a Federation (Landesverband). Nano-id keyed via {@link BaseEntity}.
+ */
 @Entity
 @Table(name = "club")
 @Getter

@@ -7,10 +7,10 @@ import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignment;
 import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignmentRepository;
 import de.dtfb.sportshub.backend.club.Club;
 import de.dtfb.sportshub.backend.club.ClubRepository;
-import de.dtfb.sportshub.backend.player.Player;
-import de.dtfb.sportshub.backend.player.PlayerRepository;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamRepository;
+import de.dtfb.sportshub.backend.user.User;
+import de.dtfb.sportshub.backend.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +43,7 @@ class MatchDaySchedulingAuthorizationIntegrationTest {
     MockMvc mockMvc;
 
     @Autowired
-    PlayerRepository playerRepository;
+    UserRepository userRepository;
 
     @Autowired
     RoleAssignmentRepository roleAssignmentRepository;
@@ -140,20 +140,21 @@ class MatchDaySchedulingAuthorizationIntegrationTest {
         return jwt().jwt(token -> token.claim("dtfb_id", dtfbId));
     }
 
-    private Player upsertPlayer(String dtfbId) {
-        return playerRepository.findByDtfbId(dtfbId).orElseGet(() -> {
-            Player player = new Player();
-            player.setDtfbId(dtfbId);
-            return playerRepository.save(player);
+    private User upsertUser(String dtfbId) {
+        return userRepository.findByDtfbId(dtfbId).orElseGet(() -> {
+            User user = new User();
+            user.setDtfbId(dtfbId);
+            return userRepository.save(user);
         });
     }
 
     private RequestPostProcessor teamAdmin(String dtfbId, String teamId) {
+        Team team = teamRepository.findById(teamId).orElseThrow();
         RoleAssignment grant = new RoleAssignment();
-        grant.setPlayer(upsertPlayer(dtfbId));
+        grant.setUser(upsertUser(dtfbId));
         grant.setRole(Role.TEAM_ADMIN);
         grant.setScopeType(ScopeType.TEAM);
-        grant.setScopeId(teamId);
+        grant.setScopeId(team.getTeamIdentityId());
         grant.setCreatedAt(Instant.now());
         roleAssignmentRepository.save(grant);
         return jwtFor(dtfbId);
