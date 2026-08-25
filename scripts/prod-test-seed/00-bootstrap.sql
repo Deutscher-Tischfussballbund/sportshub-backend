@@ -32,6 +32,13 @@
 SET NAMES utf8mb4;
 
 -- ---------------------------------------------------------------------------
+-- Root federation (DTFB). Every Landesverband inserted below is retroactively pointed at it
+-- (see the UPDATE at the end of this file) -- a general self-referencing tree
+-- (Federation#isRoot), not hardcoded to two levels.
+-- ---------------------------------------------------------------------------
+INSERT INTO federation (id, name) VALUES ('fed-dtfb', 'DTFB');
+
+-- ---------------------------------------------------------------------------
 -- Global admins — no region scope.
 -- ---------------------------------------------------------------------------
 INSERT INTO app_user (id, dtfb_id, first_name, last_name)
@@ -160,3 +167,8 @@ VALUES ('user-fleisca', 'fleischanderl', 'Paul', 'Fleischanderl'),
 INSERT INTO role_assignment (id, user_id, role, scope_type, scope_id, created_at)
 VALUES ('ra-fleisc-reg', 'user-fleisca', 'REGION_ADMIN', 'REGION', 'fed-tfvb', NOW()),
        ('ra-fleisc-team', 'user-fleisct', 'TEAM_ADMIN', 'TEAM', 'team-tfvb-1', NOW());
+
+-- ---------------------------------------------------------------------------
+-- Point every Landesverband above at the root federation (DTFB).
+-- ---------------------------------------------------------------------------
+UPDATE federation SET parent_federation_id = 'fed-dtfb' WHERE id != 'fed-dtfb';

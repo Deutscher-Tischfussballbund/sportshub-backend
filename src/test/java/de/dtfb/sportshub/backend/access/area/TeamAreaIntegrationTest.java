@@ -63,6 +63,30 @@ class TeamAreaIntegrationTest {
         assertThat(regionIds).containsExactly(fed.getId());
     }
 
+    /**
+     * The root federation (docs/16-root-federation.md, seeded {@code fed-dtfb}) has no clubs of its
+     * own, so its REGION_ADMIN's club-area expansion falls back to every OTHER federation's clubs
+     * instead of the usual "just this federation's clubs" -- unlike a normal region admin (see
+     * {@link #playerWithoutTeamGrant_getsNoTeamArea} 's sibling region for the ordinary case).
+     */
+    @Test
+    void rootFederationRegionAdmin_getsEveryFederationsClubs() throws Exception {
+        Federation root = federationRepository.findById("fed-dtfb").orElseThrow();
+        Federation sub = federation("Sub-Verband");
+        sub.setParentFederation(root);
+        sub = federationRepository.save(sub);
+        Club club = club("Fremder Verein", sub.getId());
+
+        grant(userRepository.save(user("rootadmin")), Role.REGION_ADMIN, ScopeType.REGION, root.getId());
+
+        String json = mockMvc.perform(get("/v1/auth/me/areas").with(jwtFor("rootadmin")))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+
+        List<String> clubIds = JsonPath.read(json, "$.areas[?(@.type=='club')].id");
+        assertThat(clubIds).contains(club.getId());
+    }
+
     @Test
     void playerWithoutTeamGrant_getsNoTeamArea() throws Exception {
         // A region admin reaches rosters via the placement path, not a team area.

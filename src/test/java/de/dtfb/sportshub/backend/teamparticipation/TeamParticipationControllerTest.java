@@ -221,6 +221,67 @@ class TeamParticipationControllerTest extends de.dtfb.sportshub.backend.support.
             .andExpect(status().isOk());
     }
 
+    @Test
+    void createParticipation_secondTeamSameClubSameRootLeague_isConflict() throws Exception {
+        String rootSeasonId = id(createRootSeason());
+        String rootLeagueId = id(createLeague(rootSeasonId));
+        String clubId = createClub();
+        String team1Id = id(createTeamFor("Bundesliga 1", clubId, rootSeasonId));
+        String team2Id = id(createTeamFor("Bundesliga 2", clubId, rootSeasonId));
+
+        mockMvc.perform(post("/v1/team-participations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"teamId": "%s", "leagueId": "%s"}
+                    """, team1Id, rootLeagueId)))
+            .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/v1/team-participations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"teamId": "%s", "leagueId": "%s"}
+                    """, team2Id, rootLeagueId)))
+            .andExpect(status().isConflict());
+    }
+
+    @Test
+    void createParticipation_sameClubDifferentRootLeagues_isAllowed() throws Exception {
+        String rootSeasonId = id(createRootSeason());
+        String rootLeagueAId = id(createLeague(rootSeasonId));
+        String rootLeagueBId = id(createLeague(rootSeasonId));
+        String clubId = createClub();
+        String teamAId = id(createTeamFor("Bundesliga A", clubId, rootSeasonId));
+        String teamBId = id(createTeamFor("Bundesliga B", clubId, rootSeasonId));
+
+        mockMvc.perform(post("/v1/team-participations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"teamId": "%s", "leagueId": "%s"}
+                    """, teamAId, rootLeagueAId)))
+            .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/v1/team-participations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"teamId": "%s", "leagueId": "%s"}
+                    """, teamBId, rootLeagueBId)))
+            .andExpect(status().isCreated());
+    }
+
+    @Test
+    void createParticipation_regionalLeague_secondTeamSameClub_isAllowed() throws Exception {
+        // Regional (non-root) leagues stay unrestricted -- a club may field several teams there.
+        String clubIdForTeam = teamRepository.findById(teamId).orElseThrow().getClub().getId();
+        String team2Id = id(createTeamFor("Zweite", clubIdForTeam, seasonId));
+
+        mockMvc.perform(post("/v1/team-participations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"teamId": "%s", "leagueId": "%s"}
+                    """, team2Id, leagueId)))
+            .andExpect(status().isCreated());
+    }
+
     //region helpers
     private String id(MvcResult result) throws Exception {
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
@@ -244,6 +305,16 @@ class TeamParticipationControllerTest extends de.dtfb.sportshub.backend.support.
             .contentType(MediaType.APPLICATION_JSON).content(String.format("""
                 {"name": "2025", "federationId": "%s"}
                 """, federationId))).andReturn();
+    }
+
+    /** A season under the seeded root federation -- for the one-team-per-club-per-root-league guard. */
+    private MvcResult createRootSeason() throws Exception {
+        return mockMvc.perform(post("/v1/seasons")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"name": "Bundesliga-Saison", "federationId": "fed-dtfb"}
+                    """))
+            .andExpect(status().isCreated()).andReturn();
     }
 
     private MvcResult createLeague(String seasonId) throws Exception {
@@ -284,6 +355,16 @@ class TeamParticipationControllerTest extends de.dtfb.sportshub.backend.support.
                 .content(String.format("""
                             {"name": "%s", "clubId": "%s", "seasonId": "%s"}
                     """, name, clubId, seasonId)))
+            .andExpect(status().isCreated()).andReturn();
+    }
+
+    /** A team for a caller-supplied club/season (unlike {@link #createTeam}, which makes its own club). */
+    private MvcResult createTeamFor(String name, String clubId, String forSeasonId) throws Exception {
+        return mockMvc.perform(post("/v1/teams")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                            {"name": "%s", "clubId": "%s", "seasonId": "%s"}
+                    """, name, clubId, forSeasonId)))
             .andExpect(status().isCreated()).andReturn();
     }
 

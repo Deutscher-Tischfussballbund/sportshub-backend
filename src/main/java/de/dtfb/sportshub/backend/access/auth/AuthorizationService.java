@@ -20,6 +20,7 @@ import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
 import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.season.SeasonRepository;
 import de.dtfb.sportshub.backend.team.Team;
+import de.dtfb.sportshub.backend.team.TeamDto;
 import de.dtfb.sportshub.backend.team.TeamRepository;
 import de.dtfb.sportshub.backend.team.TeamService;
 import de.dtfb.sportshub.backend.teamparticipation.TeamParticipation;
@@ -134,6 +135,24 @@ public class AuthorizationService {
         }
         Team team = teamId == null ? null : teamRepository.findById(teamId).orElse(null);
         return team != null && canManageScope(roles, ScopeType.TEAM, team.getTeamIdentityId());
+    }
+
+    /**
+     * May create the team described by {@code dto}: an admin of its club (the normal case), OR,
+     * root-federation reuse (docs/16-root-federation.md), a region admin of the target season's OWN
+     * federation -- narrowly lets a league organizer field a team for any club in their own
+     * root-level league without granting general authority over that club.
+     */
+    public boolean canCreateTeam(TeamDto dto) {
+        if (dto == null) {
+            return false;
+        }
+        if (canManageClub(dto.getClubId())) {
+            return true;
+        }
+        Season season = dto.getSeasonId() == null ? null : seasonRepository.findById(dto.getSeasonId()).orElse(null);
+        Federation federation = season == null ? null : season.getFederation();
+        return federation != null && isRegionAdmin(currentRoles(), federation.getId());
     }
 
     /**
@@ -407,9 +426,29 @@ public class AuthorizationService {
         }
         boolean teamAdmin = roles.stream().anyMatch(ra ->
             ra.getRole() == Role.TEAM_ADMIN && Objects.equals(ra.getScopeId(), team.getTeamIdentityId()));
+        return teamAdmin || canManageTeamRow(roles, team);
+    }
+
+    /**
+     * Whether the caller administers {@code team} as "an admin above it" -- either via its club's
+     * home region/club admin (the normal case), OR, root-federation reuse (docs/16-root-federation.md):
+     * a region admin of the team's OWN season's federation, regardless of the club's home federation.
+     * This is deliberately narrow -- it grants authority over THIS team only (and its roster), never
+     * over the club's profile/membership or over any of that federation's own seasons/leagues/rule
+     * sets, and it never walks the federation tree (it compares exactly two federations: the club's
+     * home one and the team's own season's one), so it works identically at any tree depth.
+     */
+    private boolean canManageTeamRow(List<RoleAssignment> roles, Team team) {
+        if (team == null) {
+            return false;
+        }
         Club club = team.getClub();
-        return teamAdmin
-            || (club != null && (isRegionAdmin(roles, club.getFederationId()) || isClubAdmin(roles, club.getId())));
+        boolean viaClubHomeRegion = club != null
+            && (isRegionAdmin(roles, club.getFederationId()) || isClubAdmin(roles, club.getId()));
+        Federation ownLeagueFederation = team.getSeason() == null ? null : team.getSeason().getFederation();
+        boolean viaOwnLeagueFederation = ownLeagueFederation != null
+            && isRegionAdmin(roles, ownLeagueFederation.getId());
+        return viaClubHomeRegion || viaOwnLeagueFederation;
     }
 
     /** May grant the role/scope in {@code dto}: the granter must administer the target scope. */
@@ -450,9 +489,7 @@ public class AuthorizationService {
                 // scopeId is the team's teamIdentityId (stable across every season-copy), not a row id --
                 // any row sharing that identity resolves to the same club/region.
                 Team team = scopeId == null ? null : teamService.latestForIdentity(scopeId).orElse(null);
-                Club club = team == null ? null : team.getClub();
-                yield club != null
-                    && (isRegionAdmin(roles, club.getFederationId()) || isClubAdmin(roles, club.getId()));
+                yield canManageTeamRow(roles, team);
             }
             case LEAGUE -> {
                 // A league belongs to its region via League -> Season -> Federation; the region admin

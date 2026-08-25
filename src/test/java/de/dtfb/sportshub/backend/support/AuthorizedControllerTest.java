@@ -44,7 +44,9 @@ public abstract class AuthorizedControllerTest {
 
     /**
      * Create a federation and return its id. A season requires a federation, so any test that
-     * sets one up needs a real federation id first.
+     * sets one up needs a real federation id first. No {@code parentFederationId} needed -- it
+     * attaches under the seeded root {@code fed-dtfb} automatically (see
+     * {@code FederationService#resolveParentForCreate}).
      */
     protected String createFederation() throws Exception {
         MvcResult result = mockMvc.perform(post("/v1/federation")

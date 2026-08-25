@@ -67,11 +67,16 @@ public class AreaService {
         for (RoleAssignment role : roles) {
             switch (role.getScopeType()) {
                 case GLOBAL -> put(areas, adminArea());
-                case REGION -> {
-                    federationRepository.findById(role.getScopeId()).ifPresent(f -> put(areas, regionArea(f)));
-                    // hierarchy: a federation role also grants the clubs inside that federation
-                    clubRepository.findByFederationId(role.getScopeId()).forEach(c -> put(areas, clubArea(c)));
-                }
+                case REGION -> federationRepository.findById(role.getScopeId()).ifPresent(f -> {
+                    put(areas, regionArea(f));
+                    // hierarchy: a federation role also grants the clubs inside that federation --
+                    // the root federation (docs/16-root-federation.md) has none of its own, so it
+                    // browses every federation's clubs instead (nav/read only; write authority for
+                    // a non-root-level team/club stays with that club's own home-federation admin --
+                    // see AuthorizationService).
+                    List<Club> clubs = f.isRoot() ? clubRepository.findAll() : clubRepository.findByFederationId(f.getId());
+                    clubs.forEach(c -> put(areas, clubArea(c)));
+                });
                 case CLUB -> clubRepository.findById(role.getScopeId()).ifPresent(c -> put(areas, clubArea(c)));
                 // role.getScopeId() is the team's teamIdentityId, not a row id -- resolve to the latest
                 // season's copy for display, and use that identity id (not a row id) as the area's own

@@ -25,16 +25,21 @@
 -- already an active member of that team's club, so every player below gets a membership row
 -- before its roster_entry rows.
 
--- Landesverbände (Federation)
+-- Root federation (DTFB) plus the Landesverbände, each pointing at it via parent_federation_id --
+-- a general self-referencing tree (Federation#isRoot), not hardcoded to two levels; today's real
+-- data just happens to be exactly two.
 INSERT INTO federation (id, name)
-VALUES ('fed-bw', 'Baden-Württemberg'),
-       ('fed-by', 'Bayern'),
-       ('fed-nrw', 'Nordrhein-Westfalen'),
-       ('fed-he', 'Hessen'),
-       ('fed-ni', 'Niedersachsen'),
-       ('fed-be', 'Berlin'),
-       ('fed-hh', 'Hamburg'),
-       ('fed-sn', 'Sachsen');
+VALUES ('fed-dtfb', 'DTFB');
+
+INSERT INTO federation (id, name, parent_federation_id)
+VALUES ('fed-bw', 'Baden-Württemberg', 'fed-dtfb'),
+       ('fed-by', 'Bayern', 'fed-dtfb'),
+       ('fed-nrw', 'Nordrhein-Westfalen', 'fed-dtfb'),
+       ('fed-he', 'Hessen', 'fed-dtfb'),
+       ('fed-ni', 'Niedersachsen', 'fed-dtfb'),
+       ('fed-be', 'Berlin', 'fed-dtfb'),
+       ('fed-hh', 'Hamburg', 'fed-dtfb'),
+       ('fed-sn', 'Sachsen', 'fed-dtfb');
 
 -- Demo clubs (Vereine). federation_id references federation.id. Not season-scoped -- a single
 -- row is shared by every team/season that references it; a rename is tracked via `entity_history`
@@ -141,7 +146,8 @@ VALUES ('usr-admin', 'admin', 'DTFB', 'Administrator'),
        ('usr-region', 'region', 'Regina', 'Region'),
        ('usr-club', 'club', 'Claus', 'Club'),
        ('usr-team', 'team', 'Tom', 'Team'),
-       ('usr-liga', 'liga', 'Lena', 'Liga');
+       ('usr-liga', 'liga', 'Lena', 'Liga'),
+       ('usr-dtfb', 'dtfb', 'Dana', 'DTFB');
 
 -- ---------------------------------------------------------------------------
 -- Roster-fill players. Not season-scoped -- one row per person, shared across every season it's
@@ -174,7 +180,11 @@ INSERT INTO role_assignment (id, user_id, role, scope_type, scope_id, created_at
 VALUES ('ra-admin-glob', 'usr-admin', 'ADMIN', 'GLOBAL', NULL, TIMESTAMP '2024-01-01 00:00:00'),
        ('ra-region', 'usr-region', 'REGION_ADMIN', 'REGION', 'fed-by', TIMESTAMP '2024-01-01 00:00:00'),
        ('ra-club', 'usr-club', 'CLUB_ADMIN', 'CLUB', 'club-tfcm', TIMESTAMP '2024-01-01 00:00:00'),
-       ('ra-team', 'usr-team', 'TEAM_ADMIN', 'TEAM', 'tid-tfcm-1', TIMESTAMP '2024-01-01 00:00:00');
+       ('ra-team', 'usr-team', 'TEAM_ADMIN', 'TEAM', 'tid-tfcm-1', TIMESTAMP '2024-01-01 00:00:00'),
+       -- Root federation admin: narrowly-scoped cross-federation authority (AuthorizationService) --
+       -- can create/manage root-level (Bundesliga) teams and rosters for ANY club, but not a
+       -- sub-federation's own club profiles/membership/seasons/leagues/rule sets.
+       ('ra-dtfb', 'usr-dtfb', 'REGION_ADMIN', 'REGION', 'fed-dtfb', TIMESTAMP '2024-01-01 00:00:00');
 
 -- Categories — the classification a League points at (Herren/Damen/Open). Defined before any
 -- league since league.category_id references them.
@@ -429,3 +439,34 @@ VALUES ('lg-2027-h', 'season-2027', 'Bayernliga Herren 2027/28', 'cat-herren', '
 
 INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status, status)
 VALUES ('tp-2027-1', 'tfcm1-2027', 'lg-2027-h', NULL, 'DRAFT', 'ACTIVE');
+
+-- ---------------------------------------------------------------------------
+-- Root-federation (DTFB) demo: a Bundesliga season/league under fed-dtfb, and a SECOND team
+-- for TFC München -- same club (club-tfcm) as its regional tid-tfcm-1 team above, but its own
+-- team_identity_id, own season/league. Demonstrates a club fielding independent teams across
+-- two federations (docs/16-root-federation.md): they may, but don't have to, share players --
+-- here the Bundesliga roster reuses player-p1 (already an active club-tfcm member) alongside a
+-- player who isn't on the regional team's roster.
+-- ---------------------------------------------------------------------------
+INSERT INTO season (id, name, federation_id, start_date, end_date, registration_opens_at, registration_closes_at)
+VALUES ('season-bl', 'Bundesliga-Saison 2026', 'fed-dtfb', DATE '2026-01-01', DATE '2026-12-31',
+        DATE '2025-10-01', DATE '2025-12-31');
+
+INSERT INTO league (id, season_id, name, category_id)
+VALUES ('lg-bl-h', 'season-bl', 'Bundesliga Herren 2026', 'cat-herren');
+
+INSERT INTO tier (id, league_id, name, level)
+VALUES ('ti-bl-1', 'lg-bl-h', 'Bundesliga', 1);
+
+INSERT INTO comp_group (id, tier_id, name, group_state)
+VALUES ('g-bl-1', 'ti-bl-1', 'Bundesliga', 'RUNNING');
+
+INSERT INTO team (id, season_id, name, club_id, team_identity_id)
+VALUES ('tfcm-bl-1', 'season-bl', 'TFC München', 'club-tfcm', 'tid-tfcm-bl');
+
+INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status, status)
+VALUES ('tp-bl-1', 'tfcm-bl-1', 'lg-bl-h', 'g-bl-1', 'CONFIRMED', 'ACTIVE');
+
+INSERT INTO roster_entry (id, participation_id, player_id, added_at, removed_at)
+VALUES ('re-bl-1', 'tp-bl-1', 'player-p1', TIMESTAMP '2026-01-15 10:00:00', NULL),
+       ('re-bl-2', 'tp-bl-1', 'player-p6', TIMESTAMP '2026-01-15 10:00:00', NULL);
