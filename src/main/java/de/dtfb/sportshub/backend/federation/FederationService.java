@@ -51,8 +51,15 @@ public class FederationService {
         return mapper.toDto(savedFederation);
     }
 
+    /**
+     * {@code actingAsAdmin} is the caller's global-admin status (resolved by the controller via
+     * {@code authz.isAdmin()}, same pattern as {@code RosterController}'s {@code actingAsAdmin}) --
+     * the endpoint itself is open to a region admin managing their own federation (e.g. picking its
+     * default rule set, from the rule-set dialog), but re-parenting the federation elsewhere in the
+     * tree is a structural move only a global admin may make.
+     */
     @Transactional
-    public FederationDto update(String id, FederationDto federationDto) {
+    public FederationDto update(String id, FederationDto federationDto, boolean actingAsAdmin) {
         Federation federation = repository.findById(id).orElseThrow(
             () -> new FederationNotFoundException(id));
 
@@ -66,12 +73,19 @@ public class FederationService {
                     + "rule set; give it an explicit rule set before changing the default");
         }
 
-        // A null parentFederationId here means "unchanged" (most callers save the whole object back
+        // A null parentFederationId means "unchanged" (most callers save the whole object back
         // without touching this field) -- re-parenting/re-rooting a federation is an explicit,
         // deliberate move, not something an omitted field should trigger.
-        if (federationDto.getParentFederationId() != null) {
-            Federation newParent = repository.findById(federationDto.getParentFederationId())
-                .orElseThrow(() -> new FederationNotFoundException(federationDto.getParentFederationId()));
+        String newParentFederationId = federationDto.getParentFederationId();
+        String currentParentFederationId = federation.getParentFederation() == null
+            ? null : federation.getParentFederation().getId();
+        if (newParentFederationId != null && !newParentFederationId.equals(currentParentFederationId)) {
+            if (!actingAsAdmin) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Only a global admin may change a federation's parent");
+            }
+            Federation newParent = repository.findById(newParentFederationId)
+                .orElseThrow(() -> new FederationNotFoundException(newParentFederationId));
             requireNoCycle(federation, newParent);
             federation.setParentFederation(newParent);
         }

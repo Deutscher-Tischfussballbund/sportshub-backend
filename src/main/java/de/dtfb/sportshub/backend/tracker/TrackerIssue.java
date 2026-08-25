@@ -13,7 +13,10 @@ import java.time.Instant;
 /**
  * A tester-reported item on the test-system feedback tracker. Starts {@link TrackerIssueStatus#OPEN};
  * {@link #convert(String, String)} moves it to {@link TrackerIssueStatus#APPROVED} once a real
- * GitHub issue has been filed for it.
+ * GitHub issue has been filed for it. {@link #markDone()} moves it to {@link TrackerIssueStatus#DONE}
+ * from either state -- resolving an issue doesn't require it to ever have been converted.
+ * {@link #reopen()} always returns to {@link TrackerIssueStatus#OPEN}, regardless of which state it
+ * came from -- a deliberately simple two-way toggle, not a full status history.
  */
 @Entity
 @Getter
@@ -43,5 +46,13 @@ public class TrackerIssue extends BaseEntity {
         this.githubRepo = githubRepo;
         this.githubIssueUrl = githubIssueUrl;
         this.status = TrackerIssueStatus.APPROVED;
+    }
+
+    void markDone() {
+        this.status = TrackerIssueStatus.DONE;
+    }
+
+    void reopen() {
+        this.status = TrackerIssueStatus.OPEN;
     }
 }

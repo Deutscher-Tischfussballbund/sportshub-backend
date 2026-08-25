@@ -60,6 +60,18 @@ class TrackerIssueAdminControllerSecurityTest {
     }
 
     @Test
+    void markDone_withoutLogin_isForbidden() throws Exception {
+        mockMvc.perform(post("/v1/tracker/issues/whatever/done"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void reopen_withoutLogin_isForbidden() throws Exception {
+        mockMvc.perform(post("/v1/tracker/issues/whatever/reopen"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     void fullFlow_createVoteConvertDelete() throws Exception {
         MvcResult created = mockMvc.perform(post("/v1/tracker/issues")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -131,5 +143,40 @@ class TrackerIssueAdminControllerSecurityTest {
 
         mockMvc.perform(delete("/v1/tracker/issues/" + id).with(githubLogin))
             .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void markDone_thenReopen() throws Exception {
+        MvcResult created = mockMvc.perform(post("/v1/tracker/issues")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"title": "Fixed already", "description": "No GitHub issue needed", "reportedBy": "Sam"}
+                    """))
+            .andExpect(status().isCreated())
+            .andReturn();
+        String id = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
+
+        ClientRegistration githubRegistration = ClientRegistration.withRegistrationId("github")
+            .clientId("test-client")
+            .clientSecret("test-secret")
+            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
+            .authorizationUri("https://github.com/login/oauth/authorize")
+            .tokenUri("https://github.com/login/oauth/access_token")
+            .userInfoUri("https://api.github.com/user")
+            .userNameAttributeName("id")
+            .clientName("GitHub")
+            .build();
+        var githubLogin = oauth2Login().clientRegistration(githubRegistration);
+
+        // Resolvable directly from OPEN -- an issue doesn't need to be converted first.
+        mockMvc.perform(post("/v1/tracker/issues/" + id + "/done").with(githubLogin))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("DONE"));
+
+        mockMvc.perform(post("/v1/tracker/issues/" + id + "/reopen").with(githubLogin))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("OPEN"));
     }
 }

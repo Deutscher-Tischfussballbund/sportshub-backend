@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.federation;
 
+import de.dtfb.sportshub.backend.access.auth.AuthorizationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -13,9 +14,11 @@ import java.util.List;
 public class FederationController {
 
     private final FederationService service;
+    private final AuthorizationService authz;
 
-    public FederationController(FederationService service) {
+    public FederationController(FederationService service, AuthorizationService authz) {
         this.service = service;
+        this.authz = authz;
     }
 
     @GetMapping
@@ -38,10 +41,15 @@ public class FederationController {
         return service.get(id);
     }
 
+    /**
+     * Open to a region admin managing their own federation (e.g. picking its default rule set,
+     * from the rule-set dialog), not just global admins -- {@code FederationService#update} still
+     * refuses a parent-federation change unless the caller is a global admin.
+     */
     @PutMapping("/{id}")
-    @PreAuthorize("@authz.isAdmin()")
+    @PreAuthorize("@authz.canManageRegion(#id)")
     public FederationDto updateFederation(@PathVariable String id, @RequestBody FederationDto federationDto) {
-        return service.update(id, federationDto);
+        return service.update(id, federationDto, authz.isAdmin());
     }
 
     @DeleteMapping("/{id}")

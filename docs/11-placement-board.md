@@ -89,9 +89,14 @@ keyboard/screen-reader accessible via `@angular/cdk/menu`. The drag handle icon 
 
 ## 3. Randomize (per-tier shuffle) — built as planned, plus a sibling "Clear tier" action
 
-A button, scoped to one tier at a time, that redistributes every **currently-placed** team in
-that tier's groups evenly at random across those same groups. Confirmed by choice: never pulls
-in already-unplaced teams, so it can't silently promote/relegate anyone as a side effect.
+A button, scoped to one tier at a time, that redistributes every team in that tier's groups
+evenly at random across those same groups. **Reversed 2026-08-26** from the original "never
+pulls in already-unplaced teams" decision above: on request, Randomize now also sweeps in the
+league's unplaced pool (`PlacementBoard.unplaced` — league-wide, since `TeamParticipation` has no
+tier FK) into the shuffle. Rationale for the reversal: viewing this tier and hitting Randomize
+already *is* the admin's placement decision for those unplaced teams, no different from manually
+dragging one in — and leaving them out made the button look broken for the common real case of a
+tier with unplaced-but-registered teams and nothing yet in its groups to reshuffle.
 
 **New, not in the original design: "Clear tier"** — unplaces every currently-placed team in the
 tier (moves them into the shared Unplaced lane) in one action. Added on request once the board
