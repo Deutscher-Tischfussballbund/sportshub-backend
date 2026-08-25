@@ -38,6 +38,8 @@
   .badge { display: inline-block; font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 1rem; }
   .badge.open { background: #8884; }
   .badge.approved { background: #2a7a2a; color: white; }
+  .badge.done { background: #555; color: white; }
+  .list-toggle { font-size: 0.85rem; margin-bottom: 1rem; }
   .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
   #status { font-size: 0.85rem; min-height: 1.2rem; margin-bottom: 1rem; }
   #status.error { color: #c0392b; }
@@ -71,6 +73,10 @@
   <p><button class="primary" id="submit-issue">Add</button></p>
 </section>
 
+<p class="list-toggle">
+  <label><input type="checkbox" id="show-done"> Show done issues</label>
+</p>
+
 <section id="issues" aria-live="polite"></section>
 
 <dialog id="convert-dialog">
@@ -100,6 +106,14 @@
   var convertDialog = document.getElementById('convert-dialog');
   var convertRepoInput = document.getElementById('convert-repo');
   var pendingConvertId = null;
+  var showDoneCheckbox = document.getElementById('show-done');
+  var lastIssues = [];
+
+  showDoneCheckbox.checked = localStorage.getItem('tracker.showDone') === 'true';
+  showDoneCheckbox.addEventListener('change', function () {
+    localStorage.setItem('tracker.showDone', showDoneCheckbox.checked);
+    render(lastIssues);
+  });
 
   nameInput.value = localStorage.getItem('tracker.voterName') || '';
   nameInput.addEventListener('change', function () {
@@ -156,12 +170,15 @@
   }
 
   function render(issues) {
+    lastIssues = issues;
+    var visible = showDoneCheckbox.checked ? issues : issues.filter(function (i) { return i.status !== 'DONE'; });
+
     issuesEl.innerHTML = '';
-    if (!issues.length) {
-      issuesEl.innerHTML = '<p>No issues yet.</p>';
+    if (!visible.length) {
+      issuesEl.innerHTML = '<p>' + (issues.length ? 'No open issues.' : 'No issues yet.') + '</p>';
       return;
     }
-    issues.forEach(function (issue) {
+    visible.forEach(function (issue) {
       var card = document.createElement('div');
       card.className = 'issue';
 
@@ -169,8 +186,16 @@
       var githubLink = issue.githubIssueUrl
         ? '<div><a class="github-link" href="' + escapeHtml(issue.githubIssueUrl) + '" target="_blank" rel="noopener">View on GitHub ↗</a></div>'
         : '';
-      var convertControl = (issue.status === 'OPEN' && me.authenticated)
+      // Never offered once already converted (has a GitHub link), even if the issue was later
+      // marked done and reopened -- reopen only resets the status, not the conversion itself.
+      var convertControl = (issue.status === 'OPEN' && !issue.githubIssueUrl && me.authenticated)
         ? '<button data-action="convert" data-id="' + issue.id + '">Convert to GitHub issue</button>'
+        : '';
+      var doneControl = (issue.status !== 'DONE' && me.authenticated)
+        ? '<button data-action="done" data-id="' + issue.id + '">Mark done</button>'
+        : '';
+      var reopenControl = (issue.status === 'DONE' && me.authenticated)
+        ? '<button data-action="reopen" data-id="' + issue.id + '">Reopen</button>'
         : '';
       var deleteControl = me.authenticated
         ? '<button data-action="delete" data-id="' + issue.id + '">Delete</button>'
@@ -186,7 +211,7 @@
           '<div class="issue-meta">reported by ' + escapeHtml(issue.reportedBy || 'unknown') + '</div>' +
           '<p class="issue-desc">' + escapeHtml(issue.description) + '</p>' +
           githubLink +
-          '<div class="actions">' + convertControl + deleteControl + '</div>' +
+          '<div class="actions">' + convertControl + doneControl + reopenControl + deleteControl + '</div>' +
         '</div>';
       issuesEl.appendChild(card);
     });
@@ -239,6 +264,12 @@
       pendingConvertId = id;
       convertRepoInput.value = localStorage.getItem('tracker.lastRepo') || '';
       convertDialog.showModal();
+    } else if (action === 'done') {
+      api('/' + id + '/done', { method: 'POST' })
+        .then(function () { setStatus('Marked done.'); load(); }).catch(function (err) { setStatus(err.message, true); });
+    } else if (action === 'reopen') {
+      api('/' + id + '/reopen', { method: 'POST' })
+        .then(function () { setStatus('Reopened.'); load(); }).catch(function (err) { setStatus(err.message, true); });
     } else if (action === 'delete') {
       if (!confirm('Delete this issue permanently?')) return;
       api('/' + id, { method: 'DELETE' })

@@ -61,6 +61,18 @@ public class TrackerIssueAdminController {
         return service.convert(id, request.getGithubRepo(), githubClient.getAccessToken().getTokenValue());
     }
 
+    @PostMapping("/{id}/done")
+    @PreAuthorize("isAuthenticated()")
+    public TrackerIssueDto markIssueDone(@PathVariable String id) {
+        return service.markDone(id);
+    }
+
+    @PostMapping("/{id}/reopen")
+    @PreAuthorize("isAuthenticated()")
+    public TrackerIssueDto reopenIssue(@PathVariable String id) {
+        return service.reopen(id);
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     @ResponseStatus(HttpStatus.NO_CONTENT)

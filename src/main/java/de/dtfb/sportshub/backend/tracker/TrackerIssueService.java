@@ -93,6 +93,22 @@ public class TrackerIssueService {
     }
 
     @Transactional
+    public TrackerIssueDto markDone(String issueId) {
+        TrackerIssue issue = getIssue(issueId);
+        issue.markDone();
+        issueRepository.save(issue);
+        return toDto(issue, voteRepository.countByIssueId(issueId), false);
+    }
+
+    @Transactional
+    public TrackerIssueDto reopen(String issueId) {
+        TrackerIssue issue = getIssue(issueId);
+        issue.reopen();
+        issueRepository.save(issue);
+        return toDto(issue, voteRepository.countByIssueId(issueId), false);
+    }
+
+    @Transactional
     public void delete(String issueId) {
         TrackerIssue issue = getIssue(issueId);
         voteRepository.deleteAll(voteRepository.findByIssueId(issueId));
