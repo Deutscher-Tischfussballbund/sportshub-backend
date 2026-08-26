@@ -32,11 +32,12 @@
 SET NAMES utf8mb4;
 
 -- ---------------------------------------------------------------------------
--- Root federation (DTFB). Every Landesverband inserted below is retroactively pointed at it
--- (see the UPDATE at the end of this file) -- a general self-referencing tree
--- (Federation#isRoot), not hardcoded to two levels.
+-- Root federation (DTFB). NOT inserted here -- Flyway's V5__federation_hierarchy.sql already
+-- seeds this row on every fresh schema, before this script ever runs; inserting it again here
+-- would collide with that (this script is a plain, non-idempotent set of INSERTs). Every
+-- Landesverband inserted below is retroactively pointed at it via the UPDATE at the end of this
+-- file -- a general self-referencing tree (Federation#isRoot), not hardcoded to two levels.
 -- ---------------------------------------------------------------------------
-INSERT INTO federation (id, name) VALUES ('fed-dtfb', 'DTFB');
 
 -- ---------------------------------------------------------------------------
 -- Global admins — no region scope.
