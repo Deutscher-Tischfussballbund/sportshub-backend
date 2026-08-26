@@ -183,20 +183,23 @@ docker compose exec -T sportshub-db mysql -u sportshub -p"$SPORTSHUB_DB_PASSWORD
 ```
 
 **⚠️ If `SPORTSHUB_BOOTSTRAP_ADMIN_DTFB_ID` was set on the backend's `.env`** (e.g. to `flock`),
-`BootstrapAdminInitializer` already auto-created a minimal `player` row for that `dtfb_id` on first
-boot (see `07-prod-keycloak-and-admin-bootstrap.md` §3) — **before** this script gets to run. The
-script's own `INSERT` for that same `dtfb_id` then fails with a duplicate-key error on
-`player`, and since it's one multi-row `INSERT` statement, it fails atomically and nothing after
-that line in the script executes either (script aborts there). Fix once, then re-run the whole
-script:
+`BootstrapAdminInitializer` already auto-created a minimal `app_user` row for that `dtfb_id` on
+first boot (see `07-prod-keycloak-and-admin-bootstrap.md` §3) — **before** this script gets to run.
+The script's own `INSERT` for that same `dtfb_id` then fails with a duplicate-key error on
+`app_user.UK_app_user_dtfb_id`, and since it's one multi-row `INSERT` statement, it fails
+atomically and nothing after that line in the script executes either (script aborts there). Fix
+once, then re-run the whole script:
 
 ```sql
-DELETE FROM role_assignment WHERE player_id = (SELECT id FROM player WHERE dtfb_id = 'flock');
-DELETE FROM player WHERE dtfb_id = 'flock';
+DELETE FROM role_assignment WHERE user_id = (SELECT id FROM app_user WHERE dtfb_id = 'flock');
+DELETE FROM app_user WHERE dtfb_id = 'flock';
 ```
 
-Once the script creates the real `player-flock` row (with the fixed id/name the script expects),
-`BootstrapAdminInitializer` becomes a harmless no-op on every future restart.
+Once the script creates the real `user-flock` row (with the fixed id/name the script expects),
+`BootstrapAdminInitializer` becomes a harmless no-op on every future restart. To avoid hitting this
+every time the DB gets wiped and reseeded, consider unsetting `SPORTSHUB_BOOTSTRAP_ADMIN_DTFB_ID`
+in `.env` once `00-bootstrap.sql` has run at least once — it already creates both global admins,
+making this redundant going forward.
 
 Then, per region:
 
