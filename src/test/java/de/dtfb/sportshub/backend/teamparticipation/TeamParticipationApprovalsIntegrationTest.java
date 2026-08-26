@@ -74,9 +74,12 @@ class TeamParticipationApprovalsIntegrationTest {
     @Test
     void pending_forbiddenWithoutRegionAuthority() throws Exception {
         Federation fed = federation("NRW");
-        userRepository.save(user("outsider"));
+        // "outsider" is used as a bare fixture dtfb_id by several test classes that share this
+        // suite's H2 context (Spring context caching) -- must stay globally unique or whichever
+        // class runs second hits a duplicate-key violation on app_user.dtfb_id.
+        userRepository.save(user("outsider-approvals"));
         mockMvc.perform(get("/v1/team-participations/pending")
-                .param("federationId", fed.getId()).with(jwtFor("outsider")))
+                .param("federationId", fed.getId()).with(jwtFor("outsider-approvals")))
             .andExpect(status().isForbidden());
     }
 

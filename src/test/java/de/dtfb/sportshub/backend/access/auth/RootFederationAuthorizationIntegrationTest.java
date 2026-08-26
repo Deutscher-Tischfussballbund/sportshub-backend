@@ -141,8 +141,11 @@ class RootFederationAuthorizationIntegrationTest {
 
     @Test
     void outsider_withoutAnyRole_mayNotCreateARootLevelTeam() throws Exception {
-        userRepository.save(user("outsider"));
-        mockMvc.perform(post("/v1/teams").with(jwtFor("outsider")).contentType(MediaType.APPLICATION_JSON)
+        // "outsider" is used as a bare fixture dtfb_id by several test classes that share this
+        // suite's H2 context (Spring context caching) -- must stay globally unique or whichever
+        // class runs second hits a duplicate-key violation on app_user.dtfb_id.
+        userRepository.save(user("outsider-rootfed"));
+        mockMvc.perform(post("/v1/teams").with(jwtFor("outsider-rootfed")).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Nope\",\"clubId\":\"" + clubId + "\",\"seasonId\":\"" + rootSeasonId + "\"}"))
             .andExpect(status().isForbidden());
     }
