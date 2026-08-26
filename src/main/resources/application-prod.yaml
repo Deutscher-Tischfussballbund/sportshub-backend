@@ -65,6 +65,13 @@ sportshub:
         # admin (the dev seed is dev-only). Idempotent; unset = no-op. Set it for
         # the first deploy, then it can stay (or be cleared) safely.
         admin-dtfb-id: ${SPORTSHUB_BOOTSTRAP_ADMIN_DTFB_ID:}
+    security:
+        # Keycloak clients ("azp" claim) allowed to call this API at all (docs/10 §5). Every real
+        # consumer today: the admin app's own users (dtfb-admin-web) AND the confidential client
+        # scripts/prod-test-seed/seed-region.sh logs real users in through via ROPC (dtfb-api) --
+        # both mint tokens for real people, just through different front doors. Add a new entry
+        # whenever a new Keycloak client is registered (dtfb-keycloak/scripts/clients.json).
+        allowed-clients: ${SPORTSHUB_ALLOWED_CLIENTS:dtfb-admin-web,dtfb-api,dtfb-service}
     cors:
         # Allowed CORS origins for the admin console(s). Comma-separated for several,
         # e.g. https://admin.dtfb.de,https://admin.stage.dtfb.de

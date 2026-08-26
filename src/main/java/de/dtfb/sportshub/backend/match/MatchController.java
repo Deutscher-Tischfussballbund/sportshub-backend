@@ -38,8 +38,15 @@ public class MatchController {
         return service.get(id);
     }
 
+    // Also reachable by a write-capable registered app (e.g. a live-scoring integration) with an
+    // in-scope ApiClientGrant -- see docs/10-api-consumers-and-authz.md §5, the one wired example
+    // of the app-level (not human-role) authorization path. apiClientAuthz must be checked FIRST:
+    // it always returns cleanly (false for a human/non-granted azp), whereas @authz.canOrganizeMatch
+    // throws for a token with no dtfb_id (a service-account JWT) rather than returning false --
+    // SpEL "or" short-circuits left-to-right, so throwing on the left would never let a legitimate
+    // API-client grant on the right get evaluated.
     @PutMapping("/{id}")
-    @PreAuthorize("@authz.canOrganizeMatch(#id)")
+    @PreAuthorize("@apiClientAuthz.canOrganizeMatch(#id) or @authz.canOrganizeMatch(#id)")
     public MatchDto updateMatch(@PathVariable String id, @RequestBody MatchDto matchDto) {
         return service.update(id, matchDto);
     }
