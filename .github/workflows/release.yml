@@ -9,7 +9,7 @@ on:
       - "v*"
 
 permissions:
-  contents: read
+  contents: write   # needed to create the GitHub Release below (was: read)
   packages: write
 
 jobs:
@@ -48,3 +48,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Technical/dev-facing release notes: GitHub compiles them from merged PR titles since the
+      # last tag -- no hand-maintained CHANGELOG.md to keep in sync.
+      - name: Create GitHub Release
+        run: gh release create "${{ github.ref_name }}" --generate-notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
