@@ -232,6 +232,76 @@ API, authenticated via ROPC as each region admin's own Keycloak account.
 **Status: all of the above confirmed working on the first live rollout as of 2026-07-28**
 (`v0.2.2`), including admin login end-to-end after the `X-Frame-Options` fix above.
 
+## 9. Redeploying a schema-breaking migration (DB wipe + reseed)
+
+Some migrations are explicitly schema-shape-only, not a data-preserving backfill (e.g.
+`V2__user_player_split.sql` — see its own header comment), because this deployment only ever had
+~7 testers and no real production history to carry forward. Applying one of these against the
+VPS's already-populated tables fails outright (FK/constraint violations), so the database gets
+wiped and rebuilt from `00-bootstrap.sql` + `seed-region.sh` instead of migrated in place. First
+done for `v0.3.0` (2026-08-26) — full steps and every gotcha hit along the way:
+
+1. Cut and push a new tag (`git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z`), wait for
+   `release.yml` to publish the image.
+2. **Back up the tracker issues first** — unlike the rest of the DB (disposable seed/demo data),
+   `tracker_issue`/`tracker_issue_vote` hold real tester-reported feedback and have zero foreign
+   keys into the domain schema (only an internal vote→issue FK), so they survive a wipe+reseed
+   independently:
+   ```bash
+   docker compose exec sportshub-db mysqldump -u sportshub -p"$SPORTSHUB_DB_PASSWORD" \
+     --default-character-set=utf8mb4 --no-create-info --complete-insert \
+     sportshub tracker_issue tracker_issue_vote > tracker-backup-$(date +%F).sql
+   ```
+   `--no-create-info` is deliberate — restoring the dump's own `CREATE TABLE` would overwrite
+   whatever the new version's Flyway migrations just built (e.g. `V6` widening `status` from an
+   `enum` to `varchar`) with the old, possibly-stale definition. Only the `INSERT`s get replayed.
+3. Wipe the schema — the app's own `sportshub` user already has `ALL PRIVILEGES` scoped to the
+   `sportshub` database name, which MySQL honors for `CREATE`/`DROP DATABASE` on that exact name
+   even without a global grant, so **no root password needed**:
+   ```bash
+   docker compose exec sportshub-db mysql -u "$SPORTSHUB_DB_USER" -p"$SPORTSHUB_DB_PASSWORD" \
+     -e "DROP DATABASE sportshub; CREATE DATABASE sportshub CHARACTER SET utf8mb4;"
+   ```
+4. Update `SPORTSHUB_TAG` in `.env`, `docker compose pull && docker compose up -d`, tail logs
+   until Flyway applies every migration and Hibernate `validate` passes.
+5. Restore the tracker backup now that the schema exists:
+   ```bash
+   docker compose exec -T sportshub-db mysql -u sportshub -p"$SPORTSHUB_DB_PASSWORD" \
+     --default-character-set=utf8mb4 sportshub < tracker-backup-*.sql
+   ```
+6. Reseed per §7. **`00-bootstrap.sql` is not idempotent and assumes an empty schema** — if it was
+   already run once against this database before (e.g. a partial/failed earlier attempt), rows
+   from that attempt collide with the fresh `INSERT`s; there's no partial-skip, only a clean wipe
+   or hand-editing the script for a single retry.
+7. Keycloak is untouched by any of this — the 12 tester accounts don't need recreating, only the
+   backend's own rows.
+
+**Gotchas hit doing this the first time (all now fixed in the repo, kept here for the next time):**
+- `00-bootstrap.sql` used to `INSERT` the root federation (`fed-dtfb`) itself, colliding with
+  `V5__federation_hierarchy.sql`'s own seed of that exact row — Flyway runs first, so the script's
+  insert always failed with `ERROR 1062` on that row. Fixed: the script no longer inserts it.
+- If `SPORTSHUB_BOOTSTRAP_ADMIN_DTFB_ID` is set, `BootstrapAdminInitializer` auto-creates a
+  minimal `app_user` row for that `dtfb_id` on boot, before `00-bootstrap.sql` runs — the script's
+  own insert for the same `dtfb_id` then fails with `ERROR 1062` on
+  `app_user.UK_app_user_dtfb_id`. Fix once (`DELETE FROM role_assignment WHERE user_id = (SELECT
+  id FROM app_user WHERE dtfb_id = '...'); DELETE FROM app_user WHERE dtfb_id = '...';`), then
+  re-run; consider unsetting the env var afterward to avoid recurring on every future wipe.
+- `seed-region.sh`'s `login()`/`api()` used `curl -sf` piped straight into `jq` — combined with
+  `set -euo pipefail`, a failed login/request used to kill the whole script silently, before its
+  own "Login failed" diagnostic ever ran. Fixed: failures now print `HTTP <code>: <body>` to
+  stderr before exiting.
+- A wrong `DTFB_API_CLIENT_SECRET` produces Keycloak's generic `unauthorized_client: Invalid
+  client or Invalid client credentials` regardless of *why* it's wrong (stale value, bad
+  client/realm config). `kcadm.sh get clients -r dtfb --fields ...,secret` (bulk list) does **not**
+  reliably return the live secret — query the dedicated sub-resource instead, the same one the
+  Admin Console's Credentials tab uses:
+  ```bash
+  CLIENT_UUID=$(docker compose -f docker-compose.prod.yaml exec keycloak \
+    /opt/keycloak/bin/kcadm.sh get clients -r dtfb -q clientId=dtfb-api --fields id --format csv --noquotes | tail -n1)
+  docker compose -f docker-compose.prod.yaml exec keycloak \
+    /opt/keycloak/bin/kcadm.sh get "clients/${CLIENT_UUID}/client-secret" -r dtfb
+  ```
+
 ## Residual risks (accepted, not blocking for a short test window)
 
 - Fixed, shared, weak tester passwords (`region`/`team`/`admin`) — mitigated by the realm's
