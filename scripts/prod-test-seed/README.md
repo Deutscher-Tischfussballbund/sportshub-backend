@@ -79,6 +79,13 @@ league, one tier, one group, all 3 teams placed and roster-confirmed against a s
 12 filler players (`player-f1`..`player-f12`, reused across regions — harmless for demo data,
 `roster_entry` has no uniqueness constraint preventing it).
 
+`00-bootstrap.sql` also seeds the root federation (`fed-dtfb`, "DTFB") and points every
+Landesverband at it (see docs/16-root-federation.md). `seed-region.sh`, when run for all regions
+(no argument), additionally builds one root-level demo league ("Bundesliga 2026/27" under
+`fed-dtfb`) as the global admin, placing `team-tfvhh-1` and `team-mtfv-1` — one team from two
+different regions' clubs — so the root-federation feature is actually clickable on the
+deployment, not just present in the nav.
+
 ## Re-running
 
 `00-bootstrap.sql` is **not idempotent** (plain `INSERT`s, no `ON DUPLICATE KEY`/upsert) — running
