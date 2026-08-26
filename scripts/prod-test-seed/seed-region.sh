@@ -47,19 +47,37 @@ TEAM3_ROSTER=(player-f7 player-f8 player-f9)
 
 ONLY_FEDERATION="${1:-}"
 
+# Prints the response body to stderr and returns 1 on a non-2xx, instead of curl -f's silent
+# empty-stdout failure -- combined with set -e/pipefail, a silent failure here used to kill the
+# whole script the instant a login/request failed, before ever reaching this script's own
+# diagnostics (e.g. login()'s "Login failed" check never ran) -- hit live during the v0.3.0 VPS
+# rollout with no indication of what actually went wrong.
+http_request() {
+  local method="$1" url="$2"
+  shift 2
+  local response http_code body
+  response="$(curl -s -w '\n%{http_code}' -X "${method}" "${url}" "$@")"
+  http_code="${response##*$'\n'}"
+  body="${response%$'\n'*}"
+  if [ "${http_code#2}" = "${http_code}" ]; then
+    echo "!! ${method} ${url} failed (HTTP ${http_code}): ${body}" >&2
+    return 1
+  fi
+  echo "${body}"
+}
+
 login() {
   local username="$1" password="${2:-${REGION_ADMIN_PASSWORD}}"
-  curl -sf -X POST "${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token" \
+  http_request POST "${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token" \
     -d "client_id=dtfb-api" -d "client_secret=${DTFB_API_CLIENT_SECRET}" \
     -d "grant_type=password" -d "username=${username}" -d "password=${password}" \
     -d "scope=openid" | jq -r '.access_token'
 }
 
-# api <method> <path> <json-body> <token> — prints the response body; fails the script on
-# a non-2xx (curl -f), so a broken step stops the run instead of silently cascading.
+# api <method> <path> <json-body> <token> — prints the response body on success.
 api() {
   local method="$1" path="$2" body="$3" token="$4"
-  curl -sf -X "${method}" "${API_BASE_PATH}${path}" \
+  http_request "${method}" "${API_BASE_PATH}${path}" \
     -H "Authorization: Bearer ${token}" -H "Content-Type: application/json" \
     -d "${body}"
 }
