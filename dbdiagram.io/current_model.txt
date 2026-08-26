@@ -339,8 +339,8 @@ Table match_event {
 
 Table standing {
   id varchar(14) [pk, note: 'A league-table row; unique (group_id, team_id)']
-  group_id varchar
-  team_id varchar
+  group_id varchar [not null]
+  team_id varchar [not null]
   played int
   wins int
   draws int
@@ -406,7 +406,7 @@ Table game_plan_entry {
 // ==================== Content ====================
 
 Table release_note {
-  id varchar(14) [pk, note: 'Functional "what''s new" feed shown to every logged-in user (shell bell button) -- global-admin authored. Distinct from technical/dev release notes, which are GitHub''s own auto-generated notes on tagged releases']
+  id varchar(14) [pk, note: 'Functional "what\'s new" feed shown to every logged-in user (shell bell button) -- global-admin authored. Distinct from technical/dev release notes, which are GitHub\'s own auto-generated notes on tagged releases']
   title_de varchar [not null]
   title_en varchar [not null]
   body_de varchar [not null]
