@@ -232,6 +232,22 @@ API, authenticated via ROPC as each region admin's own Keycloak account.
 **Status: all of the above confirmed working on the first live rollout as of 2026-07-28**
 (`v0.2.2`), including admin login end-to-end after the `X-Frame-Options` fix above.
 
+**2026-08-26: `v0.4.0` deployed (no wipe needed).** `V7__release_notes.sql` and
+`V8__api_client_grant.sql` (release notes feed + app-level API access control, docs/10 §5) are
+both pure additive `CREATE TABLE` with no backfill requirement — this redeploy was a plain
+`docker compose pull && up -d` on the backend, not the wipe-and-reseed §9 describes; see
+`V2__user_player_split.sql`'s own header comment for why that one needed a wipe and these don't.
+The frontend (`admin/release-notes`, `admin/api-clients`, the shell "what's new" bell) was
+redeployed the same way as `v0.3.0`'s frontend rollout — built locally from
+`feature/sportshub-backend-migration` (still no GHCR image for it; §4/§5's gotcha). The VPS's
+Keycloak was also updated the same day for an unrelated CVE fix (new `ghcr.io/deutscher-
+tischfussballbund/dtfb-keycloak:latest` image, pulled and restarted — Postgres migrations ran
+automatically on boot, no manual DB step). Confirmed independently: the `v0.4.0` GitHub Release
+was auto-generated correctly from PR #61/#62 titles (docs/10 §1's new touchpoint 4, first real
+exercise of that mechanism). VPS-side steps (backend/frontend pull+restart, Keycloak update,
+tester-login regression check, registering the new `dtfb-service` Keycloak client there) were
+carried out directly, not re-verified from this session.
+
 ## 9. Redeploying a schema-breaking migration (DB wipe + reseed)
 
 Some migrations are explicitly schema-shape-only, not a data-preserving backfill (e.g.

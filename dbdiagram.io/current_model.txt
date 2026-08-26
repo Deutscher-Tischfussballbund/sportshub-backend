@@ -23,6 +23,12 @@
 //
 // The few FKs actually declared `@ManyToOne(optional = false)` in code use plain `>` below:
 // role_assignment.user_id and standing.group_id/team_id.
+//
+// App-level API access control (docs/10-api-consumers-and-authz.md §5): `api_client_grant` is a
+// SECOND, independent authorization model for registered apps/service clients (keyed on the JWT
+// `azp` claim), deliberately not merged with `role_assignment` (keyed on a human's `dtfb_id`) --
+// no FK between the two. `release_note` is unrelated app content (the "what's new" feed),
+// standalone with no relationships at all.
 
 // ============================ Enums ============================
 
@@ -218,6 +224,18 @@ Table role_assignment {
   created_at datetime [not null]
 }
 
+Table api_client_grant {
+  id varchar(14) [pk, note: 'Write-permission grant for a registered app/service client (docs/10 §5) -- keyed on the JWT azp claim, NOT the app_user/role_assignment identity model (deliberately independent, no dtfb_id involved)']
+  client_id varchar [unique, not null, note: 'Keycloak client id (JWT azp claim); not a FK -- Keycloak client provisioning stays a separate ops step']
+  name varchar [not null, note: 'Human label for the admin UI, e.g. "Public Results Site"']
+  write_access boolean [not null, default: false, note: 'Read is implicit for any allowed client (see JwtDecoderConfig audience gate); this unlocks writes']
+  scope_type ScopeType [not null, default: 'GLOBAL']
+  scope_id varchar [note: 'id of the scoped entity depending on scope_type; null for GLOBAL']
+  active boolean [not null, default: true, note: 'Quick revoke without deleting the row']
+  created_at datetime [not null]
+  last_used_at datetime [note: 'Updated on each authorized request -- per-app usage visibility']
+}
+
 // ==================== League tree ====================
 
 Table season {
@@ -321,8 +339,8 @@ Table match_event {
 
 Table standing {
   id varchar(14) [pk, note: 'A league-table row; unique (group_id, team_id)']
-  group_id varchar
-  team_id varchar
+  group_id varchar [not null]
+  team_id varchar [not null]
   played int
   wins int
   draws int
@@ -383,6 +401,17 @@ Table game_plan_entry {
   rule_set_id varchar
   position int
   game_type MatchType
+}
+
+// ==================== Content ====================
+
+Table release_note {
+  id varchar(14) [pk, note: 'Functional "what\'s new" feed shown to every logged-in user (shell bell button) -- global-admin authored. Distinct from technical/dev release notes, which are GitHub\'s own auto-generated notes on tagged releases']
+  title_de varchar [not null]
+  title_en varchar [not null]
+  body_de varchar [not null]
+  body_en varchar [not null]
+  published_at datetime [not null, note: 'Set on create, preserved on edit']
 }
 
 // ============================ Relationships ============================
