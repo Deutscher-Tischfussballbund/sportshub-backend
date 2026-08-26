@@ -87,8 +87,11 @@ class LeagueAuthorizationIntegrationTest {
 
     @Test
     void outsider_withoutAnyRole_isForbidden() throws Exception {
-        userRepository.save(user("outsider"));
-        mockMvc.perform(post("/v1/rounds").with(jwtFor("outsider")).contentType(MediaType.APPLICATION_JSON)
+        // "outsider" is used as a bare fixture dtfb_id by several test classes that share this
+        // suite's H2 context (Spring context caching) -- must stay globally unique or whichever
+        // class runs second hits a duplicate-key violation on app_user.dtfb_id.
+        userRepository.save(user("outsider-league"));
+        mockMvc.perform(post("/v1/rounds").with(jwtFor("outsider-league")).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Nope\",\"index\":9,\"groupId\":\"" + groupId + "\"}"))
             .andExpect(status().isForbidden());
     }

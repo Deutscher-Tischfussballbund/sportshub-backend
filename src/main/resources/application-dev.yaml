@@ -51,6 +51,9 @@ springdoc:
 server:
     port: 8082
 sportshub:
+    security:
+        # See application-prod.yaml's comment -- same three clients locally.
+        allowed-clients: dtfb-admin-web,dtfb-api,dtfb-service
     cors:
         # Origin of the local admin console (the Angular dev server).
         allowed-origins: http://localhost:4200
