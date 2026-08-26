@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # Builds one full example season (league -> tier -> group -> 3 placed teams -> confirmed
 # rosters) for each of the 5 seeded regions, by calling the REAL REST API as that region's
-# just-bootstrapped region-admin account — not raw SQL. Run 00-bootstrap.sql first.
+# just-bootstrapped region-admin account — not raw SQL. Run 00-bootstrap.sql first. When run
+# for all regions (no argument), also builds one root-level demo league ("Bundesliga", under
+# fed-dtfb) as the global admin, so the root-federation feature (docs/16-root-federation.md) is
+# actually exercisable on the deployment, not just present in the nav.
 #
 # Auth: ROPC (password grant) against the confidential `dtfb-api` Keycloak client, which
 # already has directAccessGrantsEnabled + a provisioned secret — no Keycloak config changes
-# needed. The resulting token authenticates as the real region-admin user, indistinguishable
-# from what the SPA would get.
+# needed. The resulting token authenticates as the real region-admin/global-admin user,
+# indistinguishable from what the SPA would get.
 #
 # Requires: curl, jq. Set env vars before running (see README.md):
 #   KEYCLOAK_URL              e.g. https://sh-id-test.dtfb.de
@@ -14,9 +17,10 @@
 #   DTFB_API_CLIENT_SECRET    the `dtfb-api` client's secret (dtfb-keycloak's .env, written
 #                             there by scripts/setup-keycloak.mts)
 #   REGION_ADMIN_PASSWORD     defaults to "region", matching 00-bootstrap.sql's accounts
+#   GLOBAL_ADMIN_PASSWORD     defaults to "admin", matching 00-bootstrap.sql's two admin accounts
 #
-# Usage: ./seed-region.sh              # seeds all 5 regions
-#        ./seed-region.sh fed-tfvhh    # seeds just one (re-run/debugging a single region)
+# Usage: ./seed-region.sh              # seeds all 5 regions + the root Bundesliga demo
+#        ./seed-region.sh fed-tfvhh    # seeds just one region (re-run/debugging), skips Bundesliga
 
 set -euo pipefail
 
@@ -24,6 +28,7 @@ set -euo pipefail
 : "${API_BASE_PATH:?API_BASE_PATH required, e.g. https://sh-api-test.dtfb.de}"
 : "${DTFB_API_CLIENT_SECRET:?DTFB_API_CLIENT_SECRET required (dtfb-api client secret)}"
 REGION_ADMIN_PASSWORD="${REGION_ADMIN_PASSWORD:-region}"
+GLOBAL_ADMIN_PASSWORD="${GLOBAL_ADMIN_PASSWORD:-admin}"
 KEYCLOAK_REALM="${KEYCLOAK_REALM:-dtfb}"
 
 # Parallel arrays — must match 00-bootstrap.sql exactly.
@@ -43,10 +48,10 @@ TEAM3_ROSTER=(player-f7 player-f8 player-f9)
 ONLY_FEDERATION="${1:-}"
 
 login() {
-  local username="$1"
+  local username="$1" password="${2:-${REGION_ADMIN_PASSWORD}}"
   curl -sf -X POST "${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token" \
     -d "client_id=dtfb-api" -d "client_secret=${DTFB_API_CLIENT_SECRET}" \
-    -d "grant_type=password" -d "username=${username}" -d "password=${REGION_ADMIN_PASSWORD}" \
+    -d "grant_type=password" -d "username=${username}" -d "password=${password}" \
     -d "scope=openid" | jq -r '.access_token'
 }
 
@@ -137,11 +142,67 @@ seed_one_region() {
   echo "== ${label} done =="
 }
 
+# Root-level demo league under fed-dtfb (docs/16-root-federation.md), logged in as the global
+# admin (not a region admin — root-level leagues are DTFB's own, not any one Landesverband's).
+# Places one team from two different regions/clubs (team-tfvhh-1, team-mtfv-1) to demonstrate
+# cross-federation placement under a root league; each club fields only one team here, which is
+# exactly the "one team per club per root-level league" rule (TeamParticipationService
+# #requireSingleRootLeagueTeamPerClub) in its simplest, always-satisfied form.
+seed_root_league() {
+  echo "== Bundesliga (root, fed-dtfb) — logging in as flock =="
+  local token
+  token="$(login flock "${GLOBAL_ADMIN_PASSWORD}")"
+  if [ -z "${token}" ] || [ "${token}" = "null" ]; then
+    echo "!! Login failed for flock — check GLOBAL_ADMIN_PASSWORD / that 00-bootstrap.sql ran." >&2
+    return 1
+  fi
+
+  echo "   creating season..."
+  local season_id
+  season_id="$(api POST /v1/seasons "$(jq -n '{
+    name: "Bundesliga 2026/27", federationId: "fed-dtfb",
+    startDate: "2026-09-01", endDate: "2027-05-31", registrationOpensAt: "2026-06-01"
+  }')" "${token}" | jq -r '.id')"
+
+  echo "   creating league..."
+  local league_id
+  league_id="$(api POST /v1/leagues "$(jq -n --arg season "${season_id}" '{
+    name: "Bundesliga", seasonId: $season, categoryId: "cat-herren", ruleSetId: "rs-dtfb-std"
+  }')" "${token}" | jq -r '.id')"
+
+  echo "   creating tier..."
+  local tier_id
+  tier_id="$(api POST /v1/tiers "$(jq -n --arg league "${league_id}" '{
+    name: "1. Liga", leagueId: $league, level: 1
+  }')" "${token}" | jq -r '.id')"
+
+  echo "   creating group..."
+  local group_id
+  group_id="$(api POST /v1/groups "$(jq -n --arg tier "${tier_id}" '{
+    name: "Gesamt", tierId: $tier, groupState: "RUNNING"
+  }')" "${token}" | jq -r '.id')"
+
+  echo "   placing teams..."
+  local team_id
+  for team_id in team-tfvhh-1 team-mtfv-1; do
+    api POST /v1/team-participations "$(jq -n --arg team "${team_id}" --arg league "${league_id}" --arg group "${group_id}" '{
+      teamId: $team, leagueId: $league, groupId: $group
+    }')" "${token}" > /dev/null
+    echo "     ${team_id} placed"
+  done
+
+  echo "== Bundesliga done =="
+}
+
 for i in "${!FEDERATION_IDS[@]}"; do
   if [ -n "${ONLY_FEDERATION}" ] && [ "${ONLY_FEDERATION}" != "${FEDERATION_IDS[$i]}" ]; then
     continue
   fi
   seed_one_region "${i}"
 done
+
+if [ -z "${ONLY_FEDERATION}" ]; then
+  seed_root_league
+fi
 
 echo "All done."
