@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.access.auth;
 
+import de.dtfb.sportshub.backend.support.TestIds;
 import com.jayway.jsonpath.JsonPath;
 import de.dtfb.sportshub.backend.access.role.Role;
 import de.dtfb.sportshub.backend.access.role.ScopeType;
@@ -79,7 +80,7 @@ class LeagueAdminIntegrationTest {
         String federationId = create("/v1/federation", "{\"name\":\"Testverband\"}");
         seasonId = create("/v1/seasons",
             "{\"name\":\"2025\",\"federationId\":\"" + federationId + "\",\"registrationOpensAt\":\"2020-01-01\"}");
-        categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"H\"}");
+        categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
 
         leagueAId = create("/v1/leagues",
             "{\"name\":\"Liga A\",\"seasonId\":\"" + seasonId + "\",\"categoryId\":\"" + categoryId + "\"}");

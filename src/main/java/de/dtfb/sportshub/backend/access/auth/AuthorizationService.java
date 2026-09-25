@@ -111,6 +111,23 @@ public class AuthorizationService {
         return AccessRoles.isGlobalAdmin(currentRoles());
     }
 
+    /**
+     * Holds any admin role (global, region, club, or league admin) -- not {@code team_admin}. A
+     * read-side visibility check (e.g. the divers league side on players), so it returns false
+     * rather than throwing for a token without a {@code dtfb_id} (a service-account JWT).
+     */
+    public boolean hasAnyAdminRole() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (!(authentication != null && authentication.getPrincipal() instanceof Jwt jwt)) {
+            return false;
+        }
+        String dtfbId = jwt.getClaimAsString("dtfb_id");
+        if (dtfbId == null || dtfbId.isBlank()) {
+            return false;
+        }
+        return AccessRoles.hasAnyAdminRole(currentRoles());
+    }
+
     /** May administer the given region (federation). */
     public boolean canManageRegion(String regionId) {
         return canManageScope(currentRoles(), ScopeType.REGION, regionId);

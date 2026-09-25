@@ -1,11 +1,13 @@
 package de.dtfb.sportshub.backend.access.auth;
 
+import de.dtfb.sportshub.backend.support.TestIds;
 import com.jayway.jsonpath.JsonPath;
 import de.dtfb.sportshub.backend.access.role.Role;
 import de.dtfb.sportshub.backend.access.role.ScopeType;
 import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignment;
 import de.dtfb.sportshub.backend.access.roleassignment.RoleAssignmentRepository;
 import de.dtfb.sportshub.backend.player.Player;
+import de.dtfb.sportshub.backend.player.PlayerGender;
 import de.dtfb.sportshub.backend.player.PlayerRepository;
 import de.dtfb.sportshub.backend.user.User;
 import de.dtfb.sportshub.backend.user.UserRepository;
@@ -62,7 +64,7 @@ class RootFederationAuthorizationIntegrationTest {
         subFederationId = createFederation();
         clubId = createClub(subFederationId);
 
-        String categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"H\"}");
+        String categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
         rootSeasonId = create("/v1/seasons",
             "{\"name\":\"Bundesliga-Saison\",\"federationId\":\"" + ROOT_FEDERATION_ID + "\"}");
         rootLeagueId = create("/v1/leagues",
@@ -166,6 +168,8 @@ class RootFederationAuthorizationIntegrationTest {
 
     private String seedPlayer() {
         Player player = new Player();
+        player.setBirthYear(1990);
+        player.setGender(PlayerGender.MALE);
         player.setFirstName("Test");
         player.setLastName("Spieler");
         return playerRepository.save(player).getId();
