@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.access.auth;
 
+import de.dtfb.sportshub.backend.support.TestIds;
 import com.jayway.jsonpath.JsonPath;
 import de.dtfb.sportshub.backend.access.role.Role;
 import de.dtfb.sportshub.backend.access.role.ScopeType;
@@ -58,7 +59,7 @@ class LeagueAuthorizationIntegrationTest {
     void setup() throws Exception {
         String federationId = createFederation();
         String seasonId = create("/v1/seasons", "{\"name\":\"2025\",\"federationId\":\"" + federationId + "\"}");
-        String categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"H\"}");
+        String categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
         leagueId = create("/v1/leagues",
             "{\"name\":\"Bundesliga\",\"seasonId\":\"" + seasonId + "\",\"categoryId\":\"" + categoryId + "\"}");
         tierId = create("/v1/tiers", "{\"name\":\"1. Bundesliga\",\"leagueId\":\"" + leagueId + "\"}");
@@ -101,7 +102,7 @@ class LeagueAuthorizationIntegrationTest {
         String otherLeagueId = create("/v1/leagues",
             "{\"name\":\"Other\",\"seasonId\":\"" + create("/v1/seasons",
                 "{\"name\":\"2026\",\"federationId\":\"" + createFederation() + "\"}")
-                + "\",\"categoryId\":\"" + create("/v1/category", "{\"name\":\"Damen\",\"shortName\":\"D\"}") + "\"}");
+                + "\",\"categoryId\":\"" + create("/v1/category", "{\"name\":\"Damen\",\"shortName\":\"" + TestIds.unique("D") + "\"}") + "\"}");
         RequestPostProcessor otherOrganizer = grantLeagueOrganizer("otherOrganizer", otherLeagueId);
 
         mockMvc.perform(post("/v1/rounds").with(otherOrganizer).contentType(MediaType.APPLICATION_JSON)

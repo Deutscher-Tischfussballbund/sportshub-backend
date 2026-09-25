@@ -12,8 +12,11 @@ import de.dtfb.sportshub.backend.leaguerules.RuleSetDeletionBlockedError;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetDeletionBlockedException;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetEditBlockedError;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetEditBlockedException;
+import de.dtfb.sportshub.backend.category.CategoryShortNameTakenException;
 import de.dtfb.sportshub.backend.roster.PlayerNotClubMemberError;
 import de.dtfb.sportshub.backend.roster.PlayerNotClubMemberException;
+import de.dtfb.sportshub.backend.roster.PlayerNotEligibleError;
+import de.dtfb.sportshub.backend.roster.PlayerNotEligibleException;
 import de.dtfb.sportshub.backend.roster.RosterSizeError;
 import de.dtfb.sportshub.backend.roster.RosterSizeException;
 import de.dtfb.sportshub.backend.season.SeasonDeletionBlockedError;
@@ -66,6 +69,21 @@ public class GlobalExceptionHandler {
     public ResponseEntity<PlayerNotClubMemberError> handlePlayerNotClubMember(PlayerNotClubMemberException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new PlayerNotClubMemberError("PLAYER_NOT_CLUB_MEMBER", ex.getMessage()));
+    }
+
+    // Category create/update would reuse another category's short name (case-insensitive) → 409.
+    @ExceptionHandler(CategoryShortNameTakenException.class)
+    public ResponseEntity<ApiError> handleCategoryShortNameTaken(CategoryShortNameTakenException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ApiError("CATEGORY_SHORT_NAME_TAKEN", ex.getMessage()));
+    }
+
+    // Roster addPlayer/submit refused because player(s) fail the league category's eligibility
+    // profile (CategoryEligibility, docs/19) → 409 listing each failing player + reason.
+    @ExceptionHandler(PlayerNotEligibleException.class)
+    public ResponseEntity<PlayerNotEligibleError> handlePlayerNotEligible(PlayerNotEligibleException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new PlayerNotEligibleError("PLAYER_NOT_ELIGIBLE", ex.getMessage(), ex.getPlayers()));
     }
 
     // Registering a team into a league whose season has already ended → structured 409

@@ -1,6 +1,7 @@
 package de.dtfb.sportshub.backend.clubmembership;
 
 import de.dtfb.sportshub.backend.player.Player;
+import de.dtfb.sportshub.backend.player.PlayerGender;
 import de.dtfb.sportshub.backend.player.PlayerRepository;
 import de.dtfb.sportshub.backend.support.AuthorizedControllerTest;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,8 @@ class ClubMembershipControllerTest extends AuthorizedControllerTest {
 
     private String createPlayer() {
         Player player = new Player();
+        player.setBirthYear(1990);
+        player.setGender(PlayerGender.MALE);
         player.setFirstName("Test");
         player.setLastName("Player");
         return playerRepository.save(player).getId();

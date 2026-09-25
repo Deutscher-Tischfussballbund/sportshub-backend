@@ -54,8 +54,10 @@ VALUES ('ra-flock', 'user-flock', 'ADMIN', 'GLOBAL', NULL, NOW()),
 -- Shared reference data (not per-region): one category and one global-fallback rule set, so
 -- every region's league has something to attach to without needing a bespoke rule set each.
 -- ---------------------------------------------------------------------------
-INSERT INTO category (id, name, short_name)
-VALUES ('cat-herren', 'Herren', 'H');
+-- eligible_side stays NULL (open) on purpose: seed-region.sh rosters the mixed filler pool below
+-- onto every region's single league, so a MEN restriction would reject the female fillers.
+INSERT INTO category (id, name, short_name, eligible_side)
+VALUES ('cat-herren', 'Herren', 'H', NULL);
 
 INSERT INTO league_rule_set (id, federation_id, name, play_system, points_win, points_draw, points_loss,
                              sets_per_game, points_to_win_set, matchday_decision, side_switch_allowed)
@@ -68,18 +70,18 @@ VALUES ('rs-dtfb-std', NULL, 'DTFB Standard', 'ROUND_ROBIN', 3, 1, 0, 3, 7, 'ALL
 -- season-scoped -- the same row is reused across every season it's rostered in.
 -- ---------------------------------------------------------------------------
 INSERT INTO player (id, first_name, last_name, nationality, birth_year, gender, national_license, active)
-VALUES ('player-f1', 'Lukas', 'Bauer', 'DE', 1991, 'man', 'A', TRUE),
-       ('player-f2', 'Jonas', 'Wagner', 'DE', 1988, 'man', 'A', TRUE),
-       ('player-f3', 'Felix', 'Schneider', 'DE', 1995, 'man', 'B', TRUE),
-       ('player-f4', 'Tim', 'Fischer', 'DE', 1993, 'man', 'B', TRUE),
-       ('player-f5', 'Niklas', 'Weber', 'DE', 1990, 'man', 'C', TRUE),
-       ('player-f6', 'Paul', 'Hoffmann', 'DE', 1997, 'man', 'C', TRUE),
-       ('player-f7', 'Anna', 'Schulz', 'DE', 1994, 'woman', 'A', TRUE),
-       ('player-f8', 'Laura', 'Koch', 'DE', 1996, 'woman', 'B', TRUE),
-       ('player-f9', 'Moritz', 'Richter', 'DE', 1992, 'man', 'B', TRUE),
-       ('player-f10', 'Julia', 'Klein', 'DE', 1998, 'woman', 'C', TRUE),
-       ('player-f11', 'David', 'Wolf', 'DE', 1989, 'man', 'A', TRUE),
-       ('player-f12', 'Sophie', 'Neumann', 'DE', 1999, 'woman', 'C', TRUE);
+VALUES ('player-f1', 'Lukas', 'Bauer', 'DE', 1991, 'MALE', 'A', TRUE),
+       ('player-f2', 'Jonas', 'Wagner', 'DE', 1988, 'MALE', 'A', TRUE),
+       ('player-f3', 'Felix', 'Schneider', 'DE', 1995, 'MALE', 'B', TRUE),
+       ('player-f4', 'Tim', 'Fischer', 'DE', 1993, 'MALE', 'B', TRUE),
+       ('player-f5', 'Niklas', 'Weber', 'DE', 1990, 'MALE', 'C', TRUE),
+       ('player-f6', 'Paul', 'Hoffmann', 'DE', 1997, 'MALE', 'C', TRUE),
+       ('player-f7', 'Anna', 'Schulz', 'DE', 1994, 'FEMALE', 'A', TRUE),
+       ('player-f8', 'Laura', 'Koch', 'DE', 1996, 'FEMALE', 'B', TRUE),
+       ('player-f9', 'Moritz', 'Richter', 'DE', 1992, 'MALE', 'B', TRUE),
+       ('player-f10', 'Julia', 'Klein', 'DE', 1998, 'FEMALE', 'C', TRUE),
+       ('player-f11', 'David', 'Wolf', 'DE', 1989, 'MALE', 'A', TRUE),
+       ('player-f12', 'Sophie', 'Neumann', 'DE', 1999, 'FEMALE', 'C', TRUE);
 
 -- ---------------------------------------------------------------------------
 -- Hamburg — TFVHH (Tischfussballverband Hamburg). Helmut Poppen.

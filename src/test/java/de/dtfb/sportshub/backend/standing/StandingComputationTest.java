@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.standing;
 
+import de.dtfb.sportshub.backend.support.TestIds;
 import com.jayway.jsonpath.JsonPath;
 import de.dtfb.sportshub.backend.access.role.Role;
 import de.dtfb.sportshub.backend.access.role.ScopeType;
@@ -93,7 +94,7 @@ class StandingComputationTest extends AuthorizedControllerTest {
      */
     private Scenario buildLeagueWithHomeWin(String federationId, String leagueRuleSetRef) throws Exception {
         String seasonId = create("/v1/seasons", "{\"name\":\"2025\",\"federationId\":\"" + federationId + "\"}");
-        String categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"H\"}");
+        String categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
         String leagueId = create("/v1/leagues", "{\"name\":\"Liga\",\"seasonId\":\"" + seasonId
             + "\",\"categoryId\":\"" + categoryId + "\"" + leagueRuleSetRef + "}");
         String tierId = create("/v1/tiers", "{\"name\":\"1. Liga\",\"leagueId\":\"" + leagueId + "\"}");

@@ -156,20 +156,22 @@ VALUES ('usr-admin', 'admin', 'DTFB', 'Administrator'),
 -- ready-made roster fill players -- kept as real Player rows (distinct from the app_user
 -- identities of the same name above; the two concepts used to be one row, now they aren't).
 -- ---------------------------------------------------------------------------
-INSERT INTO player (id, first_name, last_name, nationality, national_license, active)
-VALUES ('player-test', 'Test', 'Player', 'DE', 'A', TRUE),
-       ('player-club', 'Claus', 'Club', 'DE', 'A', TRUE);
+INSERT INTO player (id, first_name, last_name, nationality, birth_year, gender, national_license, active)
+VALUES ('player-test', 'Test', 'Player', 'DE', 1990, 'MALE', 'A', TRUE),
+       ('player-club', 'Claus', 'Club', 'DE', 1985, 'MALE', 'A', TRUE);
 
 -- More players (with license/birth-year/gender) to fill rosters and the player search.
 INSERT INTO player (id, first_name, last_name, nationality, national_id, birth_year, gender, national_license, active)
-VALUES ('player-p1', 'Lukas', 'Bauer', 'DE', '1001', 1991, 'man', 'A', TRUE),
-       ('player-p2', 'Jonas', 'Wagner', 'DE', '1002', 1988, 'man', 'A', TRUE),
-       ('player-p3', 'Felix', 'Schneider', 'DE', '1003', 1995, 'man', 'B', TRUE),
-       ('player-p4', 'Tim', 'Fischer', 'DE', '1004', 1993, 'man', 'B', TRUE),
-       ('player-p5', 'Niklas', 'Weber', 'DE', '1005', 1990, 'man', 'C', TRUE),
-       ('player-p6', 'Paul', 'Hoffmann', 'DE', '1006', 1997, 'man', 'C', TRUE),
-       ('player-p7', 'Anna', 'Schulz', 'DE', '1007', 1994, 'woman', 'A', TRUE),
-       ('player-p8', 'Laura', 'Koch', 'DE', '1008', 1996, 'woman', 'B', TRUE);
+VALUES ('player-p1', 'Lukas', 'Bauer', 'DE', '1001', 1991, 'MALE', 'A', TRUE),
+       ('player-p2', 'Jonas', 'Wagner', 'DE', '1002', 1988, 'MALE', 'A', TRUE),
+       ('player-p3', 'Felix', 'Schneider', 'DE', '1003', 1995, 'MALE', 'B', TRUE),
+       ('player-p4', 'Tim', 'Fischer', 'DE', '1004', 1993, 'MALE', 'B', TRUE),
+       ('player-p5', 'Niklas', 'Weber', 'DE', '1005', 1990, 'MALE', 'C', TRUE),
+       ('player-p6', 'Paul', 'Hoffmann', 'DE', '1006', 1997, 'MALE', 'C', TRUE),
+       ('player-p7', 'Anna', 'Schulz', 'DE', '1007', 1994, 'FEMALE', 'A', TRUE),
+       ('player-p8', 'Laura', 'Koch', 'DE', '1008', 1996, 'FEMALE', 'B', TRUE),
+       -- Divers, competing in women's leagues: admins see "diverse_women", everyone else "diverse".
+       ('player-p9', 'Kim', 'Neumann', 'DE', '1009', 1999, 'DIVERSE_WOMEN', 'C', TRUE);
 
 -- Role grants. Bootstrap global admin plus one admin per scope tier of the
 -- fed-by -> club-tfcm -> TFC München 1 chain, so each scope level is testable. CLUB scope is
@@ -187,11 +189,12 @@ VALUES ('ra-admin-glob', 'usr-admin', 'ADMIN', 'GLOBAL', NULL, TIMESTAMP '2024-0
        ('ra-dtfb', 'usr-dtfb', 'REGION_ADMIN', 'REGION', 'fed-dtfb', TIMESTAMP '2024-01-01 00:00:00');
 
 -- Categories — the classification a League points at (Herren/Damen/Open). Defined before any
--- league since league.category_id references them.
-INSERT INTO category (id, name, short_name)
-VALUES ('cat-herren', 'Herren', 'H'),
-       ('cat-damen', 'Damen', 'D'),
-       ('cat-open', 'Open', 'O');
+-- league since league.category_id references them. eligible_side restricts roster adds/submits
+-- to one side of the men's/women's split (docs/19); Open stays unrestricted.
+INSERT INTO category (id, name, short_name, eligible_side)
+VALUES ('cat-herren', 'Herren', 'H', 'MEN'),
+       ('cat-damen', 'Damen', 'D', 'WOMEN'),
+       ('cat-open', 'Open', 'O', NULL);
 
 -- A reusable league rule set (fed-by), referenced by the showcase Herren league below. The
 -- game plan (2 doubles + 1 single) is stored as ordered game_plan_entry rows. scheduling_mode

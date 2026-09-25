@@ -24,7 +24,14 @@ public class PlayerDto {
     private String lastName;
     private String nationalId;
     private String internationalId;
-    private String gender;
+    /** Public gender -- divers without its league side. Always populated when known. */
+    private Gender gender;
+    /**
+     * Full stored gender including the divers league side. Admin-only: populated for callers with
+     * any admin role, null for everyone else (see {@link PlayerGenderVisibility}). The write path
+     * ({@code PUT /v1/admin/players/{id}}) reads this field, not {@link #gender}.
+     */
+    private PlayerGender genderDetail;
     private String nationalLicense;
     private String nationality;
     private Integer birthYear;
