@@ -1,5 +1,7 @@
 package de.dtfb.sportshub.backend.roster;
 
+import de.dtfb.sportshub.backend.category.Category;
+import de.dtfb.sportshub.backend.category.CategoryEligibility;
 import de.dtfb.sportshub.backend.club.Club;
 import de.dtfb.sportshub.backend.clubmembership.ClubMembershipService;
 import de.dtfb.sportshub.backend.history.EntityHistoryService;
@@ -54,12 +56,14 @@ public class RosterService {
     private final EntityHistoryService historyService;
     private final ClubMembershipService clubMembershipService;
     private final LeagueRuleResolver ruleResolver;
+    private final CategoryEligibility categoryEligibility;
 
     public RosterService(RosterEntryRepository rosterRepository, RosterEntryMapper rosterMapper,
                          TeamParticipationRepository participationRepository,
                          TeamParticipationMapper participationMapper, PlayerRepository playerRepository,
                          PlayerDirectoryService playerDirectoryService, EntityHistoryService historyService,
-                         ClubMembershipService clubMembershipService, LeagueRuleResolver ruleResolver) {
+                         ClubMembershipService clubMembershipService, LeagueRuleResolver ruleResolver,
+                         CategoryEligibility categoryEligibility) {
         this.rosterRepository = rosterRepository;
         this.rosterMapper = rosterMapper;
         this.participationRepository = participationRepository;
@@ -69,6 +73,7 @@ public class RosterService {
         this.historyService = historyService;
         this.clubMembershipService = clubMembershipService;
         this.ruleResolver = ruleResolver;
+        this.categoryEligibility = categoryEligibility;
     }
 
     @Transactional(readOnly = true)
@@ -122,6 +127,7 @@ public class RosterService {
         Player player = playerRepository.findById(playerId)
             .orElseThrow(() -> new PlayerNotFoundException(playerId));
         requireClubMember(participation, playerId);
+        requireEligible(participation, List.of(player));
         rosterRepository.findByParticipationIdAndPlayerIdAndRemovedAtIsNull(participationId, playerId)
             .ifPresent(existing -> {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Player is already on the roster");
@@ -155,6 +161,10 @@ public class RosterService {
             requireRegistrationOpen(participation);
         }
         requireMinRosterSize(participation);
+        // Re-checked on submit (no admin bypass -- eligibility is a rule, not the registration
+        // window): catches copy-forwarded entries and ones added before the category was restricted.
+        requireEligible(participation, rosterRepository.findByParticipationIdAndRemovedAtIsNull(participation.getId())
+            .stream().map(RosterEntry::getPlayer).toList());
         return transition(participation, RosterStatus.SUBMITTED);
     }
 
@@ -208,6 +218,24 @@ public class RosterService {
         if (club == null || !clubMembershipService.isActiveMember(playerId, club.getId())) {
             throw new PlayerNotClubMemberException(
                 "Player must be an active member of the team's club before joining its roster");
+        }
+    }
+
+    /**
+     * Every player must satisfy the league category's eligibility profile (docs/19) -- all failing
+     * players are reported together, so a submit names the whole set at once.
+     */
+    private void requireEligible(TeamParticipation participation, List<Player> players) {
+        Category category = participation.getLeague() == null ? null : participation.getLeague().getCategory();
+        List<IneligiblePlayer> ineligible = players.stream()
+            .flatMap(player -> categoryEligibility.check(category, player).stream()
+                .map(reason -> new IneligiblePlayer(player.getId(),
+                    player.getFirstName() + " " + player.getLastName(), reason)))
+            .toList();
+        if (!ineligible.isEmpty()) {
+            throw new PlayerNotEligibleException(
+                "Player(s) not eligible for this league's category: "
+                    + ineligible.stream().map(IneligiblePlayer::name).toList(), ineligible);
         }
     }
 

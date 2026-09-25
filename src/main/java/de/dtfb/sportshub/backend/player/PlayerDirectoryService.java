@@ -22,14 +22,17 @@ public class PlayerDirectoryService {
     private final PlayerMapper playerMapper;
     private final ClubMembershipRepository membershipRepository;
     private final ClubMembershipService membershipService;
+    private final PlayerGenderVisibility genderVisibility;
 
     public PlayerDirectoryService(PlayerRepository playerRepository, PlayerMapper playerMapper,
                                   ClubMembershipRepository membershipRepository,
-                                  ClubMembershipService membershipService) {
+                                  ClubMembershipService membershipService,
+                                  PlayerGenderVisibility genderVisibility) {
         this.playerRepository = playerRepository;
         this.playerMapper = playerMapper;
         this.membershipRepository = membershipRepository;
         this.membershipService = membershipService;
+        this.genderVisibility = genderVisibility;
     }
 
     /**
@@ -79,6 +82,7 @@ public class PlayerDirectoryService {
         Map<String, List<ClubDto>> clubsByPlayerId =
             membershipService.clubsByPlayerId(dtos.stream().map(PlayerDto::getId).toList());
         dtos.forEach(dto -> dto.setClubs(clubsByPlayerId.getOrDefault(dto.getId(), List.of())));
+        genderVisibility.apply(dtos);
         return dtos;
     }
 }

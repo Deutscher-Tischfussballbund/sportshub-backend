@@ -2,6 +2,7 @@ package de.dtfb.sportshub.backend.roster;
 
 import com.jayway.jsonpath.JsonPath;
 import de.dtfb.sportshub.backend.player.Player;
+import de.dtfb.sportshub.backend.player.PlayerGender;
 import de.dtfb.sportshub.backend.player.PlayerRepository;
 import de.dtfb.sportshub.backend.support.AuthorizedControllerTest;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,8 @@ class RosterHistoricalDisplayIntegrationTest extends AuthorizedControllerTest {
         String participationId = createParticipation(clubId, seasonId, leagueId);
 
         Player player = new Player();
+        player.setBirthYear(1990);
+        player.setGender(PlayerGender.MALE);
         player.setFirstName("Lukas");
         player.setLastName("Bauer");
         String playerId = playerRepository.save(player).getId();
@@ -55,7 +58,7 @@ class RosterHistoricalDisplayIntegrationTest extends AuthorizedControllerTest {
         mockMvc.perform(put("/v1/admin/players/" + playerId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                    {"firstName": "Lucas", "lastName": "Bauer", "active": true}
+                    {"firstName": "Lucas", "lastName": "Bauer", "birthYear": 1990, "genderDetail": "male", "active": true}
                     """))
             .andExpect(status().isOk());
 
@@ -79,6 +82,8 @@ class RosterHistoricalDisplayIntegrationTest extends AuthorizedControllerTest {
         String participationId = createParticipation(clubId, seasonId, leagueId);
 
         Player player = new Player();
+        player.setBirthYear(1990);
+        player.setGender(PlayerGender.MALE);
         player.setFirstName("Lukas");
         player.setLastName("Bauer");
         String playerId = playerRepository.save(player).getId();
@@ -93,7 +98,7 @@ class RosterHistoricalDisplayIntegrationTest extends AuthorizedControllerTest {
         mockMvc.perform(put("/v1/admin/players/" + playerId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                    {"firstName": "Lucas", "lastName": "Bauer", "active": true}
+                    {"firstName": "Lucas", "lastName": "Bauer", "birthYear": 1990, "genderDetail": "male", "active": true}
                     """))
             .andExpect(status().isOk());
 

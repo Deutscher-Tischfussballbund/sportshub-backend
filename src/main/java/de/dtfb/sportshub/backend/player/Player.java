@@ -4,6 +4,8 @@ import de.dtfb.sportshub.backend.base.BaseEntity;
 import de.dtfb.sportshub.backend.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -26,15 +28,20 @@ public class Player extends BaseEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @Column(nullable = false)
     private String firstName;
+    @Column(nullable = false)
     private String lastName;
     private String nationalId;
     private String internationalId;
     private String nationality;
+    @Column(nullable = false)
     private Integer birthYear;
 
-    /** Wire values: "man" | "woman" (free-form to stay forgiving of the source). */
-    private String gender;
+    /** Stored with the divers league side; see {@link PlayerGender} for who sees what. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PlayerGender gender;
 
     /** National license grade: "A" | "B" | "C" | "D". */
     private String nationalLicense;

@@ -66,7 +66,9 @@ Season              federation, startDate, endDate, registrationOpensAt/ClosesAt
 | Table row | `Standing` | league table entry | kept; re-parented Pool → Group |
 
 **What drops for leagues:** `Discipline` (category becomes a `League.category` attribute — a
-Damen league is a separate `League`, not a second Discipline) and `Stage` (temporal phase;
+Damen league is a separate `League`, not a second Discipline; the category is also the
+league's eligibility profile — e.g. which gender side may be rostered, see
+[`19-category-eligibility.md`](./19-category-eligibility.md)) and `Stage` (temporal phase;
 leagues here don't need it now). `Pool.tournamentMode` is replaced by
 `LeagueRuleSet.playSystem`; `Pool.poolState` survives as `Group.state`.
 

@@ -105,9 +105,9 @@ public abstract class AuthorizedControllerTest {
     protected String createCategory() throws Exception {
         MvcResult result = mockMvc.perform(post("/v1/category")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                    {"name": "Herren", "shortName": "H"}
-                    """))
+                .content(String.format("""
+                    {"name": "Herren", "shortName": "%s"}
+                    """, TestIds.unique("H"))))
             .andExpect(status().isCreated())
             .andReturn();
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");

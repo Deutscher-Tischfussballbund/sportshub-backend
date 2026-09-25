@@ -11,6 +11,8 @@ public interface PlayerMapper {
     // clubs is set by the caller afterwards (ClubMembershipService.clubsByPlayerId), not mapped
     // from the entity -- see PlayerDirectoryService/PlayerService.
     @Mapping(target = "clubs", ignore = true)
+    @Mapping(target = "gender", expression = "java(player.getGender() == null ? null : player.getGender().toPublic())")
+    @Mapping(target = "genderDetail", source = "gender")
     PlayerDto toDto(Player player);
 
     List<PlayerDto> toDtoList(List<Player> players);

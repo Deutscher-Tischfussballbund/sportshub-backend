@@ -167,13 +167,13 @@ Table app_user {
 Table player {
   id varchar(14) [pk, note: 'A single row per competitor, not season-scoped; a rename is tracked in entity_history']
   user_id varchar [note: 'Nullable: a captain-entered athlete may never log in themselves']
-  first_name varchar
-  last_name varchar
+  first_name varchar [not null]
+  last_name varchar [not null]
   national_id varchar
   international_id varchar
   nationality varchar
-  birth_year int
-  gender varchar
+  birth_year int [not null]
+  gender varchar [not null, note: 'PlayerGender: MALE | FEMALE | DIVERSE_MEN | DIVERSE_WOMEN; divers league side is admin-only']
   national_license varchar
   active boolean [not null, default: true]
 }
@@ -203,8 +203,9 @@ Table entity_history {
 
 Table category {
   id varchar(14) [pk, note: 'Global classification: Herren / Damen / Open']
-  name varchar
-  short_name varchar
+  name varchar [not null]
+  short_name varchar [not null, unique, note: 'Unique case-insensitively (utf8mb4_0900_ai_ci)']
+  eligible_side varchar [null, note: 'LeagueSide MEN / WOMEN; NULL = open to every gender. Checked on roster add + submit (docs/19)']
 }
 
 Table location {
