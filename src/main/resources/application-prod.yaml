@@ -70,8 +70,10 @@ sportshub:
         # consumer today: the admin app's own users (dtfb-admin-web) AND the confidential client
         # scripts/prod-test-seed/seed-region.sh logs real users in through via ROPC (dtfb-api) --
         # both mint tokens for real people, just through different front doors. Add a new entry
-        # whenever a new Keycloak client is registered (dtfb-keycloak/scripts/clients.json).
-        allowed-clients: ${SPORTSHUB_ALLOWED_CLIENTS:dtfb-admin-web,dtfb-api,dtfb-service}
+        # whenever a new user-facing Keycloak client is registered (dtfb-keycloak/scripts/clients.json).
+        # Machine callers don't get a Keycloak client: they use backend-issued, read-only API keys
+        # (X-API-Key header, docs/20-api-keys.md).
+        allowed-clients: ${SPORTSHUB_ALLOWED_CLIENTS:dtfb-admin-web,dtfb-api}
     cors:
         # Allowed CORS origins for the admin console(s). Comma-separated for several,
         # e.g. https://admin.dtfb.de,https://admin.stage.dtfb.de

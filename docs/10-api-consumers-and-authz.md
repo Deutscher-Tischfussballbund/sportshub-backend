@@ -1,6 +1,6 @@
 # API consumers & authorization (multi-frontend)
 
-**Kind:** decision · **Status:** the identity model AND audience gating are settled and in code; the
+**Kind:** decision · **Status:** the identity model AND audience gating are settled and in code (machine access: read-only API keys, doc 20); the
 *public read tier* (which specific GETs go anonymous) is still open, flagged below.
 
 sportshub-backend is intended to serve **several frontends with different purposes** — the admin app
@@ -44,12 +44,11 @@ identity. Clients are just different front doors for the same users.
 2. **CORS origin** — add the frontend's origin to `sportshub.cors.allowed-origins` (per-profile).
 3. **Redirect URIs / web origins** on the client.
 4. **Allow-list the client id** — add it to `sportshub.security.allowed-clients` (§5). Without
-   this the resource server now rejects its tokens outright, regardless of role. If the new
-   consumer is a machine/service client that also needs to write (no end user, so it can't hold a
-   `RoleAssignment`), also add an `ApiClientGrant` row for it (§5).
+   this the resource server now rejects its tokens outright, regardless of role. A
+   **machine** consumer (no end user) doesn't get a Keycloak client at all: it gets a read-only
+   API key instead ([20-api-keys.md](./20-api-keys.md)).
 
-No change to `AuthorizationService`, the gates, or the DTOs (beyond the one wired app-write example
-in §5). A new human-facing consumer inherits the whole role/scope model for free and simply
+No change to `AuthorizationService`, the gates, or the DTOs. A new human-facing consumer inherits the whole role/scope model for free and simply
 exercises the slice of the API its users are authorized for.
 
 ---
@@ -108,10 +107,10 @@ We don't need a separate BFF **tier** now (YAGNI) — just keep the core clean s
 ## 4. OPEN DECISION — the public read tier
 
 Today `SecurityConfig` is `anyRequest().authenticated()`: **everything except Swagger/H2/OPTIONS needs a
-token.** A public, read-only results site (no login) cannot read anything anonymously. §5's
-`dtfb-service` client narrows this gap but doesn't close it: it lets a registered app read without
-an *end user* logging in, but the app itself still needs a client-credentials token — the site's
-own visitors never see or need one, so this is invisible to them either way. A truly anonymous
+token.** A public, read-only results site (no login) cannot read anything anonymously. A
+read-only API key ([20-api-keys.md](./20-api-keys.md)) narrows this gap but doesn't close it: it
+lets a registered app read without an *end user* logging in, but the app itself still needs the
+key — the site's own visitors never see or need one, so this is invisible to them either way. A truly anonymous
 consumer (no credential at all, from anyone) still needs explicit `permitAll()` routes, decided
 here. This is the same "read tier" gap noted in the authorization work — and multiple purposes make it the real prerequisite for
 a differently-purposed public frontend.
@@ -123,39 +122,21 @@ the chosen set here when decided.
 
 ---
 
-## 5. Audience gating + app-level write grants (settled)
+## 5. Audience gating (settled) — app-level write grants superseded by doc 20
 
-The resource server now validates the JWT's `azp` (authorized party — which Keycloak client
+The resource server validates the JWT's `azp` (authorized party — which Keycloak client
 requested it) against `sportshub.security.allowed-clients`, in addition to issuer/signature/expiry
 (`JwtDecoderConfig`, replacing the auto-configured `JwtDecoder` bean — Spring Boot backs off once
 you define your own). A token from an unlisted client is rejected outright (401), before
-`AuthorizationService` ever runs. Today's list: `dtfb-admin-web` (the admin app's real users),
+`AuthorizationService` ever runs. Today's list: `dtfb-admin-web` (the admin app's real users) and
 `dtfb-api` (the confidential client `seed-region.sh` ROPC-logs real users in through — same
-people, different front door, so it must be listed too), `dtfb-service` (a new
-`serviceAccountsEnabled` client for machine/no-end-user callers, `dtfb-keycloak/scripts/clients.json`).
+people, different front door, so it must be listed too).
 
-**Two independent authorization paths, one authentication mechanism:**
-
-- **Humans** — unchanged: JWT → `dtfb_id` claim → `RoleAssignment` → `AuthorizationService`.
-- **Apps/service clients** — JWT → `azp` claim, no `dtfb_id` (no end user) → a new
-  `ApiClientGrant` row (`de.dtfb.sportshub.backend.access.apiclient`), looked up by `clientId`
-  (= `azp`) → `ApiClientAuthorizationService` (exposed as `@apiClientAuthz`). Deliberately a
-  **separate table and service**, not layered onto `RoleAssignment`/`AuthorizationService` — an
-  app's permissions are managed independently (`/v1/admin/api-clients`, global-admin-only CRUD,
-  read included — unlike most admin CRUD in this app, since this data controls write access for
-  machine clients). A grant has `writeAccess` (read is implicit for any allowed client) and a
-  `scopeType`/`scopeId` (reusing the `ScopeType` enum, mirroring `RoleAssignment`'s shape for a
-  familiar mental model, but no shared code).
-
-**One wired example, not a general retrofit** (per §2's core-vs-screen discipline — a reviewed
-slice, not blanket access): `PUT /v1/matches/{id}` (match-result reporting) now also accepts an
-in-scope, write-granted `ApiClientGrant`:
-`@PreAuthorize("@apiClientAuthz.canOrganizeMatch(#id) or @authz.canOrganizeMatch(#id)")`.
-**`@apiClientAuthz` must be checked first** — it always returns cleanly (`false` for a human token
-or a client with no grant), whereas `@authz.canOrganizeMatch` throws for a token with no `dtfb_id`
-rather than returning `false`; SpEL `or` short-circuits left-to-right, so throwing on the left
-would never let a legitimate grant on the right get evaluated. Extend this pattern endpoint by
-endpoint as real machine consumers need more, the same way `@authz` gates are added today.
+**Superseded (2026-09-25, SPO-48):** the second half of this section, **app-level write grants**
+(`ApiClientGrant` keyed on `azp`, `@apiClientAuthz`, the `dtfb-service` client-credentials
+client, and the one wired write on `PUT /v1/matches/{id}`), was removed. Machine consumers now
+get backend-issued, **read-only** API keys (`X-API-Key`), and every write needs an identifiable
+human. See [20-api-keys.md](./20-api-keys.md) for the design and the rejected alternatives.
 
 ---
 
@@ -167,5 +148,5 @@ endpoint as real machine consumers need more, the same way `@authz` gates are ad
 | New-frontend onboarding = Keycloak client + CORS + redirect URIs + allow-list | ✅ no other backend code |
 | Core-vs-BFF endpoint discipline | ✅ principle adopted (this doc); hold it in review |
 | Audience gating (`azp` allow-list) | ✅ settled, in code (§5) |
-| App-level write grants (`ApiClientGrant`) | ✅ settled, in code — one wired example (match updates, §5) |
+| Machine access | ✅ read-only API keys (doc 20); app-level write grants removed (SPO-48) |
 | Public read tier | ⬜ open — design before a public consumer |

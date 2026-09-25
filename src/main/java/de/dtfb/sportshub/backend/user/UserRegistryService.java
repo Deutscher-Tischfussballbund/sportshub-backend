@@ -1,6 +1,7 @@
 package de.dtfb.sportshub.backend.user;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,10 @@ public class UserRegistryService {
 
     @Transactional
     public User currentUser(Jwt jwt) {
+        // No JWT = not a logged-in human (e.g. a read-only API key) -- user-scoped endpoints refuse (403).
+        if (jwt == null) {
+            throw new AccessDeniedException("Requires a user login");
+        }
         String dtfbId = jwt.getClaimAsString("dtfb_id");
         if (dtfbId == null || dtfbId.isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token missing dtfb_id claim");
