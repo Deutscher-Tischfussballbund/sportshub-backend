@@ -1,5 +1,7 @@
 package de.dtfb.sportshub.backend.configuration;
 
+import de.dtfb.sportshub.backend.access.apikey.ApiKeyAuthenticationFilter;
+import de.dtfb.sportshub.backend.access.apikey.ApiKeyService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +13,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -25,10 +28,13 @@ public class SecurityConfig {
 
     /** Allowed CORS origins for the API. Comma-separated; set per profile (see application-*.yaml). */
     private final List<String> allowedOrigins;
+    private final ApiKeyService apiKeyService;
 
     public SecurityConfig(
-        @Value("${sportshub.cors.allowed-origins}") List<String> allowedOrigins) {
+        @Value("${sportshub.cors.allowed-origins}") List<String> allowedOrigins,
+        ApiKeyService apiKeyService) {
         this.allowedOrigins = allowedOrigins;
+        this.apiKeyService = apiKeyService;
     }
 
     // Falls through from TrackerSecurityConfig's chain (@Order(1), matches only /tracker/** and
@@ -52,6 +58,9 @@ public class SecurityConfig {
                 // Everything else requires authentication — reads and writes alike
                 .anyRequest().authenticated()
             )
+            // Read-only machine access via backend-issued API keys (X-API-Key), checked before the
+            // JWT filter; requests without the header fall through to JWT auth unchanged.
+            .addFilterBefore(new ApiKeyAuthenticationFilter(apiKeyService), BearerTokenAuthenticationFilter.class)
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(_ -> {
                 })
