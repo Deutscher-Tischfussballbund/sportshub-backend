@@ -1,6 +1,12 @@
 spring:
     application:
         name: sportshub-backend
+    config:
+        # Local secrets (GITHUB_OAUTH_CLIENT_ID/SECRET) come from the git-ignored `.env` next to
+        # docker-compose.yaml -- not from the shared IntelliJ run config, which is a tracked file.
+        # KEY=VALUE lines parse as properties; optional, so a missing .env just falls back to the
+        # placeholders below. Real environment variables still take precedence.
+        import: optional:file:.env[.properties]
     datasource:
         url: jdbc:h2:file:./data/testdb;AUTO_SERVER=TRUE
         driver-class-name: org.h2.Driver
@@ -34,8 +40,9 @@ spring:
             client:
                 registration:
                     github:
-                        # GitHub OAuth App not yet created — real login 401s at GitHub until these
-                        # are set. Callback to register: http://localhost:8082/login/oauth2/code/github
+                        # Set both in `.env` (see spring.config.import above) for a working local
+                        # GitHub login; the placeholders make the login 401 at GitHub. Callback to
+                        # register on the dev OAuth App: http://localhost:8082/login/oauth2/code/github
                         client-id: ${GITHUB_OAUTH_CLIENT_ID:dev-placeholder-client-id}
                         client-secret: ${GITHUB_OAUTH_CLIENT_SECRET:dev-placeholder-client-secret}
                         # "repo" (not just read:* / public_repo) so the logged-in user's own token can
