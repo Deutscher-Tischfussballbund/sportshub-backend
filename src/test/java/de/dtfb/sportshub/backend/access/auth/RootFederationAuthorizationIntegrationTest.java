@@ -64,7 +64,7 @@ class RootFederationAuthorizationIntegrationTest {
         subFederationId = createFederation();
         clubId = createClub(subFederationId);
 
-        String categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
+        String categoryId = create("/v1/categories", "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
         rootSeasonId = create("/v1/seasons",
             "{\"name\":\"Bundesliga-Saison\",\"federationId\":\"" + ROOT_FEDERATION_ID + "\"}");
         rootLeagueId = create("/v1/leagues",
@@ -207,7 +207,7 @@ class RootFederationAuthorizationIntegrationTest {
     }
 
     private String createFederation() throws Exception {
-        return create("/v1/federation", "{\"name\":\"Testverband\"}");
+        return create("/v1/federations", "{\"name\":\"Testverband\"}");
     }
 
     private String createClub(String federationId) throws Exception {

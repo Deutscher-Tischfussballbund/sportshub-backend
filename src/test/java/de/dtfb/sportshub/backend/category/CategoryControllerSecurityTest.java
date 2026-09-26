@@ -40,14 +40,14 @@ class CategoryControllerSecurityTest {
 
     @Test
     void write_withoutToken_isUnauthorized() throws Exception {
-        mockMvc.perform(post("/v1/category").contentType(MediaType.APPLICATION_JSON).content(BODY))
+        mockMvc.perform(post("/v1/categories").contentType(MediaType.APPLICATION_JSON).content(BODY))
             .andExpect(status().isUnauthorized());
     }
 
     @Test
     void write_asNonAdmin_isForbidden() throws Exception {
         Mockito.when(authz.isAdmin()).thenReturn(false);
-        mockMvc.perform(post("/v1/category").with(jwt())
+        mockMvc.perform(post("/v1/categories").with(jwt())
                 .contentType(MediaType.APPLICATION_JSON).content(BODY))
             .andExpect(status().isForbidden());
     }
@@ -55,14 +55,14 @@ class CategoryControllerSecurityTest {
     @Test
     void write_asAdmin_isAllowed() throws Exception {
         Mockito.when(authz.isAdmin()).thenReturn(true);
-        mockMvc.perform(post("/v1/category").with(jwt())
+        mockMvc.perform(post("/v1/categories").with(jwt())
                 .contentType(MediaType.APPLICATION_JSON).content(BODY))
             .andExpect(status().isCreated());
     }
 
     @Test
     void read_asAnyAuthenticatedUser_isAllowed() throws Exception {
-        mockMvc.perform(get("/v1/category").with(jwt()))
+        mockMvc.perform(get("/v1/categories").with(jwt()))
             .andExpect(status().isOk());
     }
 }

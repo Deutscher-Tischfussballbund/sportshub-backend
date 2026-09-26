@@ -77,10 +77,10 @@ class LeagueAdminIntegrationTest {
 
     @BeforeEach
     void setup() throws Exception {
-        String federationId = create("/v1/federation", "{\"name\":\"Testverband\"}");
+        String federationId = create("/v1/federations", "{\"name\":\"Testverband\"}");
         seasonId = create("/v1/seasons",
             "{\"name\":\"2025\",\"federationId\":\"" + federationId + "\",\"registrationOpensAt\":\"2020-01-01\"}");
-        categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
+        categoryId = create("/v1/categories", "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
 
         leagueAId = create("/v1/leagues",
             "{\"name\":\"Liga A\",\"seasonId\":\"" + seasonId + "\",\"categoryId\":\"" + categoryId + "\"}");

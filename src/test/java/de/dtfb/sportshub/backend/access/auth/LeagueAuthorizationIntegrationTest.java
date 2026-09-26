@@ -59,7 +59,7 @@ class LeagueAuthorizationIntegrationTest {
     void setup() throws Exception {
         String federationId = createFederation();
         String seasonId = create("/v1/seasons", "{\"name\":\"2025\",\"federationId\":\"" + federationId + "\"}");
-        String categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
+        String categoryId = create("/v1/categories", "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
         leagueId = create("/v1/leagues",
             "{\"name\":\"Bundesliga\",\"seasonId\":\"" + seasonId + "\",\"categoryId\":\"" + categoryId + "\"}");
         tierId = create("/v1/tiers", "{\"name\":\"1. Bundesliga\",\"leagueId\":\"" + leagueId + "\"}");
@@ -102,7 +102,7 @@ class LeagueAuthorizationIntegrationTest {
         String otherLeagueId = create("/v1/leagues",
             "{\"name\":\"Other\",\"seasonId\":\"" + create("/v1/seasons",
                 "{\"name\":\"2026\",\"federationId\":\"" + createFederation() + "\"}")
-                + "\",\"categoryId\":\"" + create("/v1/category", "{\"name\":\"Damen\",\"shortName\":\"" + TestIds.unique("D") + "\"}") + "\"}");
+                + "\",\"categoryId\":\"" + create("/v1/categories", "{\"name\":\"Damen\",\"shortName\":\"" + TestIds.unique("D") + "\"}") + "\"}");
         RequestPostProcessor otherOrganizer = grantLeagueOrganizer("otherOrganizer", otherLeagueId);
 
         mockMvc.perform(post("/v1/rounds").with(otherOrganizer).contentType(MediaType.APPLICATION_JSON)
@@ -143,7 +143,7 @@ class LeagueAuthorizationIntegrationTest {
     }
 
     private String createFederation() throws Exception {
-        return create("/v1/federation", "{\"name\":\"Testverband\"}");
+        return create("/v1/federations", "{\"name\":\"Testverband\"}");
     }
 
     /** POST as admin and return the created id. */

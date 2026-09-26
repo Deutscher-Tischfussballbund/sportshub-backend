@@ -61,9 +61,9 @@ class MatchDayResultAuthorizationIntegrationTest {
 
     @BeforeEach
     void setup() throws Exception {
-        String federationId = create("/v1/federation", "{\"name\":\"Testverband\"}");
+        String federationId = create("/v1/federations", "{\"name\":\"Testverband\"}");
         String seasonId = create("/v1/seasons", "{\"name\":\"2025\",\"federationId\":\"" + federationId + "\"}");
-        String categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
+        String categoryId = create("/v1/categories", "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
         String leagueId = create("/v1/leagues",
             "{\"name\":\"Liga\",\"seasonId\":\"" + seasonId + "\",\"categoryId\":\"" + categoryId + "\"}");
         String tierId = create("/v1/tiers", "{\"name\":\"1. Liga\",\"leagueId\":\"" + leagueId + "\"}");

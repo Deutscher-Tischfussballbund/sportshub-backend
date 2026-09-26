@@ -65,7 +65,7 @@ class FederationControllerTest extends de.dtfb.sportshub.backend.support.Authori
     //region helpers
     private org.springframework.test.web.servlet.ResultActions updateFederationDefault(
         String federationId, String ruleSetId) throws Exception {
-        return mockMvc.perform(put("/v1/federation/" + federationId)
+        return mockMvc.perform(put("/v1/federations/" + federationId)
             .contentType(MediaType.APPLICATION_JSON)
             .content(String.format("""
                 {"name": "Testverband", "defaultRuleSetId": "%s"}

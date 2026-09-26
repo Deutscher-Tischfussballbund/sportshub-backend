@@ -82,7 +82,7 @@ class RosterEligibilityIntegrationTest extends AuthorizedControllerTest {
 
     /** A category with the given eligible side wire value ("men"/"women"), or open when null. */
     private String createCategory(String eligibleSide) throws Exception {
-        MvcResult result = mockMvc.perform(post("/v1/category")
+        MvcResult result = mockMvc.perform(post("/v1/categories")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("{\"name\": \"C\", \"shortName\": \"%s\", \"eligibleSide\": %s}",
                     TestIds.unique("C"), eligibleSide == null ? "null" : "\"" + eligibleSide + "\"")))
@@ -93,7 +93,7 @@ class RosterEligibilityIntegrationTest extends AuthorizedControllerTest {
     }
 
     private void restrict(String categoryId, String eligibleSide) throws Exception {
-        mockMvc.perform(put("/v1/category/" + categoryId)
+        mockMvc.perform(put("/v1/categories/" + categoryId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("{\"name\": \"C\", \"shortName\": \"%s\", \"eligibleSide\": \"%s\"}",
                     TestIds.unique("C"), eligibleSide)))

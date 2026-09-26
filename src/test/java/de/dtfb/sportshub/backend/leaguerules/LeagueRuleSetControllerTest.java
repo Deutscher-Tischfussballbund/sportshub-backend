@@ -129,7 +129,7 @@ class LeagueRuleSetControllerTest extends de.dtfb.sportshub.backend.support.Auth
     @Test
     void deleteLeagueRuleSet_blockedByFederationDefault() throws Exception {
         String ruleSetId = idFromUrl(url);
-        mockMvc.perform(put("/v1/federation/" + federationId)
+        mockMvc.perform(put("/v1/federations/" + federationId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                     {"name": "Testverband", "defaultRuleSetId": "%s"}
