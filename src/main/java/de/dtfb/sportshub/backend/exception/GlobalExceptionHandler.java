@@ -10,6 +10,8 @@ import de.dtfb.sportshub.backend.leaguerules.RuleSetDeletionBlockedError;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetDeletionBlockedException;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetEditBlockedError;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetEditBlockedException;
+import de.dtfb.sportshub.backend.leaguerules.RuleSetNameTakenError;
+import de.dtfb.sportshub.backend.leaguerules.RuleSetNameTakenException;
 import de.dtfb.sportshub.backend.category.CategoryShortNameTakenException;
 import de.dtfb.sportshub.backend.roster.PlayerNotClubMemberError;
 import de.dtfb.sportshub.backend.roster.PlayerNotClubMemberException;
@@ -142,6 +144,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ClubDeletionBlockedError> handleClubDeletionBlocked(ClubDeletionBlockedException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new ClubDeletionBlockedError("CLUB_HAS_TEAMS_OR_MEMBERS", ex.getMessage()));
+    }
+
+    // Rule-set template name already taken by another template of the same owner (docs/21) -- the
+    // body names that template so a client can offer to overwrite it.
+    @ExceptionHandler(RuleSetNameTakenException.class)
+    public ResponseEntity<RuleSetNameTakenError> handleRuleSetNameTaken(RuleSetNameTakenException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new RuleSetNameTakenError("RULE_SET_NAME_TAKEN", ex.getMessage(), ex.getExistingId()));
     }
 
     // Rule change refused because the owning season has ended -- its rules are frozen (docs/21).

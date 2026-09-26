@@ -1,5 +1,7 @@
 package de.dtfb.sportshub.backend.federation;
 
+import de.dtfb.sportshub.backend.support.TestIds;
+
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -78,9 +80,9 @@ class FederationControllerTest extends de.dtfb.sportshub.backend.support.Authori
         MvcResult result = mockMvc.perform(post("/v1/league-rule-sets")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                    {"name": "Testregelwerk", "federationId": "%s", "playSystem": "ROUND_ROBIN",
+                    {"name": "%s", "federationId": "%s", "playSystem": "ROUND_ROBIN",
                      "pointsWin": 2, "pointsDraw": 1, "pointsLoss": 0}
-                    """, federationId)))
+                    """, TestIds.unique("Testregelwerk"), federationId)))
             .andExpect(status().isCreated())
             .andReturn();
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");

@@ -81,13 +81,14 @@ public class LeagueRuleSetService {
         return rules == null ? null : assemble(rules);
     }
 
-    /** Creates a blueprint. */
+    /** Creates a blueprint. Its name must be unique among its owner's templates (409 {@code RULE_SET_NAME_TAKEN}). */
     @Transactional
     public LeagueRuleSetDto create(LeagueRuleSetDto dto) {
         LeagueRuleSet ruleSet = mapper.toEntity(dto);
         ruleSet.setSnapshot(false);
         ruleSet.setArchived(Boolean.TRUE.equals(dto.getArchived()));
         ruleSet.setFederation(resolveFederation(dto.getFederationId()));
+        requireUniqueTemplateName(ruleSet.getFederation(), ruleSet.getName(), null);
         LeagueRuleSet saved = repository.save(ruleSet);
         replaceGamePlan(saved, dto.getGamePlan());
         return assemble(saved);
@@ -110,6 +111,7 @@ public class LeagueRuleSetService {
         mapper.updateEntityFromDto(dto, ruleSet);
         if (!ruleSet.isSnapshot()) {
             ruleSet.setFederation(resolveFederation(dto.getFederationId()));
+            requireUniqueTemplateName(ruleSet.getFederation(), ruleSet.getName(), ruleSet.getId());
             if (dto.getArchived() != null) {
                 ruleSet.setArchived(dto.getArchived());
             }
@@ -159,7 +161,7 @@ public class LeagueRuleSetService {
         LeagueRuleSet copy = mapper.toEntity(sourceDto);
         copy.setSnapshot(false);
         copy.setFederation(source.getFederation());
-        copy.setName(source.getName() + " (Kopie)");
+        copy.setName(freeCopyName(source.getFederation(), source.getName()));
         LeagueRuleSet saved = repository.save(copy);
         replaceGamePlan(saved, sourceDto.getGamePlan());
         return assemble(saved);
@@ -228,6 +230,33 @@ public class LeagueRuleSetService {
             .map(e -> e.getPosition() + ":" + e.getGameType())
             .toList();
         return !currentSignature.equals(requestedSignature);
+    }
+
+    /**
+     * Template names are unique per owner (a federation, or DTFB-wide), case-insensitive (docs/21);
+     * {@code selfId} is the template being renamed, if any. Snapshots are never checked -- several
+     * leagues may well share a rule set name.
+     */
+    private void requireUniqueTemplateName(Federation owner, String name, String selfId) {
+        if (name == null) {
+            return;
+        }
+        repository.findTemplatesByOwnerAndName(owner == null ? null : owner.getId(), name.trim()).stream()
+            .filter(other -> !other.getId().equals(selfId))
+            .findFirst()
+            .ifPresent(other -> {
+                throw new RuleSetNameTakenException(name.trim(), other.getId());
+            });
+    }
+
+    /** "X (Kopie)", or "X (Kopie 2)", "X (Kopie 3)" … -- the first name no template of the owner has yet. */
+    private String freeCopyName(Federation owner, String sourceName) {
+        String ownerId = owner == null ? null : owner.getId();
+        String candidate = sourceName + " (Kopie)";
+        for (int n = 2; !repository.findTemplatesByOwnerAndName(ownerId, candidate).isEmpty(); n++) {
+            candidate = sourceName + " (Kopie " + n + ")";
+        }
+        return candidate;
     }
 
     private Federation resolveFederation(String federationId) {

@@ -375,6 +375,69 @@ class LeagueRuleSetControllerTest extends de.dtfb.sportshub.backend.support.Auth
     }
 
     @Test
+    void templateName_isUniquePerFederation_caseInsensitive() throws Exception {
+        String existingId = idFromUrl(url);
+
+        mockMvc.perform(post("/v1/league-rule-sets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"name": "standard 3:1", "federationId": "%s", "playSystem": "ROUND_ROBIN"}
+                    """, federationId)))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("RULE_SET_NAME_TAKEN"))
+            .andExpect(jsonPath("$.existingId").value(existingId));
+
+        // another federation may use the same name
+        mockMvc.perform(post("/v1/league-rule-sets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"name": "Standard 3:1", "federationId": "%s", "playSystem": "ROUND_ROBIN"}
+                    """, createFederation())))
+            .andExpect(status().isCreated());
+    }
+
+    @Test
+    void renamingATemplate_toATakenName_isConflict_butKeepingItsOwnNameIsFine() throws Exception {
+        String otherUrl = createRuleSet(federationId, 2).getResponse().getHeader("Location");
+
+        mockMvc.perform(put(otherUrl)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"name": "Standard 3:1", "federationId": "%s", "playSystem": "ROUND_ROBIN"}
+                    """, federationId)))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("RULE_SET_NAME_TAKEN"));
+
+        mockMvc.perform(put(otherUrl)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"name": "Standard 2:1", "federationId": "%s", "playSystem": "ROUND_ROBIN", "pointsWin": 5}
+                    """, federationId)))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void cloningTwice_numbersTheCopies() throws Exception {
+        mockMvc.perform(post(url + "/clone"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.name").value("Standard 3:1 (Kopie)"));
+        mockMvc.perform(post(url + "/clone"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.name").value("Standard 3:1 (Kopie 2)"));
+    }
+
+    @Test
+    void snapshots_mayShareATemplatesName() throws Exception {
+        String categoryId = createCategory();
+        String first = JsonPath.read(createLeague(id(createSeason(federationId)), categoryId, idFromUrl(url))
+            .getResponse().getContentAsString(), "$.ruleSetId");
+        createLeague(id(createSeason(federationId)), categoryId, idFromUrl(url));
+
+        mockMvc.perform(get("/v1/league-rule-sets/" + first))
+            .andExpect(jsonPath("$.name").value("Standard 3:1"));
+    }
+
+    @Test
     void deleteSeason_deletesItsLeaguesAndTiersSnapshots() throws Exception {
         String seasonId = id(createSeason(federationId));
         String leagueJson = createLeague(seasonId, createCategory(), idFromUrl(url))
@@ -517,7 +580,7 @@ class LeagueRuleSetControllerTest extends de.dtfb.sportshub.backend.support.Auth
         return mockMvc.perform(post("/v1/league-rule-sets")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                    {"name": "Standard 3:1", "federationId": "%s",
+                    {"name": "%s", "federationId": "%s",
                      "playSystem": "ROUND_ROBIN",
                      "pointsWin": %d, "pointsDraw": 1, "pointsLoss": 0,
                      "setsPerGame": 3, "pointsToWinSet": 7,
@@ -527,7 +590,7 @@ class LeagueRuleSetControllerTest extends de.dtfb.sportshub.backend.support.Auth
                        {"position": 2, "gameType": "DOUBLE"},
                        {"position": 3, "gameType": "SINGLE"}
                      ]}
-                    """, federationId, pointsWin)))
+                    """, pointsWin == 3 ? "Standard 3:1" : "Standard " + pointsWin + ":1", federationId, pointsWin)))
             .andExpect(status().isCreated())
             .andReturn();
     }
