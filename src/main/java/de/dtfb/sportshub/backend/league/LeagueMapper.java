@@ -12,6 +12,8 @@ public interface LeagueMapper {
     @Mapping(source = "season.id", target = "seasonId")
     @Mapping(source = "category.id", target = "categoryId")
     @Mapping(source = "ruleSet.id", target = "ruleSetId")
+    @Mapping(source = "ruleSet.name", target = "ruleSetName")
+    @Mapping(source = "ruleSet.sourceBlueprint.id", target = "blueprintId")
     LeagueDto toDto(League league);
 
     @Mapping(target = "id", ignore = true)

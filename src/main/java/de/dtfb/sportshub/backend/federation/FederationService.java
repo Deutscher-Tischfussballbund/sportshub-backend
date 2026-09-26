@@ -3,30 +3,25 @@ package de.dtfb.sportshub.backend.federation;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSetNotFoundException;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSetRepository;
-import de.dtfb.sportshub.backend.round.RoundRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class FederationService {
     private final FederationRepository repository;
     private final FederationMapper mapper;
     private final LeagueRuleSetRepository ruleSetRepository;
-    private final RoundRepository roundRepository;
 
     public FederationService(FederationRepository repository,
                              FederationMapper mapper,
-                             LeagueRuleSetRepository ruleSetRepository,
-                             RoundRepository roundRepository) {
+                             LeagueRuleSetRepository ruleSetRepository) {
         this.repository = repository;
         this.mapper = mapper;
         this.ruleSetRepository = ruleSetRepository;
-        this.roundRepository = roundRepository;
     }
 
     @Transactional(readOnly = true)
@@ -63,15 +58,9 @@ public class FederationService {
         Federation federation = repository.findById(id).orElseThrow(
             () -> new FederationNotFoundException(id));
 
-        String currentRuleSetId = federation.getDefaultRuleSet() == null
-            ? null : federation.getDefaultRuleSet().getId();
+        // The default blueprint is only read when a league is created (docs/21), so changing it
+        // never touches an existing league -- no running-league guard needed any more.
         String newRuleSetId = federationDto.getDefaultRuleSetId();
-        if (!Objects.equals(currentRuleSetId, newRuleSetId)
-            && roundRepository.existsFixtureForFederationDefaultDependentTier(id)) {
-            throw new FederationDefaultRuleSetChangeBlockedException(
-                "A tier in this federation already has fixtures and relies on the current default "
-                    + "rule set; give it an explicit rule set before changing the default");
-        }
 
         // A null parentFederationId means "unchanged" (most callers save the whole object back
         // without touching this field) -- re-parenting/re-rooting a federation is an explicit,
@@ -97,12 +86,18 @@ public class FederationService {
         return mapper.toDto(savedFederation);
     }
 
+    /** The default must be a blueprint -- a league's private snapshot can't serve as a template. */
     private LeagueRuleSet resolveRuleSet(String ruleSetId) {
         if (ruleSetId == null) {
             return null;
         }
-        return ruleSetRepository.findById(ruleSetId)
+        LeagueRuleSet ruleSet = ruleSetRepository.findById(ruleSetId)
             .orElseThrow(() -> new LeagueRuleSetNotFoundException(ruleSetId));
+        if (ruleSet.isSnapshot()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "The default rule set must be a blueprint, not a league's own rules");
+        }
+        return ruleSet;
     }
 
     /**

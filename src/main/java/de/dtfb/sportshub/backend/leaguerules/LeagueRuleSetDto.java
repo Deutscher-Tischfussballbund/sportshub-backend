@@ -13,6 +13,15 @@ public class LeagueRuleSetDto {
     /** Owning region; null = DTFB-global template. */
     private String federationId;
 
+    /** Read-only. True = the private rule set of one league/tier; false = a blueprint (docs/21). */
+    private Boolean snapshot;
+    /** Blueprints: hidden from pickers when true. Null on update = unchanged. */
+    private Boolean archived;
+    /** Read-only, snapshots: the blueprint this snapshot was copied from. */
+    private String sourceBlueprintId;
+    /** Read-only, snapshots: the owner's season has ended, so the rules can no longer change. */
+    private Boolean frozen;
+
     private PlaySystem playSystem;
 
     private Integer pointsWin;

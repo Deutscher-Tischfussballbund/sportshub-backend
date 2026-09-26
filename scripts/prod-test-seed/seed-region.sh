@@ -107,7 +107,7 @@ seed_one_region() {
   echo "   creating league..."
   local league_id
   league_id="$(api POST /v1/leagues "$(jq -n --arg season "${season_id}" '{
-    name: "Herren", seasonId: $season, categoryId: "cat-herren", ruleSetId: "rs-dtfb-std"
+    name: "Herren", seasonId: $season, categoryId: "cat-herren", blueprintId: "rs-dtfb-std"
   }')" "${token}" | jq -r '.id')"
 
   echo "   creating tier..."
@@ -185,7 +185,7 @@ seed_root_league() {
   echo "   creating league..."
   local league_id
   league_id="$(api POST /v1/leagues "$(jq -n --arg season "${season_id}" '{
-    name: "Bundesliga", seasonId: $season, categoryId: "cat-herren", ruleSetId: "rs-dtfb-std"
+    name: "Bundesliga", seasonId: $season, categoryId: "cat-herren", blueprintId: "rs-dtfb-std"
   }')" "${token}" | jq -r '.id')"
 
   echo "   creating tier..."

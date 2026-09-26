@@ -12,7 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class FederationControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
 
     @Test
-    void updateFederationDefaultRuleSet_blockedByDependentTierWithFixtures() throws Exception {
+    void updateFederationDefaultRuleSet_neverTouchesAnExistingLeaguesRules() throws Exception {
         String federationId = createFederation();
         String ruleSetA = createRuleSet(federationId);
         String ruleSetB = createRuleSet(federationId);
@@ -25,9 +25,11 @@ class FederationControllerTest extends de.dtfb.sportshub.backend.support.Authori
         String groupId = createGroup(tierId);
         createRound(groupId);
 
-        updateFederationDefault(federationId, ruleSetB)
-            .andExpect(status().isConflict())
-            .andExpect(jsonPath("$.code").value("FEDERATION_DEFAULT_HAS_RUNNING_LEAGUES"));
+        // the default is only copied when a league is created (docs/21), so changing it is always fine
+        updateFederationDefault(federationId, ruleSetB).andExpect(status().isOk());
+        mockMvc.perform(get("/v1/leagues/" + leagueId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.blueprintId").value(ruleSetA));
     }
 
     @Test

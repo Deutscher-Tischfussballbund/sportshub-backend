@@ -2,8 +2,6 @@ package de.dtfb.sportshub.backend.exception;
 
 import de.dtfb.sportshub.backend.club.ClubDeletionBlockedError;
 import de.dtfb.sportshub.backend.club.ClubDeletionBlockedException;
-import de.dtfb.sportshub.backend.federation.FederationDefaultRuleSetChangeBlockedError;
-import de.dtfb.sportshub.backend.federation.FederationDefaultRuleSetChangeBlockedException;
 import de.dtfb.sportshub.backend.group.GroupDeletionBlockedError;
 import de.dtfb.sportshub.backend.group.GroupDeletionBlockedException;
 import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedError;
@@ -146,22 +144,11 @@ public class GlobalExceptionHandler {
             .body(new ClubDeletionBlockedError("CLUB_HAS_TEAMS_OR_MEMBERS", ex.getMessage()));
     }
 
-    // Rule-set edit refused because it's used by a closed (archived) season's league/tier -- clone it
-    // instead of rewriting history.
+    // Rule change refused because the owning season has ended -- its rules are frozen (docs/21).
     @ExceptionHandler(RuleSetEditBlockedException.class)
     public ResponseEntity<RuleSetEditBlockedError> handleRuleSetEditBlocked(RuleSetEditBlockedException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-            .body(new RuleSetEditBlockedError("RULE_SET_LOCKED_BY_CLOSED_SEASON", ex.getMessage()));
-    }
-
-    // Federation default rule-set change refused because a tier depending on it already has
-    // fixtures → 409, give the tier its own explicit rule set first.
-    @ExceptionHandler(FederationDefaultRuleSetChangeBlockedException.class)
-    public ResponseEntity<FederationDefaultRuleSetChangeBlockedError> handleFederationDefaultRuleSetChangeBlocked(
-        FederationDefaultRuleSetChangeBlockedException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-            .body(new FederationDefaultRuleSetChangeBlockedError(
-                "FEDERATION_DEFAULT_HAS_RUNNING_LEAGUES", ex.getMessage()));
+            .body(new RuleSetEditBlockedError("RULE_SET_FROZEN", ex.getMessage()));
     }
 
     // Failsafe

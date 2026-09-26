@@ -12,6 +12,7 @@ import de.dtfb.sportshub.backend.federation.Federation;
 import de.dtfb.sportshub.backend.league.League;
 import de.dtfb.sportshub.backend.league.LeagueRepository;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
+import de.dtfb.sportshub.backend.leaguerules.ApplyBlueprintRequest;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSetRepository;
 import de.dtfb.sportshub.backend.location.Location;
 import de.dtfb.sportshub.backend.location.LocationRepository;
@@ -243,15 +244,41 @@ public class AuthorizationService {
         return federationId != null && isRegionAdmin(roles, federationId);
     }
 
-    /** May edit/delete the given rule set: the admin of its owning region (or global). */
+    /**
+     * May edit/delete the given rule set. A blueprint: the admin of its owning region (or global). A
+     * snapshot (docs/21): whoever manages the league or tier that owns it -- so a league admin may
+     * tune their own league's rules.
+     */
     public boolean canManageRuleSetById(String ruleSetId) {
         List<RoleAssignment> roles = currentRoles();
         if (AccessRoles.isGlobalAdmin(roles)) {
             return true;
         }
         LeagueRuleSet ruleSet = ruleSetId == null ? null : leagueRuleSetRepository.findById(ruleSetId).orElse(null);
+        if (ruleSet != null && ruleSet.isSnapshot()) {
+            League owner = leagueRepository.findFirstByRuleSetId(ruleSetId).orElse(null);
+            if (owner != null) {
+                return canManageLeague(owner.getId());
+            }
+            Tier tierOwner = tierRepository.findFirstByRuleSetId(ruleSetId).orElse(null);
+            return tierOwner != null && canManageTier(tierOwner.getId());
+        }
         Federation federation = ruleSet == null ? null : ruleSet.getFederation();
         return federation != null && isRegionAdmin(roles, federation.getId());
+    }
+
+    /**
+     * May overwrite the given leagues'/tiers' rules from a blueprint (docs/21): must manage every one of
+     * them. Any blueprint may be used -- reading the library is open to every admin.
+     */
+    public boolean canApplyBlueprint(ApplyBlueprintRequest request) {
+        if (request == null) {
+            return false;
+        }
+        List<String> leagueIds = request.getLeagueIds() == null ? List.of() : request.getLeagueIds();
+        List<String> tierIds = request.getTierIds() == null ? List.of() : request.getTierIds();
+        return leagueIds.stream().allMatch(this::canManageLeague)
+            && tierIds.stream().allMatch(this::canManageTier);
     }
 
     /**
