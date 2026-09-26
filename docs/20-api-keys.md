@@ -68,9 +68,10 @@ SPO-48 reverses two parts of that:
 - **Write path for apps removed:** `writeAccess`, `ApiClientAuthorizationService`, and the
   `@apiClientAuthz` clause on `PUT /v1/matches/{id}` are gone. That endpoint is human-only again
   (`@authz.canOrganizeMatch`).
-- **`dtfb-service` retired:** it is dropped from the `allowed-clients` defaults and from
-  `dtfb-keycloak/scripts/clients.json`. The allow-list keeps `dtfb-admin-web` and `dtfb-api`
-  (both mint tokens for real people).
+- **`dtfb-service` retired:** it is dropped from the `allowed-clients` defaults. It was never
+  committed to `dtfb-keycloak/scripts/clients.json` (only a local change there, discarded). The
+  client may still exist in running Keycloak realms (local, VPS) and is deleted there by hand. The
+  allow-list keeps `dtfb-admin-web` and `dtfb-api` (both mint tokens for real people).
 - **Swagger (SPO-44):** `OpenApiConfig` declares an `api-key` scheme (`apiKey` in header `X-API-Key`).
   It is offered only on the operations a key may call (GET/HEAD outside `/v1/admin/**` and
   `/v1/auth/**`) via the `apiKeyOnReadEndpoints` customizer. Every other operation keeps the global

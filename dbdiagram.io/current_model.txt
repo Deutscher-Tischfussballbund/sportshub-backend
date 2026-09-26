@@ -414,6 +414,31 @@ Table release_note {
   published_at datetime [not null, note: 'Set on create, preserved on edit']
 }
 
+// ==================== Tester tracker (separate subsystem) ====================
+// Real tester feedback, unlike the disposable demo/seed domain data; planned to move into its own
+// MySQL schema at the next wipe-requiring migration. No FK into the domain tables.
+
+Table tracker_issue {
+  id varchar(14) [pk]
+  title varchar(200) [not null]
+  description varchar(4000)
+  status varchar [not null, note: 'TrackerIssueStatus: OPEN | APPROVED (converted to a GitHub issue) | DONE; varchar since V6']
+  reported_by varchar
+  github_repo varchar [note: 'Set when converted to a GitHub issue']
+  github_issue_url varchar
+  created_at timestamp [not null]
+}
+
+Table tracker_issue_vote {
+  id varchar(14) [pk]
+  issue_id varchar [not null]
+  voter_name varchar [not null, note: 'Free text from the public tracker page; unique per issue']
+
+  indexes {
+    (issue_id, voter_name) [unique]
+  }
+}
+
 // ============================ Relationships ============================
 // Declared standalone (not inline on the column) for readability at this scale. Almost every FK
 // here is nullable at the JPA/DB level (plain @ManyToOne, not `optional = false`) even where the
@@ -456,3 +481,4 @@ Ref: team_participation.group_id >? comp_group.id
 Ref: roster_entry.participation_id >? team_participation.id
 Ref: roster_entry.player_id >? player.id
 Ref: game_plan_entry.rule_set_id >? league_rule_set.id
+Ref: tracker_issue_vote.issue_id > tracker_issue.id
