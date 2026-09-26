@@ -6,6 +6,9 @@ import de.dtfb.sportshub.backend.federation.FederationRepository;
 import de.dtfb.sportshub.backend.league.League;
 import de.dtfb.sportshub.backend.league.LeagueNotFoundException;
 import de.dtfb.sportshub.backend.league.LeagueRepository;
+import de.dtfb.sportshub.backend.teamparticipation.TeamParticipation;
+import de.dtfb.sportshub.backend.teamparticipation.TeamParticipationNotFoundException;
+import de.dtfb.sportshub.backend.teamparticipation.TeamParticipationRepository;
 import de.dtfb.sportshub.backend.tier.Tier;
 import de.dtfb.sportshub.backend.tier.TierNotFoundException;
 import de.dtfb.sportshub.backend.tier.TierRepository;
@@ -29,6 +32,8 @@ public class LeagueRuleSetService {
     private final LeagueRepository leagueRepository;
     private final TierRepository tierRepository;
     private final RuleSetSnapshotService snapshots;
+    private final TeamParticipationRepository participationRepository;
+    private final LeagueRuleResolver resolver;
 
     public LeagueRuleSetService(LeagueRuleSetRepository repository,
                                 GamePlanEntryRepository gamePlanRepository,
@@ -36,7 +41,9 @@ public class LeagueRuleSetService {
                                 FederationRepository federationRepository,
                                 LeagueRepository leagueRepository,
                                 TierRepository tierRepository,
-                                RuleSetSnapshotService snapshots) {
+                                RuleSetSnapshotService snapshots,
+                                TeamParticipationRepository participationRepository,
+                                LeagueRuleResolver resolver) {
         this.repository = repository;
         this.gamePlanRepository = gamePlanRepository;
         this.mapper = mapper;
@@ -44,6 +51,8 @@ public class LeagueRuleSetService {
         this.leagueRepository = leagueRepository;
         this.tierRepository = tierRepository;
         this.snapshots = snapshots;
+        this.participationRepository = participationRepository;
+        this.resolver = resolver;
     }
 
     /** The blueprint library (archived ones included, flagged). Snapshots are private to their owner. */
@@ -57,6 +66,19 @@ public class LeagueRuleSetService {
         LeagueRuleSet ruleSet = repository.findById(id).orElseThrow(
             () -> new LeagueRuleSetNotFoundException(id));
         return assemble(ruleSet);
+    }
+
+    /**
+     * The rules that actually apply to a team's participation (docs/21): its tier's own rules if the
+     * team is placed in a tier that overrides them, otherwise the league's own rules. {@code null}
+     * only in an unseeded environment without any rules at all.
+     */
+    @Transactional(readOnly = true)
+    public LeagueRuleSetDto getEffectiveForParticipation(String participationId) {
+        TeamParticipation participation = participationRepository.findVisibleById(participationId)
+            .orElseThrow(() -> new TeamParticipationNotFoundException(participationId));
+        LeagueRuleSet rules = resolver.effectiveFor(participation);
+        return rules == null ? null : assemble(rules);
     }
 
     /** Creates a blueprint. */

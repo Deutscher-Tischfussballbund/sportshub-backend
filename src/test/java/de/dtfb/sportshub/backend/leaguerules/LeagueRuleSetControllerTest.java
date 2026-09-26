@@ -322,6 +322,59 @@ class LeagueRuleSetControllerTest extends de.dtfb.sportshub.backend.support.Auth
     }
 
     @Test
+    void participationRules_areTheLeaguesRules_orTheTierOverrideOnceTheTeamIsPlaced() throws Exception {
+        String seasonId = id(createSeason(federationId));
+        String leagueJson = createLeague(seasonId, createCategory(), idFromUrl(url))
+            .getResponse().getContentAsString();
+        String leagueId = JsonPath.read(leagueJson, "$.id");
+        String otherBlueprintId = idFromUrl(createRuleSet(federationId, 2).getResponse().getHeader("Location"));
+        String tierId = JsonPath.read(createTier(leagueId, otherBlueprintId).getResponse().getContentAsString(), "$.id");
+        String groupId = JsonPath.read(mockMvc.perform(post("/v1/groups")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"name": "Gesamt", "tierId": "%s", "groupState": "PLANNED"}
+                    """, tierId)))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), "$.id");
+        String teamId = JsonPath.read(mockMvc.perform(post("/v1/teams")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"name": "TFC", "clubId": "%s", "seasonId": "%s"}
+                    """, createClub(federationId), seasonId)))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), "$.id");
+        String participationId = JsonPath.read(mockMvc.perform(post("/v1/team-participations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"teamId": "%s", "leagueId": "%s"}
+                    """, teamId, leagueId)))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), "$.id");
+
+        // not placed yet: the league's own rules
+        mockMvc.perform(get("/v1/team-participations/" + participationId + "/rules"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value((String) JsonPath.read(leagueJson, "$.ruleSetId")))
+            .andExpect(jsonPath("$.pointsWin").value(3))
+            .andExpect(jsonPath("$.gamePlan.length()").value(3));
+
+        // placed in the tier with its own rules: those apply
+        mockMvc.perform(put("/v1/team-participations/" + participationId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"teamId": "%s", "leagueId": "%s", "groupId": "%s"}
+                    """, teamId, leagueId, groupId)))
+            .andExpect(status().isOk());
+        mockMvc.perform(get("/v1/team-participations/" + participationId + "/rules"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.pointsWin").value(2))
+            .andExpect(jsonPath("$.snapshot").value(true));
+    }
+
+    @Test
+    void participationRules_ofUnknownParticipation_isNotFound() throws Exception {
+        mockMvc.perform(get("/v1/team-participations/" + NanoIdUtils.randomNanoId() + "/rules"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
     void deleteSeason_deletesItsLeaguesAndTiersSnapshots() throws Exception {
         String seasonId = id(createSeason(federationId));
         String leagueJson = createLeague(seasonId, createCategory(), idFromUrl(url))
