@@ -1,10 +1,11 @@
-# League Model — split from tournaments (proposed)
+# League Model — split from tournaments
 
-> **Kind: model + decision (proposed, not yet implemented).**
+> **Kind: model + decision (implemented: Phase 1 + Phase 2-core 2026-07-15, frontend Phase 3 2026-07-16;
+> Phase 4 tournaments deferred).**
 > This doc **supersedes the single-tree "Option A"** in
 > [`01-competition-and-registration-model.md`](./01-competition-and-registration-model.md) §1.1.
-> Doc 01 still describes what the code does *today*; this doc describes the direction the
-> model is moving. The placement/roster split and lifecycle (doc 01 §2–§3.6) are **kept
+> This doc describes what the code does today; doc 01's tree (`Competition → Discipline → Stage →
+> Pool`) is history. The placement/roster split and lifecycle (doc 01 §2–§3.6) are **kept
 > unchanged** and only re-parented onto the new league tree.
 
 ## 0. Decision

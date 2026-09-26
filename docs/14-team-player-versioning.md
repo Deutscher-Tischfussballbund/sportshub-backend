@@ -111,6 +111,11 @@ New package `history`: a generic, reusable mechanism (not one table per entity t
   /v1/admin/players/{id}` and `PUT /v1/clubs/{id}` (neither existed before this pass; both
   are new, minimal admin endpoints so the mechanism has something to exercise). `GET
   /v1/admin/players/{id}/history` / `GET /v1/clubs/{id}/history` expose the raw log.
+- **⚠️ Decided to roll back (2026-09-14, B-2026-09-14-5, ticket SPO-50 — not done yet):** the team
+  decided that history is stored and admin-visible, but old names must **not** be shown in old
+  seasons' displays. The two `fieldsAsOf` display call sites below are therefore to be removed;
+  `entity_history` itself and its admin endpoints stay. Until SPO-50 lands, the code still behaves
+  as described below.
 - **Point-in-time reconstruction is the actual point** — `EntityHistoryService.fieldsAsOf(type,
   id, fieldNames, asOf)` finds, for each field, the earliest change *after* `asOf` and returns its
   `oldValue` (the value still in effect at `asOf`); a field with no such entry falls back to the
