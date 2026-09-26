@@ -5,6 +5,12 @@
 > collects the open questions that must be answered before we gate endpoints — most
 > importantly the granularity of `TEAM_ADMIN` / `CLUB_ADMIN` and how federation game
 > rules interact with self-service.
+>
+> **Update 2026-09-26 (SPO-103):** the central questions are settled by what was built —
+> 6.1–6.3 are marked resolved below (Option C: team self-service, system-enforced windows and
+> eligibility). Write-gating (§7) is implemented; see
+> [03-authorization-model.md](./03-authorization-model.md) for the live rules. Still open:
+> 6.4 (SPO-97), 6.5 (SPO-78), 6.6 (SPO-98).
 
 ---
 
@@ -117,6 +123,13 @@ Condensed endpoint → minimum gate (full list in the team chat / prior analysis
 
 ### 6.1 Granularity of `TEAM_ADMIN` and `CLUB_ADMIN` — the central question
 
+> ✅ **RESOLVED — Option C, as built.** `TEAM_ADMIN` (captain) and `CLUB_ADMIN` both stay. A
+> captain adds/removes players and submits while the roster is `DRAFT` **and** the season's
+> registration window is open; submitting locks it; confirming or reopening is for an admin
+> above the team (club → federation, league admin). Admins may edit outside the window.
+> See [01](./01-competition-and-registration-model.md) §3.6/§5/§6 and [09](./09-league-model.md) §4.
+> Not modelled: per-federation freeze periods such as "no changes N days before the playoffs".
+
 **The tension.** The most operationally sensitive action is **changing a team's roster**.
 Game rules differ **per federation** (e.g. *no roster changes within N days of the playoffs*).
 If a per-team `TEAM_ADMIN` can self-service their own roster, then **every team's changes must
@@ -147,6 +160,13 @@ as granular roles, and whether roster management is an endpoint at all.
 
 ### 6.2 Are federation game rules enforced by the system or by people?
 
+> ✅ **RESOLVED — by the system, for the rules that exist so far.** Enforced on roster add and
+> submit: the season registration window, active club membership (`PLAYER_NOT_CLUB_MEMBER`,
+> [15](./15-club-membership.md)), category eligibility (`PLAYER_NOT_ELIGIBLE`,
+> [19](./19-category-eligibility.md)), roster size bounds from the `LeagueRuleSet`, and the lock
+> on a withdrawn team. Rules are configurable per league/tier with a federation default
+> (`LeagueRuleSet`, [09](./09-league-model.md) §3).
+
 The right granularity in 6.1 **depends on this.** If rules (roster-freeze windows, eligibility,
 etc.) are **encoded and enforced** by the backend, fine-grained self-service (Option A/C) is
 safe. If rules live only in regulations and human judgement, fine-grained self-service demands
@@ -155,12 +175,20 @@ the system enforce, and are they configurable per federation?
 
 ### 6.3 Roster / team-membership is not modelled yet
 
+> ✅ **RESOLVED.** Rosters are `RosterEntry` rows on a `TeamParticipation`
+> ([01](./01-competition-and-registration-model.md)); player↔club membership is `ClubMembership`
+> ([15](./15-club-membership.md)). The text below is kept for history.
+
 `Player ↔ Team/Club` membership does not exist in the data model (`PlayerMapper` returns an
 empty `clubs` list as a placeholder). The very capability under debate — *managing team
 members* — has **no entity and no endpoint** today. So 6.1 is partly a "what do we build"
 question, not only "who may call it."
 
 ### 6.4 Uploader scope semantics
+
+> ⬜ **Open — SPO-97.** Since the importer was removed (PR #20) both uploader roles are unused:
+> no `@authz` rule and no frontend reads them. Decide whether to give them a meaning (e.g. the new
+> importer, SPO-46) or drop them.
 
 `TOURNAMENT_UPLOADER` is club-scoped, `REGION_TOURNAMENT_UPLOADER` region-scoped. The only
 write that clearly fits is `POST /import/data` (currently a single bulk endpoint). **Decide:**
@@ -169,11 +197,17 @@ results, or only bulk-import?
 
 ### 6.5 Visibility of "all role assignments"
 
+> ⬜ **Open — SPO-78.** As of 2026-09-26 `GET /v1/admin/auth/assignments` (and `/roles`,
+> `/user-search`) have no gate at all: any logged-in user can read them. API keys are already
+> blocked there (doc 20).
+
 `GET /v1/admin/auth/assignments` returns **all** assignments. **Decide:** global-admin only, or
 should a region admin see (only) their region's assignments? The latter needs result-scoping,
 not just a gate.
 
 ### 6.6 Who may grant which roles (already partly decided)
+
+> ⬜ **Open — SPO-98.**
 
 Implemented today: a granter may grant within a scope they administer (region admin → region/
 club/team roles in-region; club admin → club/team roles in-club; global → anything). Confirm
@@ -183,6 +217,11 @@ region (currently allowed).
 ---
 
 ## 7. Implementation phasing (deferred until 6.1–6.2 are settled)
+
+> **Superseded (2026-09-26).** Write-gating is implemented, including the competition tree by
+> owning region and the matchday result/confirm gate (`canReportMatchDay`); the live rules are in
+> [03-authorization-model.md](./03-authorization-model.md). Reads are still ungated (SPO-78). The
+> phasing below is kept for history.
 
 1. **Safe now, decision-independent:** gate `Federation`, `Category` → `isAdmin()`;
    `Season` → `canManageRegion`; `Team` → `canManageClub`; PII reads → any-admin;

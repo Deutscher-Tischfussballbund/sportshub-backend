@@ -130,9 +130,11 @@ New package `history`: a generic, reusable mechanism (not one table per entity t
   - `TeamService` — for a team whose season has ended only — resolves the team's club name as of
     the team's own `season.startDate` onto `TeamDto.clubName`, for the same reason on the
     Team→Club side.
-- Player edit authorization is `@authz.isAdmin()` only (global admin) — `Player` has no
-  club/region linkage today (`PlayerMapper` hardcodes `clubs: []`, a known gap), so there's no
-  finer scope to gate against yet. Club edit reuses the existing `@authz.canManageClub(id)`.
+- Player edit authorization is `@authz.isAdmin()` only (global admin). The original reason — no
+  club/region linkage on `Player` — no longer holds: `ClubMembership` ([15](./15-club-membership.md))
+  now links a player to clubs and so to federations. Widening edit rights to club admins and up is
+  proposed in SPO-49 (field locks for birth year/licence: SPO-81). Club edit reuses the existing
+  `@authz.canManageClub(id)`.
 
 ### `LeagueRuleSet` edit lock (enforced, not just documented)
 

@@ -91,8 +91,9 @@ Who sees the league side was a separate choice:
   add and submit. `Player.gender` (with first/last name and birth year) became mandatory in V11,
   so "not specified" is no longer a valid value. `LeagueSide` moved from a nested
   enum of `PlayerGender` to top-level `player.LeagueSide`.
-- **A public read tier** (doc 10 §4) would get `gender` only. `genderDetail` is already null for
-  any caller without an admin role, so no extra work is expected there. Re-check this if a
-  public endpoint maps `Player` through a path other than the two hooks above.
+- **Public displays read via API keys** (doc 10 §4, no anonymous tier) and get `gender` only:
+  `genderDetail` is null for any caller without an admin role, and a key carries no role. Re-check
+  this if an endpoint maps `Player` through a path other than the two hooks above (SPO-79 limits
+  player data for keys further).
 - **New `PlayerMapper` call sites** must go through `PlayerGenderVisibility`. A direct
   `playerMapper.toDto` in a new service would leak the league side.
