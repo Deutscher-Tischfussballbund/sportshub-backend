@@ -101,7 +101,8 @@ which is what satisfies "behaves like a normal federation" for the frontend.
 
 - `region-clubs.component.ts` / `region-players.component.ts`: skip the client-side
   `c.regionId === regionId` filter when the active region is root (looked up via
-  `RegionService.regions()`'s new `root` field). The player fetch additionally falls back to the
+  the `root` field of `FederationService.getAllFederations()` -- originally via the
+  `/v1/regions` alias, removed in SPO-67). The player fetch additionally falls back to the
   unscoped `players()` call when root, since `activePlayerIdsForRegion` matches on
   `club.federationId` and no club's home federation is ever the root.
 - `create-team-dialog.component.ts` ("New team" from a club's own page): the season picker now

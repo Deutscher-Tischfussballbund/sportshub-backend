@@ -59,7 +59,7 @@ public class OpenApiConfig {
      * are appended alphabetically, so a new controller is never hidden — just unordered until added.
      */
     private static final List<String> TAG_ORDER = List.of(
-        "Federation", "Region", "Club", "Team",
+        "Federation", "Club", "Team",
         "Season", "League", "Category", "Location", "League Rule Set",
         "Tier", "Group", "Round", "Match Day", "Match", "Match Set", "Match Event", "Standing",
         "Player", "Player Admin",
@@ -68,7 +68,6 @@ public class OpenApiConfig {
     /** One-line blurb per group, shown under the tag header in Swagger UI. */
     private static final Map<String, String> TAG_DESCRIPTIONS = Map.ofEntries(
         Map.entry("Federation", "Landesverbände — the top of the federation tree. Admin-managed."),
-        Map.entry("Region", "Read alias for federations (a region is a Landesverband)."),
         Map.entry("Club", "Vereine within a region. Read-only — clubs arrive via import."),
         Map.entry("Team", "Teams within a club. Managed by the club's or region's admin; every team belongs to a club."),
         Map.entry("Season", "Spielzeiten, scoped to a region. Managed by that region's admin."),
