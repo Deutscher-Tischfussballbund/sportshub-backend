@@ -25,7 +25,7 @@ soft-delete, not a hard delete, so membership history is kept. A player may hold
 memberships at once.
 
 - `ClubMembershipService.join`/`leave` — `join` is idempotent (a no-op if already an active
-  member). `POST`/`DELETE /v1/admin/clubs/{clubId}/members[/​{playerId}]`, gated by the existing
+  member). `POST`/`DELETE /v1/clubs/{clubId}/members[/​{playerId}]`, gated by the existing
   `@authz.canManageClub(#clubId)`.
 - **`RosterService#addPlayer` enforces it**: refuses (`409`, code `PLAYER_NOT_CLUB_MEMBER`) unless
   `ClubMembershipService.isActiveMember(playerId, team.club.id)`. A player joins a club first, then

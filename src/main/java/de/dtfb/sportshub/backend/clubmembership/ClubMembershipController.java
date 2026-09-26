@@ -23,14 +23,14 @@ public class ClubMembershipController {
         this.service = service;
     }
 
-    @PostMapping("/v1/admin/clubs/{clubId}/members")
+    @PostMapping("/v1/clubs/{clubId}/members")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("@authz.canManageClub(#clubId)")
     public void addClubMember(@PathVariable String clubId, @RequestBody AddClubMemberDto dto) {
         service.join(dto.playerId(), clubId);
     }
 
-    @DeleteMapping("/v1/admin/clubs/{clubId}/members/{playerId}")
+    @DeleteMapping("/v1/clubs/{clubId}/members/{playerId}")
     @PreAuthorize("@authz.canManageClub(#clubId)")
     public void removeClubMember(@PathVariable String clubId, @PathVariable String playerId) {
         service.leave(playerId, clubId);

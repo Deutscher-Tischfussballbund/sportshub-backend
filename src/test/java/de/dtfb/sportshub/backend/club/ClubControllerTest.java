@@ -30,7 +30,7 @@ class ClubControllerTest extends AuthorizedControllerTest {
 
     @Test
     void clubs_listsSeededClubs() throws Exception {
-        mockMvc.perform(get("/v1/admin/clubs"))
+        mockMvc.perform(get("/v1/clubs"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(org.hamcrest.Matchers.greaterThan(0)));
     }
@@ -40,7 +40,7 @@ class ClubControllerTest extends AuthorizedControllerTest {
         String federationId = createFederation();
         String clubId = createClub(federationId);
 
-        mockMvc.perform(put("/v1/admin/clubs/" + clubId)
+        mockMvc.perform(put("/v1/clubs/" + clubId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                     {"name": "Neuer Name", "shortName": "NN", "city": "Berlin", "active": true, "regionId": "%s"}
@@ -48,7 +48,7 @@ class ClubControllerTest extends AuthorizedControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.name").value("Neuer Name"));
 
-        mockMvc.perform(get("/v1/admin/clubs/" + clubId + "/history"))
+        mockMvc.perform(get("/v1/clubs/" + clubId + "/history"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[?(@.fieldName == 'name')].oldValue").value("Testverein"))
             .andExpect(jsonPath("$[?(@.fieldName == 'name')].newValue").value("Neuer Name"));
@@ -58,7 +58,7 @@ class ClubControllerTest extends AuthorizedControllerTest {
     void create_addsAClub() throws Exception {
         String federationId = createFederation();
 
-        MvcResult result = mockMvc.perform(post("/v1/admin/clubs")
+        MvcResult result = mockMvc.perform(post("/v1/clubs")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                     {"name": "Neuer Verein", "shortName": "NV", "city": "Hamburg", "active": true, "regionId": "%s"}
@@ -69,13 +69,13 @@ class ClubControllerTest extends AuthorizedControllerTest {
             .andReturn();
         String clubId = JsonPath.read(result.getResponse().getContentAsString(), "$.id");
 
-        mockMvc.perform(get("/v1/admin/clubs"))
+        mockMvc.perform(get("/v1/clubs"))
             .andExpect(jsonPath("$[?(@.id == '" + clubId + "')].name").value("Neuer Verein"));
     }
 
     @Test
     void create_unknownRegion_isNotFound() throws Exception {
-        mockMvc.perform(post("/v1/admin/clubs")
+        mockMvc.perform(post("/v1/clubs")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {"name": "X", "active": true, "regionId": "does-not-exist"}
@@ -88,16 +88,16 @@ class ClubControllerTest extends AuthorizedControllerTest {
         String federationId = createFederation();
         String clubId = createClub(federationId);
 
-        mockMvc.perform(delete("/v1/admin/clubs/" + clubId))
+        mockMvc.perform(delete("/v1/clubs/" + clubId))
             .andExpect(status().isOk());
 
-        mockMvc.perform(get("/v1/admin/clubs"))
+        mockMvc.perform(get("/v1/clubs"))
             .andExpect(jsonPath("$[?(@.id == '" + clubId + "')]").isEmpty());
     }
 
     @Test
     void delete_unknownClub_isNotFound() throws Exception {
-        mockMvc.perform(delete("/v1/admin/clubs/does-not-exist"))
+        mockMvc.perform(delete("/v1/clubs/does-not-exist"))
             .andExpect(status().isNotFound());
     }
 
@@ -113,7 +113,7 @@ class ClubControllerTest extends AuthorizedControllerTest {
                     """, clubId, seasonId)))
             .andExpect(status().isCreated());
 
-        mockMvc.perform(delete("/v1/admin/clubs/" + clubId))
+        mockMvc.perform(delete("/v1/clubs/" + clubId))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.code").value("CLUB_HAS_TEAMS_OR_MEMBERS"));
     }
@@ -130,14 +130,14 @@ class ClubControllerTest extends AuthorizedControllerTest {
         String playerId = playerRepository.save(player).getId();
         joinClub(playerId, clubId);
 
-        mockMvc.perform(delete("/v1/admin/clubs/" + clubId))
+        mockMvc.perform(delete("/v1/clubs/" + clubId))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.code").value("CLUB_HAS_TEAMS_OR_MEMBERS"));
     }
 
     @Test
     void update_unknownClub_isNotFound() throws Exception {
-        mockMvc.perform(put("/v1/admin/clubs/does-not-exist")
+        mockMvc.perform(put("/v1/clubs/does-not-exist")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {"name": "X", "active": true}
@@ -163,7 +163,7 @@ class ClubControllerTest extends AuthorizedControllerTest {
         mockMvc.perform(get("/v1/teams/" + teamId))
             .andExpect(jsonPath("$.clubName").value("Testverein"));
 
-        mockMvc.perform(put("/v1/admin/clubs/" + clubId)
+        mockMvc.perform(put("/v1/clubs/" + clubId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                     {"name": "Umbenannter Verein", "active": true, "regionId": "%s"}
@@ -175,7 +175,7 @@ class ClubControllerTest extends AuthorizedControllerTest {
             .andExpect(jsonPath("$.clubName").value("Testverein"));
 
         // but the club itself, read directly, shows its current name
-        mockMvc.perform(get("/v1/admin/clubs"))
+        mockMvc.perform(get("/v1/clubs"))
             .andExpect(jsonPath("$[?(@.id == '" + clubId + "')].name").value("Umbenannter Verein"));
     }
 
@@ -194,7 +194,7 @@ class ClubControllerTest extends AuthorizedControllerTest {
             .andReturn();
         String teamId = JsonPath.read(teamResult.getResponse().getContentAsString(), "$.id");
 
-        mockMvc.perform(put("/v1/admin/clubs/" + clubId)
+        mockMvc.perform(put("/v1/clubs/" + clubId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                     {"name": "Umbenannter Verein", "active": true, "regionId": "%s"}

@@ -30,12 +30,12 @@ public class ClubController {
         this.historyService = historyService;
     }
 
-    @GetMapping("/v1/admin/clubs")
+    @GetMapping("/v1/clubs")
     public List<ClubDto> clubs() {
         return service.getAll();
     }
 
-    @PostMapping("/v1/admin/clubs")
+    @PostMapping("/v1/clubs")
     @PreAuthorize("@authz.canManageRegion(#dto.regionId)")
     public ResponseEntity<ClubDto> createClub(@RequestBody ClubDto dto) {
         ClubDto created = service.create(dto);
@@ -43,19 +43,19 @@ public class ClubController {
         return ResponseEntity.created(location).body(created);
     }
 
-    @PutMapping("/v1/admin/clubs/{id}")
+    @PutMapping("/v1/clubs/{id}")
     @PreAuthorize("@authz.canManageClub(#id)")
     public ClubDto updateClub(@PathVariable String id, @RequestBody ClubDto dto, @AuthenticationPrincipal Jwt jwt) {
         return service.update(id, dto, jwt.getClaimAsString("dtfb_id"));
     }
 
-    @DeleteMapping("/v1/admin/clubs/{id}")
+    @DeleteMapping("/v1/clubs/{id}")
     @PreAuthorize("@authz.canManageClub(#id)")
     public void deleteClub(@PathVariable String id) {
         service.delete(id);
     }
 
-    @GetMapping("/v1/admin/clubs/{id}/history")
+    @GetMapping("/v1/clubs/{id}/history")
     @PreAuthorize("@authz.canManageClub(#id)")
     public List<EntityHistoryDto> clubHistory(@PathVariable String id) {
         return historyService.history(HistoryEntityType.CLUB, id);

@@ -53,6 +53,18 @@ class ApiKeyAuthenticationIntegrationTest {
     }
 
     @Test
+    void validKey_readsClubList_butNotClubHistory() throws Exception {
+        String key = newKey("clubs");
+
+        // SPO-68: the club list moved out of /v1/admin/**, so machine clients can read it.
+        mockMvc.perform(get("/v1/clubs").header("X-API-Key", key))
+            .andExpect(status().isOk());
+        // History stays per-club admin (@authz.canManageClub), which a key is never.
+        mockMvc.perform(get("/v1/clubs/club-tfcm/history").header("X-API-Key", key))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     void validKey_touchesLastUsedAt() throws Exception {
         String key = newKey("toucher");
         mockMvc.perform(get("/v1/seasons").header("X-API-Key", key)).andExpect(status().isOk());
