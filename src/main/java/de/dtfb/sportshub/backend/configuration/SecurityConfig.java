@@ -42,6 +42,7 @@ public class SecurityConfig {
     @Bean
     @Order(2)
     public SecurityFilterChain filterChain(HttpSecurity http) {
+        ApiErrorAuthenticationEntryPoint authenticationEntryPoint = new ApiErrorAuthenticationEntryPoint();
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
@@ -61,9 +62,12 @@ public class SecurityConfig {
             // Read-only machine access via backend-issued API keys (X-API-Key), checked before the
             // JWT filter; requests without the header fall through to JWT auth unchanged.
             .addFilterBefore(new ApiKeyAuthenticationFilter(apiKeyService), BearerTokenAuthenticationFilter.class)
+            // 401s (missing or invalid credentials) carry an ApiError body like every other error.
+            .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(authenticationEntryPoint))
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(_ -> {
                 })
+                .authenticationEntryPoint(authenticationEntryPoint)
             );
 
         return http.build();
