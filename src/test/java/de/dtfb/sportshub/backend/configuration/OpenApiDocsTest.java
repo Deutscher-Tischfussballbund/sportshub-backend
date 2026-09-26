@@ -50,6 +50,16 @@ class OpenApiDocsTest {
     }
 
     @Test
+    void documents401OnSecuredOperations_butNotOnThePublicTracker() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.paths['/v1/seasons'].get.responses['401']").exists())
+            .andExpect(jsonPath("$.paths['/v1/seasons/{id}'].delete.responses['401'].content[*].schema['$ref']")
+                .value(hasItem(containsString("ApiError"))))
+            .andExpect(jsonPath("$.paths['/v1/tracker/issues'].get.responses['401']").doesNotExist());
+    }
+
+    @Test
     void documentsSharedErrorResponsesWithApiErrorBody() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
             .andExpect(status().isOk())

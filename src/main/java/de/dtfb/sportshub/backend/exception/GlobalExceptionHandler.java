@@ -33,10 +33,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.oauth2.client.ClientAuthorizationRequiredException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -178,6 +180,21 @@ public class GlobalExceptionHandler {
         HttpStatusCode status = ex.getStatusCode();
         String code = status instanceof HttpStatus httpStatus ? httpStatus.name() : "ERROR";
         return ResponseEntity.status(status).body(new ApiError(code, ex.getReason()));
+    }
+
+    // No route matches the path → 404. Without this the catch-all below turned a wrong URL (e.g. a
+    // frontend calling a path the running backend doesn't have yet) into a misleading 500 (SPO-66).
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiError handleNoResource(NoResourceFoundException ex) {
+        return new ApiError("NOT_FOUND", "No endpoint for " + ex.getHttpMethod() + " /" + ex.getResourcePath());
+    }
+
+    // The path exists but not for this HTTP method → 405, same catch-all problem as above (SPO-66).
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    public ApiError handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        return new ApiError("METHOD_NOT_ALLOWED", "Method " + ex.getMethod() + " is not supported here");
     }
 
     // Authorization denial (@PreAuthorize / method security) → 403, not the catch-all 500 below.

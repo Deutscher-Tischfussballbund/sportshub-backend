@@ -5,6 +5,11 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.security.OAuthFlow;
 import io.swagger.v3.oas.models.security.OAuthFlows;
 import io.swagger.v3.oas.models.security.Scopes;
@@ -147,6 +152,36 @@ public class OpenApiConfig {
                             new SecurityRequirement().addList(OAUTH_SCHEME),
                             new SecurityRequirement().addList(API_KEY_SCHEME)));
                     }
+                });
+            });
+        };
+    }
+
+    /**
+     * Documents the 401 on every operation behind the main JWT chain. It comes from Spring Security's
+     * entry point ({@link ApiErrorAuthenticationEntryPoint}), not from GlobalExceptionHandler, so
+     * springdoc can't derive it the way it derives the other shared error responses. The tracker's
+     * own chain ({@code /v1/tracker/issues/**}, {@code /v1/tracker/me}) is public and excluded.
+     */
+    @Bean
+    public OpenApiCustomizer documentUnauthorized() {
+        return openApi -> {
+            if (openApi.getPaths() == null) {
+                return;
+            }
+            openApi.getPaths().forEach((path, pathItem) -> {
+                if (path.startsWith("/v1/tracker/issues") || path.equals("/v1/tracker/me")) {
+                    return;
+                }
+                pathItem.readOperations().forEach(operation -> {
+                    if (operation.getResponses() == null) {
+                        operation.setResponses(new ApiResponses());
+                    }
+                    operation.getResponses().addApiResponse("401", new ApiResponse()
+                        .description("No or invalid credentials (missing/expired token, or an unknown, "
+                            + "deactivated or expired API key)")
+                        .content(new Content().addMediaType("application/json",
+                            new MediaType().schema(new Schema<>().$ref("#/components/schemas/ApiError")))));
                 });
             });
         };
