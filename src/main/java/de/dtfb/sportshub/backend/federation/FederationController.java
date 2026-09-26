@@ -10,7 +10,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/v1/federation")
+@RequestMapping("/v1/federations")
 public class FederationController {
 
     private final FederationService service;

@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * A region admin manages their own federation (e.g. picking its default rule set, from the
- * rule-set dialog's "Default" checkbox) -- {@code PUT /v1/federation/{id}} used to be
+ * rule-set dialog's "Default" checkbox) -- {@code PUT /v1/federations/{id}} used to be
  * global-admin-only, refusing every region admin's attempt with a 403, even for their own
  * federation. Fixed to {@code canManageRegion}, with a parent-federation change still refused
  * unless the caller is a global admin (see docs/16-root-federation.md).
@@ -48,7 +48,7 @@ class FederationAuthorizationIntegrationTest {
         Federation own = federation("Eigener Verband");
         RequestPostProcessor regionAdmin = grantRegionAdmin("owncomer", own.getId());
 
-        mockMvc.perform(put("/v1/federation/" + own.getId()).with(regionAdmin)
+        mockMvc.perform(put("/v1/federations/" + own.getId()).with(regionAdmin)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Eigener Verband\"}"))
             .andExpect(status().isOk());
@@ -60,7 +60,7 @@ class FederationAuthorizationIntegrationTest {
         Federation own = federation("Eigener Verband 2");
         RequestPostProcessor regionAdmin = grantRegionAdmin("foreigner", own.getId());
 
-        mockMvc.perform(put("/v1/federation/" + foreign.getId()).with(regionAdmin)
+        mockMvc.perform(put("/v1/federations/" + foreign.getId()).with(regionAdmin)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Umbenannt\"}"))
             .andExpect(status().isForbidden());
@@ -72,7 +72,7 @@ class FederationAuthorizationIntegrationTest {
         Federation otherParent = federation("Anderer Verband");
         RequestPostProcessor regionAdmin = grantRegionAdmin("reparenter", own.getId());
 
-        mockMvc.perform(put("/v1/federation/" + own.getId()).with(regionAdmin)
+        mockMvc.perform(put("/v1/federations/" + own.getId()).with(regionAdmin)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Eigener Verband 3\",\"parentFederationId\":\"" + otherParent.getId() + "\"}"))
             .andExpect(status().isForbidden());

@@ -57,14 +57,14 @@ class CategoryControllerTest extends AuthorizedControllerTest {
     }
 
     private ResultActions create(String name, String shortName, String eligibleSide) throws Exception {
-        return mockMvc.perform(post("/v1/category")
+        return mockMvc.perform(post("/v1/categories")
             .contentType(MediaType.APPLICATION_JSON)
             .content(String.format("{\"name\": \"%s\", \"shortName\": \"%s\", \"eligibleSide\": %s}",
                 name, shortName, eligibleSide == null ? "null" : "\"" + eligibleSide + "\"")));
     }
 
     private ResultActions update(String id, String name, String shortName) throws Exception {
-        return mockMvc.perform(put("/v1/category/" + id)
+        return mockMvc.perform(put("/v1/categories/" + id)
             .contentType(MediaType.APPLICATION_JSON)
             .content(String.format("{\"name\": \"%s\", \"shortName\": \"%s\"}", name, shortName)));
     }

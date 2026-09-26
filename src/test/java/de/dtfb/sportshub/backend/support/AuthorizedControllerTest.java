@@ -49,7 +49,7 @@ public abstract class AuthorizedControllerTest {
      * {@code FederationService#resolveParentForCreate}).
      */
     protected String createFederation() throws Exception {
-        MvcResult result = mockMvc.perform(post("/v1/federation")
+        MvcResult result = mockMvc.perform(post("/v1/federations")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {"name": "Testverband"}
@@ -103,7 +103,7 @@ public abstract class AuthorizedControllerTest {
 
     /** Create a category and return its id — a discipline requires a category. */
     protected String createCategory() throws Exception {
-        MvcResult result = mockMvc.perform(post("/v1/category")
+        MvcResult result = mockMvc.perform(post("/v1/categories")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                     {"name": "Herren", "shortName": "%s"}

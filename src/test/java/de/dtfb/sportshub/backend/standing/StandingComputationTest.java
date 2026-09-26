@@ -67,9 +67,9 @@ class StandingComputationTest extends AuthorizedControllerTest {
     @Test
     void standings_useFederationDefaultWhenTierAndLeagueHaveNone() throws Exception {
         // A rule set set as the federation's default, with neither tier nor league overriding it.
-        String federationId = create("/v1/federation", "{\"name\":\"FedDefault\"}");
+        String federationId = create("/v1/federations", "{\"name\":\"FedDefault\"}");
         String ruleSetId = createRuleSet(federationId, 5, 2, 1);
-        update("/v1/federation/" + federationId,
+        update("/v1/federations/" + federationId,
             "{\"name\":\"FedDefault\",\"defaultRuleSetId\":\"" + ruleSetId + "\"}");
 
         Scenario s = buildLeagueWithHomeWin(federationId, "");  // league has no rule set
@@ -80,7 +80,7 @@ class StandingComputationTest extends AuthorizedControllerTest {
 
     /** Build a league (optionally with a points rule set on the league), play one home win, confirm. */
     private Scenario buildLeagueWithHomeWin(Integer win, Integer draw, Integer loss) throws Exception {
-        String federationId = create("/v1/federation", "{\"name\":\"Testverband\"}");
+        String federationId = create("/v1/federations", "{\"name\":\"Testverband\"}");
         String ruleSetRef = "";
         if (win != null) {
             ruleSetRef = ",\"ruleSetId\":\"" + createRuleSet(federationId, win, draw, loss) + "\"";
@@ -94,7 +94,7 @@ class StandingComputationTest extends AuthorizedControllerTest {
      */
     private Scenario buildLeagueWithHomeWin(String federationId, String leagueRuleSetRef) throws Exception {
         String seasonId = create("/v1/seasons", "{\"name\":\"2025\",\"federationId\":\"" + federationId + "\"}");
-        String categoryId = create("/v1/category", "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
+        String categoryId = create("/v1/categories", "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
         String leagueId = create("/v1/leagues", "{\"name\":\"Liga\",\"seasonId\":\"" + seasonId
             + "\",\"categoryId\":\"" + categoryId + "\"" + leagueRuleSetRef + "}");
         String tierId = create("/v1/tiers", "{\"name\":\"1. Liga\",\"leagueId\":\"" + leagueId + "\"}");

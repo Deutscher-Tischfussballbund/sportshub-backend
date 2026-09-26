@@ -301,7 +301,7 @@ Deferred to the colleague-app integration (§5).
 - ✅ **Federation-default ruleset source** — RESOLVED (2026-07-15): the federation default lives on
   `Federation.defaultRuleSet` (nullable) and is the last fallback in `LeagueRuleResolver`
   (`tier ?? league ?? federation.defaultRuleSet`, else historical 2/1/0). Editable via
-  `PUT /v1/federation/{id}` (`defaultRuleSetId`).
+  `PUT /v1/federations/{id}` (`defaultRuleSetId`).
 - ✅ **Tier ladder order** — RESOLVED (2026-07-15): `Tier.level` (Integer, 1 = top) defines the
   promote/relegate order instead of parsing `Tier.name`; carried by copy-forward and surfaced
   (sorted) in the `LeagueStructure` read-model.

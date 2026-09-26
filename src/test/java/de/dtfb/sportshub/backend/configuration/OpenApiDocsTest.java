@@ -55,12 +55,12 @@ class OpenApiDocsTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.components.schemas.ApiError").exists())
             // Every common error code is documented on an operation...
-            .andExpect(jsonPath("$.paths['/v1/category'].get.responses['400']").exists())
-            .andExpect(jsonPath("$.paths['/v1/category'].get.responses['403']").exists())
-            .andExpect(jsonPath("$.paths['/v1/category'].get.responses['404']").exists())
-            .andExpect(jsonPath("$.paths['/v1/category'].get.responses['500']").exists())
+            .andExpect(jsonPath("$.paths['/v1/categories'].get.responses['400']").exists())
+            .andExpect(jsonPath("$.paths['/v1/categories'].get.responses['403']").exists())
+            .andExpect(jsonPath("$.paths['/v1/categories'].get.responses['404']").exists())
+            .andExpect(jsonPath("$.paths['/v1/categories'].get.responses['500']").exists())
             // ...all sharing the same ApiError body.
-            .andExpect(jsonPath("$.paths['/v1/category'].get.responses['403'].content[*].schema['$ref']")
+            .andExpect(jsonPath("$.paths['/v1/categories'].get.responses['403'].content[*].schema['$ref']")
                 .value(hasItem(containsString("ApiError"))));
     }
 
@@ -87,9 +87,9 @@ class OpenApiDocsTest {
     void prettifiesControllerTagNames() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.paths['/v1/category'].get.tags").value(hasItem("Category")))
+            .andExpect(jsonPath("$.paths['/v1/categories'].get.tags").value(hasItem("Category")))
             // No raw "*-controller" tag survives on the operation.
-            .andExpect(jsonPath("$.paths['/v1/category'].get.tags[?(@ =~ /.*-controller/)]").value(empty()));
+            .andExpect(jsonPath("$.paths['/v1/categories'].get.tags[?(@ =~ /.*-controller/)]").value(empty()));
     }
 
     @Test
