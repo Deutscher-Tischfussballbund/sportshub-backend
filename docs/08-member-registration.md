@@ -28,11 +28,13 @@ These bound every possible design:
 
 - **sportshub is a pure OAuth2 resource server** — it validates JWTs and has *zero* Keycloak
   dependency. That decoupling is a deliberate win of the migration.
-- **No member directory today.** `Player` rows are created only by lazy auto-provision on first login
-  (sparse JWT claims `dtfb_id`/`email`/`given_name`/`family_name`), the bootstrap admin, and the dev
-  seed. There is no bulk membership import (`ImportPlayer` is match-lineup data, not a membership feed);
-  `PlayerController`/`PlayerAdminController` are read-only.
-- **No emails stored** — `Player.email` is nullable and only ever set from the JWT on login.
+- **No member directory today.** Since the User/Player split ([14](./14-team-player-versioning.md))
+  first login lazily creates only a `User` (login identity, from the sparse JWT claims
+  `dtfb_id`/`email`/`given_name`/`family_name`, `UserRegistryService`) — never a `Player`. `Player`
+  rows come only from seed scripts; there is no create endpoint (SPO-9) and no bulk membership import
+  yet (the old importer was removed in PR #20; the new one is SPO-46). `PlayerAdminController` can
+  edit a player (global admin), not create one.
+- **No emails stored for players** — `User.email` is nullable and only ever set from the JWT on login.
   ⇒ email-verification-code proof is **permanently off the table**.
 - **Only `birthYear`** (nullable `Integer`), not full DOB — low-entropy, brute-forceable.
 - **No registration endpoint** — no `RegistrationController`/`RegisterDto`/`RegisterResponseDto` exist.

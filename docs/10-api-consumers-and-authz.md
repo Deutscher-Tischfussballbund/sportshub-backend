@@ -1,7 +1,8 @@
 # API consumers & authorization (multi-frontend)
 
-**Kind:** decision · **Status:** the identity model AND audience gating are settled and in code (machine access: read-only API keys, doc 20); the
-*public read tier* (which specific GETs go anonymous) is still open, flagged below.
+**Kind:** decision · **Status:** the identity model AND audience gating are settled and in code (machine access: read-only API keys, doc 20).
+The *public read tier* is decided (2026-09-26): **no anonymous access** — public displays read through
+API keys (§4).
 
 sportshub-backend is intended to serve **several frontends with different purposes** — the admin app
 today, a team portal next (doc 06), and plausibly a public results site and/or a mobile client later.
@@ -104,7 +105,15 @@ We don't need a separate BFF **tier** now (YAGNI) — just keep the core clean s
 
 ---
 
-## 4. OPEN DECISION — the public read tier
+## 4. The public read tier — DECIDED: no anonymous access, public displays use API keys
+
+> **Decision, 2026-09-26 (Marvin).** No `permitAll()` GETs are added. A public page (results,
+> standings, fixtures, e.g. the dtfb.de link for the Regionalliga, SPO-59) reads through a
+> read-only API key ([20-api-keys.md](./20-api-keys.md)) held by the site that renders it; its
+> visitors need no credential. Consequences: anything an API key can read is effectively public,
+> so personal player data exposed to keys must be limited (SPO-79); standings stay server-side,
+> since keys only read backend endpoints. Securing reads for *logged-in* users is a separate
+> topic (SPO-78). The original analysis follows for history.
 
 Today `SecurityConfig` is `anyRequest().authenticated()`: **everything except Swagger/H2/OPTIONS needs a
 token.** A public, read-only results site (no login) cannot read anything anonymously. A
@@ -149,4 +158,4 @@ human. See [20-api-keys.md](./20-api-keys.md) for the design and the rejected al
 | Core-vs-BFF endpoint discipline | ✅ principle adopted (this doc); hold it in review |
 | Audience gating (`azp` allow-list) | ✅ settled, in code (§5) |
 | Machine access | ✅ read-only API keys (doc 20); app-level write grants removed (SPO-48) |
-| Public read tier | ⬜ open — design before a public consumer |
+| Public read tier | ✅ decided 2026-09-26: no anonymous access; public displays read via API keys (§4) |

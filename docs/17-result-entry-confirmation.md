@@ -18,9 +18,15 @@
 
 ## Context
 
-Nothing in the system currently lets a captain record anything: the result-entry surface does not
-exist on either side, backend or frontend. The first production use of the Sports Hub is a
-Regionalliga weekend, where results have to be captured as the weekend runs, not afterwards.
+No frontend lets a captain record anything. The backend has an older two-step flow that falls short
+of this decision: `POST /v1/matchdays/{id}/result` (sets the `Match` scores, `resultState =
+HOME_SUBMITTED`) and `POST /v1/matchdays/{id}/confirm` (`CONFIRMED`, confirmer ≠ submitter), both
+gated by `canReportMatchDay` (a team's `team_admin` or an admin above it). It has no edit/re-open
+cycle (submit requires `OPEN`), no league-admin access, no notification, and — because the fixture
+generator creates no `Match` rows (doc 12 §2, SPO-71) — nothing to score on generated fixtures.
+*(Correction 2026-09-26, SPO-103: the first version of this doc said no backend existed.)* The first
+production use of the Sports Hub is a Regionalliga weekend, where results have to be captured as the
+weekend runs, not afterwards.
 
 The legacy process is paper: both teams write the result on a sheet, both sign it, and the sheet
 goes to the on-site tournament management, who transcribes it. Reproducing that digitally would
