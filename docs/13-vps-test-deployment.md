@@ -33,6 +33,10 @@ recovery) knows what it's relying on:
   name.
 - If pulling private GHCR images: `docker login ghcr.io -u <user> --password-stdin` with a
   classic PAT scoped `read:packages` (piped via stdin, never typed into shell history).
+  The `sportshub-backend` package is private, and the PAT expires: a `docker compose pull` that
+  fails with `error from registry: unauthorized` means the stored login is stale — create a new
+  PAT and log in again (hit on the `v0.5.0` rollout):
+  `read -rs GHCR_PAT && echo "$GHCR_PAT" | docker login ghcr.io -u <user> --password-stdin; unset GHCR_PAT`.
 
 ## 2. Deploy Keycloak
 
@@ -246,7 +250,43 @@ automatically on boot, no manual DB step). Confirmed independently: the `v0.4.0`
 was auto-generated correctly from PR #61/#62 titles (docs/10 §1's new touchpoint 4, first real
 exercise of that mechanism). VPS-side steps (backend/frontend pull+restart, Keycloak update,
 tester-login regression check, registering the new `dtfb-service` Keycloak client there) were
-carried out directly, not re-verified from this session.
+carried out directly, not re-verified from this session. (Correction, 2026-09-26: `dtfb-service`
+was in fact never registered on the VPS.)
+
+**2026-09-26: `v0.5.0` deployed (no wipe needed, SPO-70).** `V9`–`V12` (gender enum, category
+eligible side, mandatory player/category fields, API keys replacing `api_client_grant`) migrate in
+place, but `V11` adds `NOT NULL`/`UNIQUE` constraints the existing rows must already satisfy — and
+MySQL DDL isn't transactional, so a failing `V11` leaves `V9`/`V10` applied and Flyway stuck on a
+failed record. Backend and frontend had to go out together (REST paths changed: plural
+`/v1/federations`/`/v1/categories`, `/v1/regions` removed, `/v1/admin/clubs` → `/v1/clubs`). Steps
+as executed:
+
+1. Full backup first. The DB credentials are read from the container's own env (the shell never
+   loads `.env`, so `$SPORTSHUB_DB_PASSWORD` is empty there and mysql just prompts), and
+   `--no-tablespaces` is required — the `sportshub` user lacks the global `PROCESS` privilege:
+   ```bash
+   docker compose exec -T sportshub-db sh -c \
+     'mysqldump -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --no-tablespaces --default-character-set=utf8mb4 --single-transaction sportshub' \
+     > backup-pre-v0.5.0-$(date +%F).sql
+   tail -n 1 backup-pre-v0.5.0-*.sql   # "-- Dump completed on ..."
+   ```
+2. Pre-flight checks against the **old** data (all must return 0 / no rows). `V9` maps only
+   `man`/`woman` and clears every other `gender` value to `NULL`, so free text counts as bad too.
+   `player` has no `dtfb_id` since `V2` (it lives on `app_user`, joined via `player.user_id`):
+   ```sql
+   SELECT COUNT(*) FROM player WHERE first_name IS NULL OR last_name IS NULL OR birth_year IS NULL
+      OR gender IS NULL OR gender NOT IN ('man','woman');
+   SELECT COUNT(*) FROM category WHERE name IS NULL OR short_name IS NULL;
+   SELECT LOWER(short_name), COUNT(*) FROM category GROUP BY LOWER(short_name) HAVING COUNT(*) > 1;
+   ```
+   One player had free text in `gender`; it was set to `'man'`/`'woman'` by hand (the old value,
+   so `V9` maps it) before pulling.
+3. `SPORTSHUB_TAG=v0.5.0`, `docker compose pull && up -d` — Flyway applied 4 migrations. The pull
+   first failed with `unauthorized` (expired GHCR PAT, see §1).
+4. Frontend immediately after, built locally from `feature/sportshub-backend-migration`
+   (`037c0ab`) as before.
+5. Verified: logins for all tiers, gender dropdown, category eligible side, clubs/federations
+   pages, a read-only API key (`GET` 200, `/v1/regions` 404, writes refused), tracker issues intact.
 
 ## 9. Redeploying a schema-breaking migration (DB wipe + reseed)
 
@@ -264,9 +304,9 @@ done for `v0.3.0` (2026-08-26) — full steps and every gotcha hit along the way
    keys into the domain schema (only an internal vote→issue FK), so they survive a wipe+reseed
    independently:
    ```bash
-   docker compose exec sportshub-db mysqldump -u sportshub -p"$SPORTSHUB_DB_PASSWORD" \
-     --default-character-set=utf8mb4 --no-create-info --complete-insert \
-     sportshub tracker_issue tracker_issue_vote > tracker-backup-$(date +%F).sql
+   docker compose exec -T sportshub-db sh -c \
+     'mysqldump -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --no-tablespaces --default-character-set=utf8mb4 --no-create-info --complete-insert sportshub tracker_issue tracker_issue_vote' \
+     > tracker-backup-$(date +%F).sql
    ```
    `--no-create-info` is deliberate — restoring the dump's own `CREATE TABLE` would overwrite
    whatever the new version's Flyway migrations just built (e.g. `V6` widening `status` from an
