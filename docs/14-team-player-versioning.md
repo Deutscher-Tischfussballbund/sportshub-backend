@@ -5,7 +5,7 @@
 > `Player` (competitor record) — `Player` itself is NOT season-scoped. `Player` and `Club` stay
 > single, un-duplicated rows; a generic `entity_history` change log records old/new values per
 > field, reconstructible "as of" a point in time. A `LeagueRuleSet` edit is now refused once a
-> closed season uses it. See `dbdiagram.io/current_model.txt` for the full schema.
+> closed season uses it. See [`dbdiagram.io/current_model.txt`](./dbdiagram.io/current_model.txt) for the full schema.
 
 ## The problem
 

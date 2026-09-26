@@ -28,4 +28,6 @@ source of truth for what the code does; **decision** docs record why a choice wa
 | 20 | [API keys](./20-api-keys.md) | decision | **Implemented.** Machine consumers get backend-issued, read-only API keys (`X-API-Key`, only the SHA-256 hash stored, shown once) instead of Keycloak clients + write-capable grants. One filter enforces `GET`/`HEAD` only and no `/v1/admin/**` or `/v1/auth/**`; writes always need an identifiable user. Supersedes doc 10 §5's app-level write grants; `dtfb-service` retired. |
 | 21 | [Rule sets as blueprints](./21-rule-set-blueprints.md) | model + decision | **Implemented 2026-09-26 in PR #78, to confirm 28.09. before merge.** `LeagueRuleSet` becomes a federation blueprint library; each league (optionally a tier) gets its own snapshot copy at creation/copy-forward, editable while the season runs and frozen once it ends. Resolver shrinks to `tier ?? league`. Replaces doc 14's lock-and-clone (which missed ended-but-unarchived seasons, the federation-default fallback and cross-season sharing); realizes B-2026-08-17-1. |
 
+The current database model (dbdiagram.io DBML) lives in [`dbdiagram.io/current_model.txt`](./dbdiagram.io/current_model.txt) — keep it in sync with schema changes.
+
 Numbers are a reading/topic order, not a chronology — renumber on the rare insert.
