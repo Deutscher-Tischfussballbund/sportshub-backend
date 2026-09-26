@@ -299,7 +299,10 @@ Deferred to the colleague-app integration (§5).
 
 ## 7. Open decisions / deferred (post-Phase-1)
 - **In-season phases** (playoffs/relegation) — deferred (see §1 note).
-- ✅ **Federation-default ruleset source** — RESOLVED (2026-07-15): the federation default lives on
+- ✅ **Federation-default ruleset source** — RESOLVED (2026-07-15), **then changed by
+  [21-rule-set-blueprints.md](./21-rule-set-blueprints.md) (2026-09-26):** leagues own snapshots and the
+  resolver is `tier ?? league`; the federation default is only copied when a league is created. The
+  original 2026-07-15 resolution: the federation default lives on
   `Federation.defaultRuleSet` (nullable) and is the last fallback in `LeagueRuleResolver`
   (`tier ?? league ?? federation.defaultRuleSet`, else historical 2/1/0). Editable via
   `PUT /v1/federations/{id}` (`defaultRuleSetId`).

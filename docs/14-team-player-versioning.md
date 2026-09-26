@@ -138,6 +138,10 @@ New package `history`: a generic, reusable mechanism (not one table per entity t
 
 ### `LeagueRuleSet` edit lock (enforced, not just documented)
 
+> **Superseded by [21-rule-set-blueprints.md](./21-rule-set-blueprints.md) (2026-09-26).** Leagues and
+> tiers no longer share rule sets: each owns a snapshot that freezes when its season ends, so the
+> archive-keyed lock described here is gone. Kept for history.
+
 Reuses the only existing "season is closed" signal in the codebase, `Season.archivedAt != null`
 (same one `docs/05` already uses for archived-subtree hiding). A `LeagueRuleSet` update is refused
 (`409`, code `RULE_SET_LOCKED_BY_CLOSED_SEASON`) if it changes a **rule-affecting** field

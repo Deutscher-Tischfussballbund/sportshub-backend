@@ -1,6 +1,6 @@
 # Rule sets as blueprints — every league owns a frozen-at-season-end snapshot
 
-> **Proposed (2026-09-26), to confirm in the meeting on 2026-09-28. Not built.** `LeagueRuleSet`
+> **Implemented (2026-09-26) in PR #78, to confirm in the meeting on 2026-09-28 before merge.** `LeagueRuleSet`
 > splits into two roles: a federation-owned **blueprint** library that can be edited freely, and a
 > **snapshot** — a private copy each `League` (and optionally a `Tier`) receives when it is created
 > or copied forward. The snapshot belongs to that season: editable while the season runs, frozen
@@ -59,15 +59,16 @@ separately refused once a default-dependent tier has fixtures
 
 ## Decision
 
-- **Two roles for `LeagueRuleSet`**, distinguished by a new column (e.g. `kind = BLUEPRINT |
-  SNAPSHOT`, or a nullable `blueprint_id` on snapshots pointing at their origin):
+- **Two roles for `LeagueRuleSet`**, distinguished by `snapshot` (bit), with `source_blueprint_id` on
+  snapshots pointing at their origin and `archived` on blueprints:
   - **Blueprint** — owned by a `Federation` (as today via `LeagueRuleSet.federation`), listed on the
     rule-set page, freely editable and deletable when unused as a template. Never referenced by a
     `League`/`Tier` at runtime. Gains an `archived` flag that hides it from pickers.
   - **Snapshot** — created by copying a blueprint (fields + `GamePlanEntry` rows). Referenced by
     exactly one `League` or `Tier`; not listed in the blueprint library; deleted with its owner.
-- **Creating a league** takes a blueprint (default: the federation's default blueprint) and stores
-  a snapshot on `League.ruleSet`, which becomes mandatory. **A tier** keeps an optional override:
+- **Creating a league** takes a blueprint (`LeagueDto.blueprintId`; default: the federation's
+  default blueprint, else the seeded "DTFB Standard") and stores a snapshot on `League.ruleSet`. On
+  update, a different `blueprintId` resets the league's snapshot from it. **A tier** keeps an optional override:
   choosing a blueprint for a tier stores a snapshot on `Tier.ruleSet`; no choice means "use the
   league's snapshot".
 - **Resolver:** `LeagueRuleResolver` resolves `tier.ruleSet ?? league.ruleSet`. The federation
@@ -79,24 +80,35 @@ separately refused once a default-dependent tier has fixtures
 - **Copy-forward** copies the source league's/tier's **snapshot** into a new snapshot for the new
   season (continuity: last season's tweaks carry over). The new season can reset a league's
   snapshot from a blueprint explicitly. (Gap 3 disappears.)
-- **"Apply blueprint"** — an explicit action to overwrite the snapshots of selected leagues/tiers of
-  a running season from a blueprint, e.g. after the federation changed its rules for everyone.
-  Refused for ended seasons.
+- **"Apply blueprint"** — `POST /v1/league-rule-sets/{blueprintId}/apply` with `{leagueIds,
+  tierIds}` overwrites the snapshots of the selected leagues/tiers of a running season, e.g. after the
+  federation changed its rules for everyone. Refused (409) for ended seasons. Authorized for whoever
+  manages every listed league/tier (a league admin may apply to their own league).
 - **Standings recalculation** (SPO-73) always uses the league's own snapshot, which cannot change
   after the season ends. (Gap 4 disappears.)
 - **Removed once built:** `isLockedByClosedSeason`, `RULE_SET_LOCKED_BY_CLOSED_SEASON`,
   `FederationDefaultRuleSetChangeBlockedException` (changing the default blueprint only affects
   future leagues), and the clone endpoint's role as a workaround (clone stays useful for blueprints).
-- **Migration (Flyway):** every existing `League`/`Tier` reference to a shared row gets its own
-  snapshot copy; leagues without a rule set get a snapshot of their federation's current default
-  (or the seeded "DTFB Standard"); rows no longer referenced by anything become blueprints. Ended
-  seasons get snapshots of the rules they effectively ran with at migration time — the best
-  approximation available, since the shared rows may already have been edited. No data wipe needed.
-- **Frontend:** the rule-set page lists blueprints (with an "archived" filter); league/tier
-  dialogs pick a blueprint and show/edit "the rules of this league" (the snapshot), read-only for
-  ended seasons.
+- **Migration:** `V13__rule_set_blueprints.sql` only adds the three columns (every existing row
+  starts as a blueprint). `RuleSetSnapshotBackfill` then runs on every startup and gives each
+  `League`/`Tier` still pointing at a shared row its own snapshot copy; leagues without a rule set get
+  a snapshot of their federation's current default (or "DTFB Standard"). It is idempotent (a second
+  run creates nothing) and reuses the one snapshot code path, so the dev seed and the seed scripts are
+  converted the same way. Ended seasons get snapshots of the rules they effectively ran with at
+  migration time — the best approximation available, since the shared rows may already have been
+  edited. No data wipe needed; verified against MySQL 8.4 with V1–V12 data.
+- **Snapshot edits:** `PUT /v1/league-rule-sets/{snapshotId}`, authorized for whoever manages the
+  owning league/tier. `DELETE` of a snapshot is refused; it goes with its owner (league/tier delete,
+  season hard-delete, removing a tier override). Deleting a blueprint only clears the lineage link of
+  its snapshots; it is refused only while it is a federation's default.
+- **Frontend:** the rule-set page manages templates ("Vorlagen", with "show archived" and "apply to
+  leagues"); league/tier dialogs pick a template; the league detail page edits "the rules of this
+  league/tier" (the snapshot), with a frozen notice for ended seasons and "save as template".
 
 ## Open questions
+
+The implementation takes the proposed answer for each; changing one later is local (the freeze check
+lives in `RuleSetSnapshotService`, the copy-forward source in `CopyForwardService`).
 
 - **Freeze point.** Season end (`Season.hasEnded()`), as proposed, or already at the **first
   confirmed result** of the league? The stricter variant prevents changing points mid-season;
