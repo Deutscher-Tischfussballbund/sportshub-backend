@@ -101,9 +101,22 @@ separately refused once a default-dependent tier has fixtures
   owning league/tier. `DELETE` of a snapshot is refused; it goes with its owner (league/tier delete,
   season hard-delete, removing a tier override). Deleting a blueprint only clears the lineage link of
   its snapshots; it is refused only while it is a federation's default.
-- **Frontend:** the rule-set page manages templates ("Vorlagen", with "show archived" and "apply to
-  leagues"); league/tier dialogs pick a template; the league detail page edits "the rules of this
-  league/tier" (the snapshot), with a frozen notice for ended seasons and "save as template".
+- **Unique template names:** per owner (a federation, or DTFB-wide), case-insensitive; creating or
+  renaming a template to a taken name is `409 RULE_SET_NAME_TAKEN` with the existing template's
+  `existingId`. Clones are numbered ("(Kopie)", "(Kopie 2)" …). Snapshots are exempt -- many leagues
+  carry their template's name.
+- **Effective rules of a team:** `GET /v1/team-participations/{id}/rules` returns the tier's own
+  rules once the team is placed in a tier with an override, otherwise the league's -- so captains
+  can see roster size and game order without knowing the league structure.
+- **Frontend:**
+  - the rule-set page manages templates ("Vorlagen") with "apply to leagues"; archived templates
+    live on their own page ("Archiv anzeigen", restore with a confirm dialog), like the season
+    archive;
+  - league/tier dialogs pick a template;
+  - the league detail page shows the league's rules as a read-only summary; "edit" (with "save as
+    template", which checks the name and offers to overwrite an existing template) only while the
+    season runs, a "frozen" badge afterwards;
+  - the roster editor shows the rules that apply to the team (captains and admins).
 
 ## Open questions
 

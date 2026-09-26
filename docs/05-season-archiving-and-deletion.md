@@ -73,7 +73,8 @@ client gets the model — not a hand-typed shape on the frontend):
 ## 5. Implementation notes
 
 - **`SeasonStructure`** centralizes the season-scoped JPQL: `contentsOf(id)` (the counts behind the
-  guard + 409 body) and `deleteStructure(id)` (ordered leaf→root bulk deletes, `IN (subquery)` form so
+  guard + 409 body) and `deleteStructure(id)` (ordered leaf→root bulk deletes -- including the leagues'
+  and tiers' own rule sets, doc 21 -- `IN (subquery)` form so
   the deep navigation lives in a SELECT subquery — valid HQL bulk delete). Not JPA `cascade = REMOVE`
   (which would load the whole graph).
 - **`@Query` filtering, not `@SQLRestriction`.** A global `@SQLRestriction` would be one annotation

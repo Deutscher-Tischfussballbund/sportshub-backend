@@ -133,7 +133,7 @@ Enum ScopeType {
 Table federation {
   id varchar(14) [pk, note: 'A Landesverband / region, or the root federation (DTFB)']
   name varchar
-  default_rule_set_id varchar [note: 'null = fall back to historical 2/1/0; last tier in rule resolution']
+  default_rule_set_id varchar [note: 'The template (blueprint) a new league copies when none is chosen (docs/21); null = the seeded DTFB Standard. Not read at runtime']
   parent_federation_id varchar [note: 'self-referencing tree; null = the single root federation (docs/16)']
 }
 
@@ -219,7 +219,7 @@ Table role_assignment {
   user_id varchar [not null, note: 'A role belongs to the login identity, not a season-scoped Player row']
   role Role [not null]
   scope_type ScopeType [not null]
-  scope_id varchar [note: 'id of the scoped entity (null for GLOBAL); for TEAM this is team_identity_id, not a row id, so a grant survives copy-forward; for CLUB it is the plain club row id (Club is not season-scoped)']
+  scope_id varchar [note: 'id of the scoped entity (null for GLOBAL); for TEAM this is team_identity_id and for LEAGUE league_identity_id (not row ids), so a grant survives copy-forward; for CLUB it is the plain club row id (Club is not season-scoped)']
   granted_by_dtfb_id varchar
   created_at datetime [not null]
 }
@@ -251,9 +251,10 @@ Table season {
 
 Table league {
   id varchar(14) [pk, note: 'One category ladder in a season (was Competition)']
+  league_identity_id varchar [not null, note: 'Stable across the league season-copies (like team.team_identity_id): generated once, carried by copy-forward; LEAGUE_ADMIN grants point to it (SPO-28, docs/14). V14 backfilled it from each row id']
   season_id varchar
   category_id varchar
-  rule_set_id varchar [note: 'nullable default rule set']
+  rule_set_id varchar [note: 'The league own rules: a snapshot private to this league (docs/21), copied from a template at create/copy-forward, frozen once the season has ended']
   name varchar
   import_id varchar
 }
@@ -261,7 +262,7 @@ Table league {
 Table tier {
   id varchar(14) [pk, note: 'Promotion/relegation level, e.g. 1./2. Bayernliga']
   league_id varchar
-  rule_set_id varchar [note: 'null = inherit league/federation']
+  rule_set_id varchar [note: 'Optional override: a snapshot private to this tier (docs/21); null = the league rules apply']
   name varchar
   level int [note: 'Ordinal ladder position, 1 = top tier; orders promote/relegate']
 }
@@ -378,9 +379,12 @@ Table roster_entry {
 // ==================== Rule sets ====================
 
 Table league_rule_set {
-  id varchar(14) [pk, note: 'Reusable, typed league rules; shared across tiers/leagues. Enforced (no new column): editing a rule-affecting field is refused once any League/Tier of a closed (season.archived_at set) season references this row -- clone it instead via POST .../{id}/clone']
-  federation_id varchar [note: 'null = DTFB-global template']
-  name varchar
+  id varchar(14) [pk, note: 'Typed league rules in one of two roles (docs/21): a template (blueprint) in a federation library, or a snapshot owned by exactly one league/tier, frozen once its season has ended (409 RULE_SET_FROZEN)']
+  federation_id varchar [note: 'null = DTFB-global template; a snapshot carries its season federation']
+  snapshot boolean [not null, note: 'true = private rules of one league/tier; false = template']
+  archived boolean [not null, note: 'Templates only: hidden from pickers and the main list']
+  source_blueprint_id varchar [note: 'Snapshots only: the template it was copied from (null once that is deleted)']
+  name varchar [note: 'Templates: unique per federation (or DTFB-wide), case-insensitive; snapshots may share names']
   play_system PlaySystem
   points_win int
   points_draw int [note: 'null = draws impossible']
@@ -481,4 +485,5 @@ Ref: team_participation.group_id >? comp_group.id
 Ref: roster_entry.participation_id >? team_participation.id
 Ref: roster_entry.player_id >? player.id
 Ref: game_plan_entry.rule_set_id >? league_rule_set.id
+Ref: league_rule_set.source_blueprint_id >? league_rule_set.id
 Ref: tracker_issue_vote.issue_id > tracker_issue.id
