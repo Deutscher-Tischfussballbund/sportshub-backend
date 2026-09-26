@@ -35,6 +35,21 @@ class OpenApiDocsTest {
     }
 
     @Test
+    void exposesApiKeyScheme_onlyOnOperationsAKeyMayCall() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.components.securitySchemes.api-key.type").value("apiKey"))
+            .andExpect(jsonPath("$.components.securitySchemes.api-key.in").value("header"))
+            .andExpect(jsonPath("$.components.securitySchemes.api-key.name").value("X-API-Key"))
+            // A domain read: token OR key.
+            .andExpect(jsonPath("$.paths['/v1/seasons'].get.security[*].api-key").isNotEmpty())
+            // A write and an admin read: no key offered (inherit the global token-only requirement).
+            .andExpect(jsonPath("$.paths['/v1/seasons'].post.security").doesNotExist())
+            .andExpect(jsonPath("$.paths['/v1/admin/players'].get.security").doesNotExist())
+            .andExpect(jsonPath("$.security[*].api-key").isEmpty());
+    }
+
+    @Test
     void documentsSharedErrorResponsesWithApiErrorBody() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
             .andExpect(status().isOk())
