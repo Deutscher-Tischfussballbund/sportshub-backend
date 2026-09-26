@@ -1,6 +1,8 @@
 package de.dtfb.sportshub.backend.configuration;
 
+import de.dtfb.sportshub.backend.access.apikey.ApiKeyAuthenticationFilter;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.OAuthFlow;
@@ -25,9 +27,11 @@ import java.util.stream.Collectors;
 /**
  * Swagger / OpenAPI presentation:
  * <ul>
- *   <li><b>Auth</b> — two interchangeable schemes so "Try it out" works against secured endpoints:
+ *   <li><b>Auth</b> — interchangeable schemes so "Try it out" works against secured endpoints:
  *       paste a token ({@code bearer-jwt}) or log in via Keycloak ({@code keycloak},
- *       authorization-code + PKCE; the client id / PKCE flag are set in {@code application-dev.yaml}).</li>
+ *       authorization-code + PKCE; the client id / PKCE flag are set in {@code application-dev.yaml}).
+ *       Additionally a read-only API key ({@code api-key}, header {@code X-API-Key}, docs/20) — offered
+ *       only on the operations a key may call (see {@link #apiKeyOnReadEndpoints()}).</li>
  *   <li><b>Tags</b> — the auto-generated {@code *-controller} group names are prettified
  *       (e.g. {@code match-day-controller} → {@code Match Day}).</li>
  * </ul>
@@ -42,6 +46,7 @@ public class OpenApiConfig {
 
     private static final String BEARER_SCHEME = "bearer-jwt";
     private static final String OAUTH_SCHEME = "keycloak";
+    private static final String API_KEY_SCHEME = "api-key";
 
     /**
      * Group display order in Swagger UI — follows the domain chain (org tree, then competition tree,
@@ -91,7 +96,9 @@ public class OpenApiConfig {
                 .title("DTFB Sportshub API")
                 .version("v1")
                 .description("Backend for the DTFB federation ecosystem. Authorize with a Keycloak "
-                    + "token (paste it, or use the Keycloak login) to try secured endpoints."))
+                    + "token (paste it, or use the Keycloak login) to try secured endpoints. Read "
+                    + "endpoints can also be tried with a read-only API key (X-API-Key), created by a "
+                    + "global admin in the admin app."))
             .components(new Components()
                 .addSecuritySchemes(BEARER_SCHEME, new SecurityScheme()
                     .type(SecurityScheme.Type.HTTP)
@@ -104,10 +111,45 @@ public class OpenApiConfig {
                     .flows(new OAuthFlows().authorizationCode(new OAuthFlow()
                         .authorizationUrl(openIdConnect + "/auth")
                         .tokenUrl(openIdConnect + "/token")
-                        .scopes(new Scopes().addString("openid", "OpenID Connect"))))))
+                        .scopes(new Scopes().addString("openid", "OpenID Connect")))))
+                .addSecuritySchemes(API_KEY_SCHEME, new SecurityScheme()
+                    .type(SecurityScheme.Type.APIKEY)
+                    .in(SecurityScheme.In.HEADER)
+                    .name(ApiKeyAuthenticationFilter.HEADER)
+                    .description("Read-only API key (docs/20-api-keys.md): GET/HEAD only, never "
+                        + "/v1/admin/** or /v1/auth/**. Don't combine it with a token -- a request "
+                        + "carrying both is rejected (400). Errors: 401 INVALID_API_KEY, "
+                        + "403 API_KEY_READ_ONLY / API_KEY_PATH_NOT_ALLOWED.")))
             // Either scheme satisfies the requirement (separate items = OR).
             .addSecurityItem(new SecurityRequirement().addList(BEARER_SCHEME))
             .addSecurityItem(new SecurityRequirement().addList(OAUTH_SCHEME));
+    }
+
+    /**
+     * Offers the API key only where {@code ApiKeyAuthenticationFilter} accepts one: GET/HEAD outside
+     * {@code /v1/admin/**} and {@code /v1/auth/**}. Everywhere else the operation keeps the global
+     * token-only requirement, so Swagger UI never sends a key that would be refused.
+     */
+    @Bean
+    public OpenApiCustomizer apiKeyOnReadEndpoints() {
+        return openApi -> {
+            if (openApi.getPaths() == null) {
+                return;
+            }
+            openApi.getPaths().forEach((path, pathItem) -> {
+                if (path.startsWith("/v1/admin/") || path.startsWith("/v1/auth/")) {
+                    return;
+                }
+                pathItem.readOperationsMap().forEach((method, operation) -> {
+                    if (method == PathItem.HttpMethod.GET || method == PathItem.HttpMethod.HEAD) {
+                        operation.setSecurity(List.of(
+                            new SecurityRequirement().addList(BEARER_SCHEME),
+                            new SecurityRequirement().addList(OAUTH_SCHEME),
+                            new SecurityRequirement().addList(API_KEY_SCHEME)));
+                    }
+                });
+            });
+        };
     }
 
     @Bean
