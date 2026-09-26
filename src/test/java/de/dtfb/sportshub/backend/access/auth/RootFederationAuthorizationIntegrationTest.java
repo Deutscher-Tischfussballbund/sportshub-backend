@@ -98,7 +98,7 @@ class RootFederationAuthorizationIntegrationTest {
     @Test
     void dtfbAdmin_mayNotEditTheClubsProfile() throws Exception {
         RequestPostProcessor dtfbAdmin = grantRegionAdmin("dtfbAdmin2", ROOT_FEDERATION_ID);
-        mockMvc.perform(put("/v1/admin/clubs/" + clubId).with(dtfbAdmin)
+        mockMvc.perform(put("/v1/clubs/" + clubId).with(dtfbAdmin)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Umbenannt\",\"active\":true,\"regionId\":\"" + subFederationId + "\"}"))
             .andExpect(status().isForbidden());
@@ -108,7 +108,7 @@ class RootFederationAuthorizationIntegrationTest {
     void dtfbAdmin_mayNotAddAClubMember() throws Exception {
         RequestPostProcessor dtfbAdmin = grantRegionAdmin("dtfbAdmin3", ROOT_FEDERATION_ID);
         String playerId = seedPlayer();
-        mockMvc.perform(post("/v1/admin/clubs/" + clubId + "/members").with(dtfbAdmin)
+        mockMvc.perform(post("/v1/clubs/" + clubId + "/members").with(dtfbAdmin)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"playerId\":\"" + playerId + "\"}"))
             .andExpect(status().isForbidden());
@@ -177,7 +177,7 @@ class RootFederationAuthorizationIntegrationTest {
 
     private String seedActiveClubMember() throws Exception {
         String playerId = seedPlayer();
-        mockMvc.perform(post("/v1/admin/clubs/" + clubId + "/members").with(ADMIN)
+        mockMvc.perform(post("/v1/clubs/" + clubId + "/members").with(ADMIN)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"playerId\":\"" + playerId + "\"}"))
             .andExpect(status().isCreated());
@@ -211,7 +211,7 @@ class RootFederationAuthorizationIntegrationTest {
     }
 
     private String createClub(String federationId) throws Exception {
-        String body = mockMvc.perform(post("/v1/admin/clubs").with(ADMIN).contentType(MediaType.APPLICATION_JSON)
+        String body = mockMvc.perform(post("/v1/clubs").with(ADMIN).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Testverein\",\"active\":true,\"regionId\":\"" + federationId + "\"}"))
             .andExpect(status().isCreated())
             .andReturn().getResponse().getContentAsString();

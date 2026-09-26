@@ -38,7 +38,7 @@ class ClubMembershipControllerTest extends AuthorizedControllerTest {
         String clubId = createClub();
         String playerId = createPlayer();
 
-        mockMvc.perform(post("/v1/admin/clubs/" + clubId + "/members")
+        mockMvc.perform(post("/v1/clubs/" + clubId + "/members")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                     {"playerId": "%s"}
@@ -68,7 +68,7 @@ class ClubMembershipControllerTest extends AuthorizedControllerTest {
         String playerId = createPlayer();
         joinClub(playerId, clubId);
 
-        mockMvc.perform(delete("/v1/admin/clubs/" + clubId + "/members/" + playerId))
+        mockMvc.perform(delete("/v1/clubs/" + clubId + "/members/" + playerId))
             .andExpect(status().isOk());
 
         mockMvc.perform(get("/v1/admin/players").param("clubId", clubId))
@@ -80,7 +80,7 @@ class ClubMembershipControllerTest extends AuthorizedControllerTest {
         String clubId = createClub();
         String playerId = createPlayer();
 
-        mockMvc.perform(delete("/v1/admin/clubs/" + clubId + "/members/" + playerId))
+        mockMvc.perform(delete("/v1/clubs/" + clubId + "/members/" + playerId))
             .andExpect(status().isNotFound());
     }
 }

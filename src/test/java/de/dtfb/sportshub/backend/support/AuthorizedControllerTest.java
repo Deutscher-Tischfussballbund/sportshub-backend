@@ -81,7 +81,7 @@ public abstract class AuthorizedControllerTest {
      * roster-add in a test that wasn't already doing so.
      */
     protected void joinClub(String playerId, String clubId) throws Exception {
-        mockMvc.perform(post("/v1/admin/clubs/" + clubId + "/members")
+        mockMvc.perform(post("/v1/clubs/" + clubId + "/members")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
                     {"playerId": "%s"}

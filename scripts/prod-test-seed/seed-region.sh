@@ -130,7 +130,7 @@ seed_one_region() {
   echo "   joining filler players to ${club_id}..."
   local filler_player
   for filler_player in "${TEAM1_ROSTER[@]}" "${TEAM2_ROSTER[@]}" "${TEAM3_ROSTER[@]}"; do
-    api POST "/v1/admin/clubs/${club_id}/members" "$(jq -n --arg p "${filler_player}" '{playerId: $p}')" "${token}" > /dev/null
+    api POST "/v1/clubs/${club_id}/members" "$(jq -n --arg p "${filler_player}" '{playerId: $p}')" "${token}" > /dev/null
   done
 
   echo "   placing teams + building rosters..."
