@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -128,7 +129,12 @@ public class RoleAdminService {
             .orElseThrow(() -> new UserNotFoundException(dto.userId()));
 
         ScopeType scopeType = dto.role().scopeType();
-        String scopeId = scopeType == ScopeType.GLOBAL ? null : dto.scopeId();
+        String requestedScopeId = scopeType == ScopeType.GLOBAL ? null : dto.scopeId();
+        // A league admin administers the league across seasons (SPO-28): store the league identity,
+        // whether the client sent a league row id or the identity itself.
+        String scopeId = scopeType == ScopeType.LEAGUE
+            ? leagueRepository.findByScopeId(requestedScopeId).map(League::getLeagueIdentityId).orElse(requestedScopeId)
+            : requestedScopeId;
 
         // Idempotent: a matching grant already present is returned as-is.
         Optional<RoleAssignment> existing = roleAssignmentRepository.findByUser(user).stream()
@@ -186,10 +192,13 @@ public class RoleAdminService {
             .collect(Collectors.toMap(Federation::getId, Function.identity()));
     }
 
+    /** LEAGUE scope id (a league identity, SPO-28) -> the newest season's copy, for its name. */
     private Map<String, League> leaguesByScopeId(List<RoleAssignment> rows) {
-        List<String> ids = scopeIds(rows, ScopeType.LEAGUE);
-        return ids.isEmpty() ? Map.of()
-            : leagueRepository.findAllById(ids).stream().collect(Collectors.toMap(League::getId, Function.identity()));
+        Map<String, League> leagues = new HashMap<>();
+        for (String scopeId : scopeIds(rows, ScopeType.LEAGUE)) {
+            leagueRepository.findByScopeId(scopeId).ifPresent(league -> leagues.put(scopeId, league));
+        }
+        return leagues;
     }
 
     private List<String> scopeIds(List<RoleAssignment> rows, ScopeType type) {

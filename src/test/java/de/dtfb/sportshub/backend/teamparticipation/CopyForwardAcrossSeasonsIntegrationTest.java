@@ -36,8 +36,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * SPO-28, cross-season identity: after copy-forward the new season has its own copies of the team
- * and of the league's rules, linked to last season's but independent of them. Uses the real
+ * SPO-28, cross-season identity: after copy-forward the new season has its own copies of the team,
+ * the league and the league's rules, linked to last season's but independent of them; captains and
+ * league admins keep their rights through the team/league identity. Uses the real
  * authorization stack (JWT + role assignment) for the captain case.
  */
 @SpringBootTest
@@ -77,9 +78,11 @@ class CopyForwardAcrossSeasonsIntegrationTest {
     void setup() throws Exception {
         String federationId = create("/v1/federations", "{\"name\":\"Testverband\"}");
         String sourceSeasonId = create("/v1/seasons",
-            "{\"name\":\"2025\",\"federationId\":\"" + federationId + "\",\"registrationOpensAt\":\"2020-01-01\"}");
+            "{\"name\":\"2025\",\"federationId\":\"" + federationId + "\",\"registrationOpensAt\":\"2020-01-01\""
+                + ",\"startDate\":\"2025-09-01\",\"endDate\":\"2099-05-31\"}");
         String targetSeasonId = create("/v1/seasons",
-            "{\"name\":\"2026\",\"federationId\":\"" + federationId + "\",\"registrationOpensAt\":\"2020-01-01\"}");
+            "{\"name\":\"2026\",\"federationId\":\"" + federationId + "\",\"registrationOpensAt\":\"2020-01-01\""
+                + ",\"startDate\":\"2026-09-01\",\"endDate\":\"2099-05-31\"}");
         String categoryId = create("/v1/categories",
             "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
         sourceLeagueId = create("/v1/leagues",
@@ -140,6 +143,58 @@ class CopyForwardAcrossSeasonsIntegrationTest {
             .andExpect(jsonPath("$.pointsWin").value(5));
         mockMvc.perform(get("/v1/league-rule-sets/" + sourceRules).with(ADMIN))
             .andExpect(jsonPath("$.name").value(org.hamcrest.Matchers.not("Neu")));
+    }
+
+    @Test
+    void leagueAdminGrantedLastSeason_managesTheNewSeasonsLeague() throws Exception {
+        String sourceJson = leagueJson(sourceLeagueId);
+        String targetJson = leagueJson(targetLeagueId);
+        String identity = JsonPath.read(sourceJson, "$.leagueIdentityId");
+        assertThat((String) JsonPath.read(targetJson, "$.leagueIdentityId")).isEqualTo(identity);
+
+        // granted on last season's league row -- stored as the league identity
+        User liga = upsertUser("liga-across");
+        mockMvc.perform(post("/v1/admin/auth/roles").with(ADMIN)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userId\":\"" + liga.getId() + "\",\"role\":\"league_admin\",\"scopeId\":\"" + sourceLeagueId + "\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.scopeId").value(identity));
+
+        mockMvc.perform(put("/v1/leagues/" + targetLeagueId).with(jwtFor("liga-across"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Liga 2026\",\"seasonId\":\"" + JsonPath.read(targetJson, "$.seasonId")
+                    + "\",\"categoryId\":\"" + JsonPath.read(targetJson, "$.categoryId") + "\"}"))
+            .andExpect(status().isOk());
+
+        // the role list names the newest season's copy
+        mockMvc.perform(get("/v1/admin/auth/assignments").with(ADMIN)
+                .param("role", "league_admin").param("userId", liga.getId()))
+            .andExpect(jsonPath("$[0].scopeName").value("Liga 2026"));
+    }
+
+    @Test
+    void leagueCreatedByHandInTheNewSeason_isNotCoveredByLastSeasonsLeagueAdmin() throws Exception {
+        String targetJson = leagueJson(targetLeagueId);
+        String handMadeId = create("/v1/leagues", "{\"name\":\"Liga\",\"seasonId\":\""
+            + JsonPath.read(targetJson, "$.seasonId") + "\",\"categoryId\":\""
+            + JsonPath.read(targetJson, "$.categoryId") + "\"}");
+        User liga = upsertUser("liga-handmade");
+        mockMvc.perform(post("/v1/admin/auth/roles").with(ADMIN)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userId\":\"" + liga.getId() + "\",\"role\":\"league_admin\",\"scopeId\":\"" + sourceLeagueId + "\"}"))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(put("/v1/leagues/" + handMadeId).with(jwtFor("liga-handmade"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Liga X\",\"seasonId\":\"" + JsonPath.read(targetJson, "$.seasonId")
+                    + "\",\"categoryId\":\"" + JsonPath.read(targetJson, "$.categoryId") + "\"}"))
+            .andExpect(status().isForbidden());
+    }
+
+    private String leagueJson(String leagueId) throws Exception {
+        return mockMvc.perform(get("/v1/leagues/" + leagueId).with(ADMIN))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
     }
 
     // --- helpers ---

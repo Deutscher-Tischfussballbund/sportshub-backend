@@ -96,6 +96,7 @@ public class CopyForwardService {
             newLeague.setSeason(target);
             newLeague.setName(sourceLeague.getName());
             newLeague.setImportId(sourceLeague.getImportId());
+            newLeague.setLeagueIdentityId(sourceLeague.getLeagueIdentityId()); // same league, next season (SPO-28)
             newLeague.setCategory(sourceLeague.getCategory()); // Category is global -- reused, not cloned
             newLeague.setRuleSet(sourceLeague.getRuleSet() == null
                 ? snapshots.snapshotOf(snapshots.defaultBlueprintFor(target.getFederation()), target.getFederation())

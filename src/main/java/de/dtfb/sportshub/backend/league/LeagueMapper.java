@@ -21,6 +21,7 @@ public interface LeagueMapper {
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "ruleSet", ignore = true)
     @Mapping(target = "importId", ignore = true)
+    @Mapping(target = "leagueIdentityId", ignore = true)
     League toEntity(LeagueDto leagueDto);
 
     @Mapping(target = "id", ignore = true)
@@ -28,6 +29,7 @@ public interface LeagueMapper {
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "ruleSet", ignore = true)
     @Mapping(target = "importId", ignore = true)
+    @Mapping(target = "leagueIdentityId", ignore = true)
     void updateEntityFromDto(LeagueDto dto, @MappingTarget League entity);
 
     List<LeagueDto> toDtoList(List<League> leagues);

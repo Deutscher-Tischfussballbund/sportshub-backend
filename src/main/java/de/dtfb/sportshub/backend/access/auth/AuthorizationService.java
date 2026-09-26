@@ -36,7 +36,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -60,7 +62,7 @@ import java.util.stream.Collectors;
  * match every other season's copy of the same team. See {@link Team#getTeamIdentityId()}.
  *
  * <p>Note: the {@code LEAGUE} scope / {@code LEAGUE_ADMIN} role gate a {@link League} directly
- * (the scope's {@code scopeId} is a league id).
+ * (the scope's {@code scopeId} is the league identity, stable across season-copies -- SPO-28).
  */
 @Component("authz")
 public class AuthorizationService {
@@ -229,7 +231,7 @@ public class AuthorizationService {
         Season season = league == null ? null : league.getSeason();
         Federation region = season == null ? null : season.getFederation();
         return (region != null && isRegionAdmin(roles, region.getId()))
-            || (league != null && isLeagueAdmin(roles, league.getId()));
+            || (league != null && isLeagueAdmin(roles, league));
     }
 
     /**
@@ -299,7 +301,7 @@ public class AuthorizationService {
         Season season = league == null ? null : league.getSeason();
         Federation region = season == null ? null : season.getFederation();
         return (region != null && isRegionAdmin(roles, region.getId()))
-            || (league != null && isLeagueAdmin(roles, league.getId()));
+            || (league != null && isLeagueAdmin(roles, league));
     }
 
     /**
@@ -320,14 +322,19 @@ public class AuthorizationService {
         if (federationId == null) {
             return List.of();
         }
-        Set<String> leagueAdminLeagueIds = currentRoles().stream()
+        Set<String> leagueAdminScopeIds = currentRoles().stream()
             .filter(ra -> ra.getRole() == Role.LEAGUE_ADMIN)
             .map(RoleAssignment::getScopeId)
             .collect(Collectors.toSet());
-        if (leagueAdminLeagueIds.isEmpty()) {
+        if (leagueAdminScopeIds.isEmpty()) {
             return List.of();
         }
-        return leagueRepository.findAllById(leagueAdminLeagueIds).stream()
+        // every season-copy of the administered leagues (grants hold league identities, SPO-28), plus
+        // any grant still holding a plain league row id -- same leniency as isLeagueAdmin
+        Map<String, League> leagues = new LinkedHashMap<>();
+        leagueRepository.findByLeagueIdentityIdIn(leagueAdminScopeIds).forEach(l -> leagues.put(l.getId(), l));
+        leagueRepository.findAllById(leagueAdminScopeIds).forEach(l -> leagues.put(l.getId(), l));
+        return leagues.values().stream()
             .filter(league -> league.getSeason() != null && league.getSeason().getFederation() != null
                 && federationId.equals(league.getSeason().getFederation().getId()))
             .map(League::getId)
@@ -349,7 +356,7 @@ public class AuthorizationService {
             ? null : teamParticipationRepository.findById(participationId).orElse(null);
         Team team = participation == null ? null : participation.getTeam();
         League league = participation == null ? null : participation.getLeague();
-        return canRepresent(roles, team) || (league != null && isLeagueAdmin(roles, league.getId()));
+        return canRepresent(roles, team) || (league != null && isLeagueAdmin(roles, league));
     }
 
     /**
@@ -365,7 +372,7 @@ public class AuthorizationService {
         Team team = participation == null ? null : participation.getTeam();
         League league = participation == null ? null : participation.getLeague();
         boolean adminAboveTeam = team != null && canManageScope(roles, ScopeType.TEAM, team.getTeamIdentityId());
-        return adminAboveTeam || (league != null && isLeagueAdmin(roles, league.getId()));
+        return adminAboveTeam || (league != null && isLeagueAdmin(roles, league));
     }
 
     /**
@@ -429,12 +436,19 @@ public class AuthorizationService {
         }
         Federation region = league.getSeason() == null ? null : league.getSeason().getFederation();
         boolean regionAdmin = region != null && isRegionAdmin(roles, region.getId());
-        return regionAdmin || isLeagueAdmin(roles, league.getId());
+        return regionAdmin || isLeagueAdmin(roles, league);
     }
 
-    private boolean isLeagueAdmin(List<RoleAssignment> roles, String leagueId) {
-        return leagueId != null && roles.stream().anyMatch(ra ->
-            ra.getRole() == Role.LEAGUE_ADMIN && Objects.equals(ra.getScopeId(), leagueId));
+    /**
+     * Whether a {@code league_admin} grant covers this league. Grants point at the league identity
+     * (SPO-28), so one grant covers every season-copy of the league; a grant still holding a row id
+     * (before the identity existed, backfilled to equal the row id) matches the same way.
+     */
+    private boolean isLeagueAdmin(List<RoleAssignment> roles, League league) {
+        return league != null && roles.stream().anyMatch(ra ->
+            ra.getRole() == Role.LEAGUE_ADMIN
+                && (Objects.equals(ra.getScopeId(), league.getLeagueIdentityId())
+                    || Objects.equals(ra.getScopeId(), league.getId())));
     }
 
     /**
@@ -541,11 +555,12 @@ public class AuthorizationService {
                 // and, as a full league admin, a league_admin already appointed to it
                 // administers it too (e.g. to appoint a co-admin), same pattern as a club admin
                 // granting team_admin within their own club.
-                League league = scopeId == null ? null : leagueRepository.findById(scopeId).orElse(null);
+                // scopeId is a league row id or a league identity (what grants store, SPO-28).
+                League league = leagueRepository.findByScopeId(scopeId).orElse(null);
                 Federation region = league == null || league.getSeason() == null
                     ? null : league.getSeason().getFederation();
                 yield (region != null && isRegionAdmin(roles, region.getId()))
-                    || isLeagueAdmin(roles, scopeId);
+                    || isLeagueAdmin(roles, league);
             }
         };
     }

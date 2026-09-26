@@ -9,6 +9,8 @@ public class LeagueDto {
     private String id;
     private String name;
     private String seasonId;
+    /** Read-only: stable across this league's season-copies (SPO-28); what LEAGUE_ADMIN grants point to. */
+    private String leagueIdentityId;
     /** The category this league runs under (Herren/Damen/...). Required on create. */
     private String categoryId;
     /**

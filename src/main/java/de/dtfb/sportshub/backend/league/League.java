@@ -4,9 +4,12 @@ import de.dtfb.sportshub.backend.base.BaseEntity;
 import de.dtfb.sportshub.backend.category.Category;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
 import de.dtfb.sportshub.backend.season.Season;
+import de.dtfb.sportshub.backend.util.IdGenerator;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -24,6 +27,15 @@ import lombok.Setter;
 @Getter
 @Setter
 public class League extends BaseEntity {
+    /**
+     * Stable across every season-copy of this league (SPO-28): generated once, carried forward verbatim
+     * by copy-forward -- the league counterpart of {@code Team.teamIdentityId}. {@code LEAGUE_ADMIN}
+     * grants are scoped to it, so a league admin keeps their league across the season change. A league
+     * created by hand starts a new identity.
+     */
+    @Column(nullable = false, updatable = false)
+    private String leagueIdentityId;
+
     @ManyToOne
     @JoinColumn(name = "season_id")
     private Season season;
@@ -39,4 +51,11 @@ public class League extends BaseEntity {
     private String name;
 
     private String importId;
+
+    @PrePersist
+    void generateIdentity() {
+        if (leagueIdentityId == null) {
+            leagueIdentityId = IdGenerator.newId();
+        }
+    }
 }
