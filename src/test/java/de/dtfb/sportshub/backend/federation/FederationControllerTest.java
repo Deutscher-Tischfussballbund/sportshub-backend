@@ -1,5 +1,7 @@
 package de.dtfb.sportshub.backend.federation;
 
+import de.dtfb.sportshub.backend.support.TestIds;
+
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -12,7 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class FederationControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedControllerTest {
 
     @Test
-    void updateFederationDefaultRuleSet_blockedByDependentTierWithFixtures() throws Exception {
+    void updateFederationDefaultRuleSet_neverTouchesAnExistingLeaguesRules() throws Exception {
         String federationId = createFederation();
         String ruleSetA = createRuleSet(federationId);
         String ruleSetB = createRuleSet(federationId);
@@ -25,9 +27,11 @@ class FederationControllerTest extends de.dtfb.sportshub.backend.support.Authori
         String groupId = createGroup(tierId);
         createRound(groupId);
 
-        updateFederationDefault(federationId, ruleSetB)
-            .andExpect(status().isConflict())
-            .andExpect(jsonPath("$.code").value("FEDERATION_DEFAULT_HAS_RUNNING_LEAGUES"));
+        // the default is only copied when a league is created (docs/21), so changing it is always fine
+        updateFederationDefault(federationId, ruleSetB).andExpect(status().isOk());
+        mockMvc.perform(get("/v1/leagues/" + leagueId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.blueprintId").value(ruleSetA));
     }
 
     @Test
@@ -76,9 +80,9 @@ class FederationControllerTest extends de.dtfb.sportshub.backend.support.Authori
         MvcResult result = mockMvc.perform(post("/v1/league-rule-sets")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
-                    {"name": "Testregelwerk", "federationId": "%s", "playSystem": "ROUND_ROBIN",
+                    {"name": "%s", "federationId": "%s", "playSystem": "ROUND_ROBIN",
                      "pointsWin": 2, "pointsDraw": 1, "pointsLoss": 0}
-                    """, federationId)))
+                    """, TestIds.unique("Testregelwerk"), federationId)))
             .andExpect(status().isCreated())
             .andReturn();
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");

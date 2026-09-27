@@ -236,8 +236,14 @@ VALUES ('rs-dtfb-std', NULL, 'DTFB Standard', 'ROUND_ROBIN', 2, 1, 0);
 -- Full spine under fed-by (Bayern): season -> league -> tier -> group -> round -> match_day,
 -- with one CONFIRMED match-day and two standings.
 -- ---------------------------------------------------------------------------
-INSERT INTO league (id, season_id, name, category_id)
-VALUES ('league-res', 'season-res', 'Bayernliga 2023', 'cat-herren');
+-- ---------------------------------------------------------------------------
+-- League identity (SPO-28): league_identity_id is stable across a league's season-copies and is what
+-- LEAGUE_ADMIN grants point to. The three "Bayernliga Herren" seasons (lg-by25-h, lg-2026-h,
+-- lg-2027-h) share one identity (lg-by25-h), so the league admin below (ra-liga) administers all
+-- three; every other league is its own identity.
+-- ---------------------------------------------------------------------------
+INSERT INTO league (id, league_identity_id, season_id, name, category_id)
+VALUES ('league-res', 'league-res', 'season-res', 'Bayernliga 2023', 'cat-herren');
 
 INSERT INTO tier (id, league_id, name, level)
 VALUES ('tier-res', 'league-res', '1. Bayernliga', 1);
@@ -280,9 +286,9 @@ VALUES ('tp-res-1', 'tfcm1-res', 'league-res', 'group-res', 'CONFIRMED', 'ACTIVE
 -- empty one (count 0), placed + one unplaced team, and rosters in every lifecycle state
 -- (DRAFT / SUBMITTED / CONFIRMED). The Herren league uses the shared rule set rs-by-std.
 -- ---------------------------------------------------------------------------
-INSERT INTO league (id, season_id, name, category_id, rule_set_id)
-VALUES ('lg-by25-h', 'season-by25', 'Bayernliga Herren 2024/25', 'cat-herren', 'rs-by-std'),
-       ('lg-by25-d', 'season-by25', 'Bayernliga Damen 2024/25', 'cat-damen', NULL);
+INSERT INTO league (id, league_identity_id, season_id, name, category_id, rule_set_id)
+VALUES ('lg-by25-h', 'lg-by25-h', 'season-by25', 'Bayernliga Herren 2024/25', 'cat-herren', 'rs-by-std'),
+       ('lg-by25-d', 'lg-by25-d', 'season-by25', 'Bayernliga Damen 2024/25', 'cat-damen', NULL);
 
 -- Herren tiers: 1. Bayernliga (two groups), 2. Bayernliga (one group), plus a Playoffs tier.
 INSERT INTO tier (id, league_id, name, level)
@@ -355,10 +361,10 @@ INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status,
 VALUES ('tp-by25-7', 'team-tfcm-3', 'lg-by25-h', 'g-by25-3', 'CONFIRMED', 'ACTIVE'),
        ('tp-by25-8', 'team-kfa-3', 'lg-by25-h', 'g-by25-3', 'CONFIRMED', 'ACTIVE');
 
--- League admin (usr-liga) scoped to just lg-by25-h (Bayernliga Herren 2024/25). Simulates a
--- region admin delegating one league's day-to-day running: usr-liga gets region-admin-
--- equivalent authority narrowed to lg-by25-h only, e.g. can manage its placements/rosters but not
--- lg-by25-d or any other fed-by league/season.
+-- League admin (usr-liga) scoped to the Bayernliga Herren league -- its identity lg-by25-h, so every
+-- season-copy of it (2024/25, 2026, 2027/28; SPO-28). Simulates a region admin delegating one
+-- league's day-to-day running: usr-liga gets region-admin-equivalent authority narrowed to that one
+-- league, e.g. can manage its placements/rosters but not lg-by25-d or any other fed-by league.
 INSERT INTO role_assignment (id, user_id, role, scope_type, scope_id, created_at)
 VALUES ('ra-liga', 'usr-liga', 'LEAGUE_ADMIN', 'LEAGUE', 'lg-by25-h',
         TIMESTAMP '2024-01-01 00:00:00');
@@ -367,8 +373,8 @@ VALUES ('ra-liga', 'usr-liga', 'LEAGUE_ADMIN', 'LEAGUE', 'lg-by25-h',
 -- A second region's league (Baden-Württemberg) — so placements/structure aren't
 -- Bayern-only and switching regions shows genuinely different data.
 -- ---------------------------------------------------------------------------
-INSERT INTO league (id, season_id, name, category_id)
-VALUES ('lg-bw25', 'season-bw25', 'Baden-Württemberg-Liga 2024/25', 'cat-herren');
+INSERT INTO league (id, league_identity_id, season_id, name, category_id)
+VALUES ('lg-bw25', 'lg-bw25', 'season-bw25', 'Baden-Württemberg-Liga 2024/25', 'cat-herren');
 
 INSERT INTO tier (id, league_id, name, level)
 VALUES ('ti-bw25', 'lg-bw25', 'Oberliga BW', 1);
@@ -387,8 +393,8 @@ VALUES ('tp-bw25-1', 'team-tsvs-1', 'lg-bw25', 'g-bw25', 'CONFIRMED', 'ACTIVE'),
 -- league with a group phase (two groups) and a finals tier. (Tournaments proper are parked;
 -- this stays valid league-shaped demo data.)
 -- ---------------------------------------------------------------------------
-INSERT INTO league (id, season_id, name, category_id)
-VALUES ('lg-cup', 'season-cup', 'Bayern-Pokal 2024', 'cat-open');
+INSERT INTO league (id, league_identity_id, season_id, name, category_id)
+VALUES ('lg-cup', 'lg-cup', 'season-cup', 'Bayern-Pokal 2024', 'cat-open');
 
 INSERT INTO tier (id, league_id, name, level)
 VALUES ('ti-cup-grp', 'lg-cup', 'Gruppenphase', 1),
@@ -414,8 +420,8 @@ VALUES ('tp-cup-1', 'tfcm1-cup', 'lg-cup', 'g-cup-a', 'CONFIRMED', 'ACTIVE'),
 -- adjust forward if this seed is still in use once these ranges are themselves
 -- in the past.
 -- ---------------------------------------------------------------------------
-INSERT INTO league (id, season_id, name, category_id, rule_set_id)
-VALUES ('lg-2026-h', 'season-2026', 'Bayernliga Herren 2026', 'cat-herren', 'rs-by-std');
+INSERT INTO league (id, league_identity_id, season_id, name, category_id, rule_set_id)
+VALUES ('lg-2026-h', 'lg-by25-h', 'season-2026', 'Bayernliga Herren 2026', 'cat-herren', 'rs-by-std');
 
 INSERT INTO tier (id, league_id, name, level)
 VALUES ('ti-2026-1', 'lg-2026-h', '1. Bayernliga', 1);
@@ -437,8 +443,8 @@ VALUES ('re-2026-1', 'tp-2026-1', 'player-p1', TIMESTAMP '2026-01-15 10:00:00', 
 -- structure set up either, since placements haven't run (mirrors tp-by25-4's
 -- "registered but unplaced" shape). TFC München 1 has pre-registered; its roster is
 -- still an empty DRAFT since the season is still a ways off.
-INSERT INTO league (id, season_id, name, category_id, rule_set_id)
-VALUES ('lg-2027-h', 'season-2027', 'Bayernliga Herren 2027/28', 'cat-herren', 'rs-by-std');
+INSERT INTO league (id, league_identity_id, season_id, name, category_id, rule_set_id)
+VALUES ('lg-2027-h', 'lg-by25-h', 'season-2027', 'Bayernliga Herren 2027/28', 'cat-herren', 'rs-by-std');
 
 INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status, status)
 VALUES ('tp-2027-1', 'tfcm1-2027', 'lg-2027-h', NULL, 'DRAFT', 'ACTIVE');
@@ -455,8 +461,8 @@ INSERT INTO season (id, name, federation_id, start_date, end_date, registration_
 VALUES ('season-bl', 'Bundesliga-Saison 2026', 'fed-dtfb', DATE '2026-01-01', DATE '2026-12-31',
         DATE '2025-10-01', DATE '2025-12-31');
 
-INSERT INTO league (id, season_id, name, category_id)
-VALUES ('lg-bl-h', 'season-bl', 'Bundesliga Herren 2026', 'cat-herren');
+INSERT INTO league (id, league_identity_id, season_id, name, category_id)
+VALUES ('lg-bl-h', 'lg-bl-h', 'season-bl', 'Bundesliga Herren 2026', 'cat-herren');
 
 INSERT INTO tier (id, league_id, name, level)
 VALUES ('ti-bl-1', 'lg-bl-h', 'Bundesliga', 1);

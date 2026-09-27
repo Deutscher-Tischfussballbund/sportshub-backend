@@ -1,18 +1,18 @@
 package de.dtfb.sportshub.backend.leaguerules;
 
-import de.dtfb.sportshub.backend.federation.Federation;
 import de.dtfb.sportshub.backend.group.Group;
 import de.dtfb.sportshub.backend.league.League;
-import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.teamparticipation.TeamParticipation;
 import de.dtfb.sportshub.backend.tier.Tier;
 import org.springframework.stereotype.Component;
 
 /**
  * Resolves the {@link LeagueRuleSet} that governs a group and reads its settings with sensible
- * defaults. Resolution order (docs/09-league-model.md §3): the group's tier's own rule set, else the
- * league's default, else the owning federation's default, else the seeded {@value
- * #DTFB_STANDARD_ID} template row; {@code null} only if even that seeded row is missing.
+ * defaults. Resolution order (docs/21-rule-set-blueprints.md): the group's tier's own override, else
+ * the league's own rules. Both are snapshots private to their owner, so the federation default no
+ * longer plays a role at runtime -- it is only copied when a league is created. The seeded {@value
+ * #DTFB_STANDARD_ID} blueprint remains a defensive last resort for a league without rules (which the
+ * startup backfill prevents); {@code null} only if even that row is missing.
  *
  * <p>Callers that only need a single setting use the {@code pointsX} helpers, which fall back to the
  * historical defaults (2/1/0) when no rule set resolves at all or a field is unset — an ultimate
@@ -50,16 +50,13 @@ public class LeagueRuleResolver {
         if (league == null) {
             return null;
         }
-        if (league.getRuleSet() != null) {
-            return league.getRuleSet();
-        }
-        return federationDefault(league);
+        return rulesOf(league);
     }
 
     /**
      * The effective rule set for a team's participation: the group's tier chain if it's been
-     * placed, otherwise the league's own rule set / federation default directly (a team can be
-     * registered and building its roster before placement has run).
+     * placed, otherwise the league's own rules directly (a team can be registered and building its
+     * roster before placement has run).
      */
     public LeagueRuleSet effectiveFor(TeamParticipation participation) {
         if (participation == null) {
@@ -73,19 +70,12 @@ public class LeagueRuleResolver {
         if (league == null) {
             return null;
         }
-        return league.getRuleSet() != null ? league.getRuleSet() : federationDefault(league);
+        return rulesOf(league);
     }
 
-    /**
-     * The owning federation's default rule set (via league → season → federation), falling through
-     * to the seeded DTFB-global template when the federation has not configured one of its own.
-     */
-    private LeagueRuleSet federationDefault(League league) {
-        Season season = league.getSeason();
-        Federation federation = season == null ? null : season.getFederation();
-        LeagueRuleSet federationDefault = federation == null ? null : federation.getDefaultRuleSet();
-        if (federationDefault != null) {
-            return federationDefault;
+    private LeagueRuleSet rulesOf(League league) {
+        if (league.getRuleSet() != null) {
+            return league.getRuleSet();
         }
         return ruleSetRepository.findById(DTFB_STANDARD_ID).orElse(null);
     }

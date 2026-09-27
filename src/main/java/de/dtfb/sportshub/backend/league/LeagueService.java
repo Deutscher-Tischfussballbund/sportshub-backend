@@ -4,8 +4,8 @@ import de.dtfb.sportshub.backend.category.Category;
 import de.dtfb.sportshub.backend.category.CategoryNotFoundException;
 import de.dtfb.sportshub.backend.category.CategoryRepository;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
-import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSetNotFoundException;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSetRepository;
+import de.dtfb.sportshub.backend.leaguerules.RuleSetSnapshotService;
 import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.season.SeasonNotFoundException;
 import de.dtfb.sportshub.backend.season.SeasonRepository;
@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class LeagueService {
@@ -25,10 +26,12 @@ public class LeagueService {
     private final LeagueRuleSetRepository ruleSetRepository;
     private final TierRepository tierRepository;
     private final TeamParticipationRepository teamParticipationRepository;
+    private final RuleSetSnapshotService snapshots;
 
     public LeagueService(LeagueRepository repository, LeagueMapper mapper, SeasonRepository seasonRepository,
                          CategoryRepository categoryRepository, LeagueRuleSetRepository ruleSetRepository,
-                         TierRepository tierRepository, TeamParticipationRepository teamParticipationRepository) {
+                         TierRepository tierRepository, TeamParticipationRepository teamParticipationRepository,
+                         RuleSetSnapshotService snapshots) {
         this.repository = repository;
         this.mapper = mapper;
         this.seasonRepository = seasonRepository;
@@ -36,6 +39,7 @@ public class LeagueService {
         this.ruleSetRepository = ruleSetRepository;
         this.tierRepository = tierRepository;
         this.teamParticipationRepository = teamParticipationRepository;
+        this.snapshots = snapshots;
     }
 
     @Transactional(readOnly = true)
@@ -52,26 +56,51 @@ public class LeagueService {
         return mapper.toDto(league);
     }
 
+    /**
+     * Creates the league with its own rule set: a snapshot of the chosen blueprint, or of the
+     * federation's default when none was chosen (docs/21-rule-set-blueprints.md).
+     */
     @Transactional
     public LeagueDto create(LeagueDto leagueDto) {
         League league = mapper.toEntity(leagueDto);
         applyRelations(leagueDto, league);
+        LeagueRuleSet blueprint = chosenBlueprint(leagueDto);
+        if (blueprint == null) {
+            blueprint = snapshots.defaultBlueprintFor(league.getSeason().getFederation());
+        }
+        league.setRuleSet(snapshots.snapshotOf(blueprint, league.getSeason().getFederation()));
         return mapper.toDto(repository.save(league));
     }
 
+    /**
+     * Updates the league's meta. Naming a different blueprint than the one the league's rules came
+     * from resets the league's rules from it -- refused ({@code 409 RULE_SET_FROZEN}) once the season
+     * has ended. The rule set itself is edited via the rule-set endpoint.
+     */
     @Transactional
     public LeagueDto update(String id, LeagueDto leagueDto) {
         League league = repository.findById(id).orElseThrow(
             () -> new LeagueNotFoundException(id));
         mapper.updateEntityFromDto(leagueDto, league);
         applyRelations(leagueDto, league);
+
+        LeagueRuleSet blueprint = chosenBlueprint(leagueDto);
+        LeagueRuleSet current = league.getRuleSet();
+        if (blueprint != null && (current == null || !isFrom(current, blueprint))) {
+            snapshots.requireSeasonRunning(league.getSeason());
+            if (current == null) {
+                league.setRuleSet(snapshots.snapshotOf(blueprint, league.getSeason().getFederation()));
+            } else {
+                snapshots.overwrite(current, blueprint);
+            }
+        }
         return mapper.toDto(repository.save(league));
     }
 
     /**
      * A league blocks its own delete while it still has a {@code Tier} or a {@code TeamParticipation}
      * registered directly against it -- a groupless league's participations reference it with no tier
-     * at all. Delete the structure/participations first, bottom-up.
+     * at all. Delete the structure/participations first, bottom-up. Its rule set goes with it.
      */
     @Transactional
     public void delete(String id) {
@@ -81,7 +110,10 @@ public class LeagueService {
             throw new LeagueDeletionBlockedException(
                 "League has tiers or team participations; remove them before deleting the league");
         }
+        LeagueRuleSet ruleSet = league.getRuleSet();
         repository.delete(league);
+        repository.flush();
+        snapshots.delete(ruleSet);
     }
 
     private void applyRelations(LeagueDto dto, League league) {
@@ -92,15 +124,25 @@ public class LeagueService {
         Category category = categoryRepository.findById(dto.getCategoryId())
             .orElseThrow(() -> new CategoryNotFoundException(dto.getCategoryId()));
         league.setCategory(category);
-
-        league.setRuleSet(resolveRuleSet(dto.getRuleSetId()));
     }
 
-    private LeagueRuleSet resolveRuleSet(String ruleSetId) {
-        if (ruleSetId == null) {
-            return null;
+    /**
+     * The blueprint named in the request, or {@code null}. For older clients a {@code ruleSetId} that
+     * names a blueprint counts as the choice too; a snapshot id there (the league's own rules being
+     * echoed back) is ignored.
+     */
+    private LeagueRuleSet chosenBlueprint(LeagueDto dto) {
+        if (dto.getBlueprintId() != null) {
+            return snapshots.requireBlueprint(dto.getBlueprintId());
         }
-        return ruleSetRepository.findById(ruleSetId)
-            .orElseThrow(() -> new LeagueRuleSetNotFoundException(ruleSetId));
+        if (dto.getRuleSetId() != null) {
+            return ruleSetRepository.findById(dto.getRuleSetId()).filter(r -> !r.isSnapshot()).orElse(null);
+        }
+        return null;
+    }
+
+    private static boolean isFrom(LeagueRuleSet snapshot, LeagueRuleSet blueprint) {
+        return snapshot.getSourceBlueprint() != null
+            && Objects.equals(snapshot.getSourceBlueprint().getId(), blueprint.getId());
     }
 }

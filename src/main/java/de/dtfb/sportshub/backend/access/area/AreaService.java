@@ -86,7 +86,8 @@ public class AreaService {
                 // Placements page (there's no dedicated league area) -- narrower than a REGION
                 // grant, though: only that region area is added, not every club in it, since their
                 // authority stays scoped to the one league (see AuthorizationService#canManageLeague).
-                case LEAGUE -> leagueRepository.findById(role.getScopeId())
+                // role.getScopeId() is the league identity (SPO-28), resolved to its newest copy.
+                case LEAGUE -> leagueRepository.findByScopeId(role.getScopeId())
                     .map(League::getSeason)
                     .map(Season::getFederation)
                     .ifPresent(f -> put(areas, regionArea(f)));

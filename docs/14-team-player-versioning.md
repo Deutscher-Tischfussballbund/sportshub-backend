@@ -5,7 +5,7 @@
 > `Player` (competitor record) — `Player` itself is NOT season-scoped. `Player` and `Club` stay
 > single, un-duplicated rows; a generic `entity_history` change log records old/new values per
 > field, reconstructible "as of" a point in time. A `LeagueRuleSet` edit is now refused once a
-> closed season uses it. See `dbdiagram.io/current_model.txt` for the full schema.
+> closed season uses it. See [`dbdiagram.io/current_model.txt`](./dbdiagram.io/current_model.txt) for the full schema.
 
 ## The problem
 
@@ -70,6 +70,22 @@ lock/guard/business-rule needed, unlike the ruleset case below.
 earlier version of this doc gave Club the identical season-scoping treatment as Team; that was
 reverted once player/club history landed as the general mechanism for exactly this class of
 problem (a rename retroactively affecting historical display) without the row duplication.
+
+### `League` gets a cross-season identity too (added 2026-09-26, SPO-28)
+
+`League` rows were already copied per season by copy-forward, but with no link between the
+copies — so a `league_admin` (scoped to one league row) lost their league at every season change.
+`League.leagueIdentityId` now mirrors `Team.teamIdentityId`: generated once, carried to next
+season's copy by `CopyForwardService`; a league created by hand starts a new identity (no manual
+linking for now).
+
+- `LEAGUE_ADMIN` grants store the identity. `POST /v1/admin/auth/roles` accepts a league row id or
+  the identity and normalizes to the identity; `AuthorizationService.isLeagueAdmin`, the pending
+  approvals queue, `AreaService` and the role list resolve it (`LeagueRepository.findByScopeId`,
+  newest season's copy for the name). Grants still holding a plain row id keep matching.
+- `V14__league_identity.sql` backfills each existing row's identity from its own id — exactly what
+  existing grants hold, so they stay valid with no data change.
+- Tiers and groups have no identity (only `Tier.level`); add one when cross-season history needs it.
 
 ### `Player` splits into `User` (auth) + `Player` (competitor) — `Player` itself is NOT season-scoped
 
@@ -137,6 +153,10 @@ New package `history`: a generic, reusable mechanism (not one table per entity t
   `@authz.canManageClub(id)`.
 
 ### `LeagueRuleSet` edit lock (enforced, not just documented)
+
+> **Superseded by [21-rule-set-blueprints.md](./21-rule-set-blueprints.md) (2026-09-26).** Leagues and
+> tiers no longer share rule sets: each owns a snapshot that freezes when its season ends, so the
+> archive-keyed lock described here is gone. Kept for history.
 
 Reuses the only existing "season is closed" signal in the codebase, `Season.archivedAt != null`
 (same one `docs/05` already uses for archived-subtree hiding). A `LeagueRuleSet` update is refused

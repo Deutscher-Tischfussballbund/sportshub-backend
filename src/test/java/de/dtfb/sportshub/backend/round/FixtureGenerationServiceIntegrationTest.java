@@ -1,5 +1,7 @@
 package de.dtfb.sportshub.backend.round;
 
+import de.dtfb.sportshub.backend.support.TestIds;
+
 import com.jayway.jsonpath.JsonPath;
 import de.dtfb.sportshub.backend.club.Club;
 import de.dtfb.sportshub.backend.club.ClubRepository;
@@ -221,9 +223,10 @@ class FixtureGenerationServiceIntegrationTest extends AuthorizedControllerTest {
 
     private String createGroup(String schedulingMode, Integer schedulingWindowDays) throws Exception {
         String ruleSetBody = schedulingWindowDays == null
-            ? String.format("{\"name\":\"Testregeln\",\"schedulingMode\":\"%s\"}", schedulingMode)
-            : String.format("{\"name\":\"Testregeln\",\"schedulingMode\":\"%s\",\"schedulingWindowDays\":%d}",
-                schedulingMode, schedulingWindowDays);
+            // template names are unique per owner (docs/21); these DTFB-wide ones share one owner
+            ? String.format("{\"name\":\"%s\",\"schedulingMode\":\"%s\"}", TestIds.unique("Testregeln"), schedulingMode)
+            : String.format("{\"name\":\"%s\",\"schedulingMode\":\"%s\",\"schedulingWindowDays\":%d}",
+                TestIds.unique("Testregeln"), schedulingMode, schedulingWindowDays);
         String ruleSetId = id(mockMvc.perform(post("/v1/league-rule-sets")
                 .contentType(MediaType.APPLICATION_JSON).content(ruleSetBody))
             .andExpect(status().isCreated()).andReturn());

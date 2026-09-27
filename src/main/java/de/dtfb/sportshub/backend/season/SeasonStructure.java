@@ -50,9 +50,23 @@ public class SeasonStructure {
             + " (select g from LeagueGroup g where g.tier.league.season.id = :s)", seasonId);
         bulkDelete("delete from LeagueGroup g where g.tier in"
             + " (select t from Tier t where t.league.season.id = :s)", seasonId);
+        // The leagues' and tiers' own rule sets (snapshots, docs/21) go with them -- collected before
+        // the owners are deleted, removed after (FK owner -> rule set).
+        java.util.List<String> snapshotIds = new java.util.ArrayList<>(em.createQuery(
+                "select l.ruleSet.id from League l where l.season.id = :s and l.ruleSet.snapshot = true",
+                String.class).setParameter("s", seasonId).getResultList());
+        snapshotIds.addAll(em.createQuery(
+                "select t.ruleSet.id from Tier t where t.league.season.id = :s and t.ruleSet.snapshot = true",
+                String.class).setParameter("s", seasonId).getResultList());
         bulkDelete("delete from Tier t where t.league in"
             + " (select l from League l where l.season.id = :s)", seasonId);
         bulkDelete("delete from League l where l.season.id = :s", seasonId);
+        if (!snapshotIds.isEmpty()) {
+            em.createQuery("delete from GamePlanEntry e where e.ruleSet.id in :ids")
+                .setParameter("ids", snapshotIds).executeUpdate();
+            em.createQuery("delete from LeagueRuleSet r where r.id in :ids")
+                .setParameter("ids", snapshotIds).executeUpdate();
+        }
     }
 
     private long countMatchDaysWithResults(String seasonId) {

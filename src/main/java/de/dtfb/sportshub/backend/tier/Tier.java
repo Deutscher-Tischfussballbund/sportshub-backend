@@ -17,8 +17,8 @@ import lombok.Setter;
  *
  * <p>The parent is the {@code League} this tier belongs to.
  *
- * <p>{@link #ruleSet} is optional: null ⇒ inherit the league's (or federation) default — see the
- * resolution order in docs/09-league-model.md §3.
+ * <p>{@link #ruleSet} is an optional override: a snapshot private to this tier; null ⇒ the
+ * league's own rules apply — see docs/21-rule-set-blueprints.md.
  */
 @Entity
 @Getter

@@ -4,9 +4,12 @@ import de.dtfb.sportshub.backend.base.BaseEntity;
 import de.dtfb.sportshub.backend.category.Category;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
 import de.dtfb.sportshub.backend.season.Season;
+import de.dtfb.sportshub.backend.util.IdGenerator;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,13 +19,23 @@ import lombok.Setter;
  * generic {@code Competition}; a Damen league is a separate League, not a second discipline.
  *
  * <p>{@link #category} is the classification the league runs under (folded up from the dropped
- * Discipline). {@link #ruleSet} is the league-level default rule set (nullable -> inherit a
- * federation default); a tier may override it -- see docs/09-league-model.md section 3.
+ * Discipline). {@link #ruleSet} is the league's own rule set: a snapshot copied from a blueprint when
+ * the league is created or copied forward, private to this league and frozen once the season has
+ * ended; a tier may override it with a snapshot of its own -- see docs/21-rule-set-blueprints.md.
  */
 @Entity
 @Getter
 @Setter
 public class League extends BaseEntity {
+    /**
+     * Stable across every season-copy of this league (SPO-28): generated once, carried forward verbatim
+     * by copy-forward -- the league counterpart of {@code Team.teamIdentityId}. {@code LEAGUE_ADMIN}
+     * grants are scoped to it, so a league admin keeps their league across the season change. A league
+     * created by hand starts a new identity.
+     */
+    @Column(nullable = false, updatable = false)
+    private String leagueIdentityId;
+
     @ManyToOne
     @JoinColumn(name = "season_id")
     private Season season;
@@ -38,4 +51,11 @@ public class League extends BaseEntity {
     private String name;
 
     private String importId;
+
+    @PrePersist
+    void generateIdentity() {
+        if (leagueIdentityId == null) {
+            leagueIdentityId = IdGenerator.newId();
+        }
+    }
 }

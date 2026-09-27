@@ -11,6 +11,8 @@ public interface TierMapper {
 
     @Mapping(source = "league.id", target = "leagueId")
     @Mapping(source = "ruleSet.id", target = "ruleSetId")
+    @Mapping(source = "ruleSet.name", target = "ruleSetName")
+    @Mapping(source = "ruleSet.sourceBlueprint.id", target = "blueprintId")
     TierDto toDto(Tier tier);
 
     @Mapping(target = "id", ignore = true)

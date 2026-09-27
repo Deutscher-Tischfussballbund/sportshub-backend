@@ -12,6 +12,8 @@ public interface LeagueMapper {
     @Mapping(source = "season.id", target = "seasonId")
     @Mapping(source = "category.id", target = "categoryId")
     @Mapping(source = "ruleSet.id", target = "ruleSetId")
+    @Mapping(source = "ruleSet.name", target = "ruleSetName")
+    @Mapping(source = "ruleSet.sourceBlueprint.id", target = "blueprintId")
     LeagueDto toDto(League league);
 
     @Mapping(target = "id", ignore = true)
@@ -19,6 +21,7 @@ public interface LeagueMapper {
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "ruleSet", ignore = true)
     @Mapping(target = "importId", ignore = true)
+    @Mapping(target = "leagueIdentityId", ignore = true)
     League toEntity(LeagueDto leagueDto);
 
     @Mapping(target = "id", ignore = true)
@@ -26,6 +29,7 @@ public interface LeagueMapper {
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "ruleSet", ignore = true)
     @Mapping(target = "importId", ignore = true)
+    @Mapping(target = "leagueIdentityId", ignore = true)
     void updateEntityFromDto(LeagueDto dto, @MappingTarget League entity);
 
     List<LeagueDto> toDtoList(List<League> leagues);

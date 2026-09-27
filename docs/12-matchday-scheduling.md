@@ -29,8 +29,9 @@ Federations run fixture scheduling one of two ways:
 The mode (and, for `WINDOW`, the window length) is configured on `LeagueRuleSet` —
 `schedulingMode: DAY_BATCH | WINDOW`, `schedulingWindowDays` — since a federation's leagues tend
 to run one way consistently, and `LeagueRuleSet` is already the natural, reusable home for
-play-system-shaped config (resolved via the existing `tier → league → federation.defaultRuleSet`
-chain, `LeagueRuleResolver.effectiveFor`).
+play-system-shaped config (resolved via `tier → league`, `LeagueRuleResolver.effectiveFor`; since
+doc 21 each league owns its own copy of a template, so the scheduling mode is set per league or on
+the template it is created from).
 
 ## 2. The generator (`FixtureGenerationService`)
 

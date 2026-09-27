@@ -83,8 +83,9 @@ leagues here don't need it now). `Pool.tournamentMode` is replaced by
 
 - **Copy-forward** clones `League → Tier → Group` (+ `TeamParticipation` placements, and — unless
   opted out via `copyRoster=false` — each placement's active `RosterEntry` rows) from a prior
-  season into a new one as a *starting point* (as today, doc 01 §7 L1). It **references the same
-  shared rulesets** (§3), it does not clone them.
+  season into a new one as a *starting point* (as today, doc 01 §7 L1). Each league's (and tier
+  override's) rules are **copied into a new snapshot** for the new season (§3, doc 21), and the new
+  league keeps the old one's `leagueIdentityId` (SPO-28, doc 14).
 - **Roster copy** (added post-Phase-1): most teams' rosters barely change season to season, so
   copy-forward pre-fills the new participation's roster from the source's active (non-removed)
   entries instead of leaving it empty. The clone stays `RosterStatus.DRAFT` and the copy bypasses
@@ -95,7 +96,8 @@ leagues here don't need it now). `Pool.tournamentMode` is replaced by
   **number of leagues/tiers/groups can differ season to season** (common in smaller
   federations). So everything copied forward is **fully editable**, and a season can also be
   built from scratch. Provenance is tracked with `copiedFromParticipationId` (already on
-  `TeamParticipation`); no rigid standing-league identity is required across seasons.
+  `TeamParticipation`). Since 2026-09-26 a league carries a `leagueIdentityId` across its
+  copy-forwarded seasons (doc 14) -- a league built from scratch starts a new identity.
 - **Promotion/relegation** = move a `TeamParticipation` to a `Group` in the `Tier`
   above/below (now a real cross-tier move, not string-matching `Pool.name`).
 
@@ -105,6 +107,12 @@ Leagues genuinely need configurable match & scoring rules (this **reverses the
 "RuleSet dropped / distributed settings" decision of doc 01 §4 — for leagues only**). It is a
 **typed** config entity — *not* the generic JSON rule-engine that was rightly dropped, and not
 scattered fields.
+
+> **Reuse model and edit lock below superseded by [21-rule-set-blueprints.md](./21-rule-set-blueprints.md)
+> (2026-09-26):** rule sets are templates (blueprints) in the federation's library; every league
+> owns a snapshot copied from one (a tier optionally too), frozen once its season has ended, and the
+> resolver is `group.tier.ruleSet ?? group.tier.league.ruleSet` -- the federation default is only
+> copied when a league is created. The text below is kept for history.
 
 **Reuse model (decided 2026-07-07):** a ruleset is a **standalone, reusable row**. The *same*
 ruleset may apply to **multiple tiers, even multiple leagues**; a tier *may* (but need not)
@@ -194,9 +202,10 @@ region/global admin who could already do all of this. `canManageScope`'s `LEAGUE
 `canManageLeague`/`canRegisterForLeague`/`canGrant`/`canRevoke`) was widened the same way, so an
 organizer can also appoint a co-admin for their own league -- the same pattern a club admin already
 has for granting `team_admin` within their own club. A league admin still cannot create a *new* league (that's a season-level operation,
-`canManageSeason`, since a not-yet-created league has no id to scope a grant to) and cannot edit a
-shared `LeagueRuleSet`'s own fields (that stays region-scoped, since one rule set can be referenced
-by several leagues/tiers). See `LeagueAdminIntegrationTest` for the real-authz coverage, including
+`canManageSeason`, since a not-yet-created league has no id to scope a grant to). Rule sets: a league
+admin may edit **their own league's rules** (its snapshot, doc 21) and apply a template to it, but not
+the federation's templates (region-scoped). Since 2026-09-26 the grant is scoped to the league's
+**identity** (`leagueIdentityId`, doc 14), so it covers every season-copy of the league. See `LeagueAdminIntegrationTest` for the real-authz coverage, including
 the cross-league negative cases.
 
 **Delete guard:** hard-deleting a `TeamParticipation` is now refused (`409 PARTICIPATION_HAS_MATCHES`)
@@ -299,7 +308,10 @@ Deferred to the colleague-app integration (§5).
 
 ## 7. Open decisions / deferred (post-Phase-1)
 - **In-season phases** (playoffs/relegation) — deferred (see §1 note).
-- ✅ **Federation-default ruleset source** — RESOLVED (2026-07-15): the federation default lives on
+- ✅ **Federation-default ruleset source** — RESOLVED (2026-07-15), **then changed by
+  [21-rule-set-blueprints.md](./21-rule-set-blueprints.md) (2026-09-26):** leagues own snapshots and the
+  resolver is `tier ?? league`; the federation default is only copied when a league is created. The
+  original 2026-07-15 resolution: the federation default lives on
   `Federation.defaultRuleSet` (nullable) and is the last fallback in `LeagueRuleResolver`
   (`tier ?? league ?? federation.defaultRuleSet`, else historical 2/1/0). Editable via
   `PUT /v1/federations/{id}` (`defaultRuleSetId`).

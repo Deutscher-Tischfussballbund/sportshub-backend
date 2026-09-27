@@ -2,8 +2,6 @@ package de.dtfb.sportshub.backend.exception;
 
 import de.dtfb.sportshub.backend.club.ClubDeletionBlockedError;
 import de.dtfb.sportshub.backend.club.ClubDeletionBlockedException;
-import de.dtfb.sportshub.backend.federation.FederationDefaultRuleSetChangeBlockedError;
-import de.dtfb.sportshub.backend.federation.FederationDefaultRuleSetChangeBlockedException;
 import de.dtfb.sportshub.backend.group.GroupDeletionBlockedError;
 import de.dtfb.sportshub.backend.group.GroupDeletionBlockedException;
 import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedError;
@@ -12,6 +10,8 @@ import de.dtfb.sportshub.backend.leaguerules.RuleSetDeletionBlockedError;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetDeletionBlockedException;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetEditBlockedError;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetEditBlockedException;
+import de.dtfb.sportshub.backend.leaguerules.RuleSetNameTakenError;
+import de.dtfb.sportshub.backend.leaguerules.RuleSetNameTakenException;
 import de.dtfb.sportshub.backend.category.CategoryShortNameTakenException;
 import de.dtfb.sportshub.backend.roster.PlayerNotClubMemberError;
 import de.dtfb.sportshub.backend.roster.PlayerNotClubMemberException;
@@ -146,22 +146,19 @@ public class GlobalExceptionHandler {
             .body(new ClubDeletionBlockedError("CLUB_HAS_TEAMS_OR_MEMBERS", ex.getMessage()));
     }
 
-    // Rule-set edit refused because it's used by a closed (archived) season's league/tier -- clone it
-    // instead of rewriting history.
+    // Rule-set template name already taken by another template of the same owner (docs/21) -- the
+    // body names that template so a client can offer to overwrite it.
+    @ExceptionHandler(RuleSetNameTakenException.class)
+    public ResponseEntity<RuleSetNameTakenError> handleRuleSetNameTaken(RuleSetNameTakenException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new RuleSetNameTakenError("RULE_SET_NAME_TAKEN", ex.getMessage(), ex.getExistingId()));
+    }
+
+    // Rule change refused because the owning season has ended -- its rules are frozen (docs/21).
     @ExceptionHandler(RuleSetEditBlockedException.class)
     public ResponseEntity<RuleSetEditBlockedError> handleRuleSetEditBlocked(RuleSetEditBlockedException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-            .body(new RuleSetEditBlockedError("RULE_SET_LOCKED_BY_CLOSED_SEASON", ex.getMessage()));
-    }
-
-    // Federation default rule-set change refused because a tier depending on it already has
-    // fixtures → 409, give the tier its own explicit rule set first.
-    @ExceptionHandler(FederationDefaultRuleSetChangeBlockedException.class)
-    public ResponseEntity<FederationDefaultRuleSetChangeBlockedError> handleFederationDefaultRuleSetChangeBlocked(
-        FederationDefaultRuleSetChangeBlockedException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-            .body(new FederationDefaultRuleSetChangeBlockedError(
-                "FEDERATION_DEFAULT_HAS_RUNNING_LEAGUES", ex.getMessage()));
+            .body(new RuleSetEditBlockedError("RULE_SET_FROZEN", ex.getMessage()));
     }
 
     // Failsafe

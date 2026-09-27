@@ -50,7 +50,7 @@ public class LeagueRuleSetController {
         service.delete(id);
     }
 
-    /** Copies a (possibly locked) rule set into a new, unreferenced, immediately-editable row. */
+    /** Copies a blueprint or a league's snapshot into a new blueprint (docs/21). */
     @PostMapping("/{id}/clone")
     @PreAuthorize("@authz.canManageRuleSetById(#id)")
     public ResponseEntity<LeagueRuleSetDto> cloneLeagueRuleSet(@PathVariable String id) {
@@ -60,5 +60,17 @@ public class LeagueRuleSetController {
             .path("/v1/league-rule-sets/{id}").buildAndExpand(cloned.getId()).toUri();
 
         return ResponseEntity.created(location).body(cloned);
+    }
+
+    /**
+     * Overwrites the rules of the given leagues/tier overrides with this blueprint's (docs/21), e.g.
+     * after the federation changed its rules for everyone. 409 {@code RULE_SET_FROZEN} if any of their
+     * seasons has ended.
+     */
+    @PostMapping("/{id}/apply")
+    @PreAuthorize("@authz.canApplyBlueprint(#request)")
+    public ResponseEntity<Void> applyBlueprint(@PathVariable String id, @RequestBody ApplyBlueprintRequest request) {
+        service.apply(id, request);
+        return ResponseEntity.noContent().build();
     }
 }

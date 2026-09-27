@@ -1,6 +1,8 @@
 package de.dtfb.sportshub.backend.teamparticipation;
 
 import de.dtfb.sportshub.backend.access.auth.AuthorizationService;
+import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSetDto;
+import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSetService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -15,10 +17,13 @@ public class TeamParticipationController {
 
     private final TeamParticipationService service;
     private final AuthorizationService authz;
+    private final LeagueRuleSetService ruleSetService;
 
-    public TeamParticipationController(TeamParticipationService service, AuthorizationService authz) {
+    public TeamParticipationController(TeamParticipationService service, AuthorizationService authz,
+                                       LeagueRuleSetService ruleSetService) {
         this.service = service;
         this.authz = authz;
+        this.ruleSetService = ruleSetService;
     }
 
     @GetMapping
@@ -54,6 +59,17 @@ public class TeamParticipationController {
     @GetMapping("/{id}")
     public TeamParticipationDto getTeamParticipation(@PathVariable String id) {
         return service.get(id);
+    }
+
+    /**
+     * The rules that apply to this team in this league (docs/21): the tier's own rules if the team is
+     * placed in a tier that overrides them, otherwise the league's. Lets a captain see roster size,
+     * game order etc. without knowing the league structure. 204 if no rules exist at all.
+     */
+    @GetMapping("/{id}/rules")
+    public ResponseEntity<LeagueRuleSetDto> getTeamParticipationRules(@PathVariable String id) {
+        LeagueRuleSetDto rules = ruleSetService.getEffectiveForParticipation(id);
+        return rules == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(rules);
     }
 
     @PutMapping("/{id}")

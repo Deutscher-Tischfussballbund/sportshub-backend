@@ -164,8 +164,9 @@ as granular roles, and whether roster management is an endpoint at all.
 > submit: the season registration window, active club membership (`PLAYER_NOT_CLUB_MEMBER`,
 > [15](./15-club-membership.md)), category eligibility (`PLAYER_NOT_ELIGIBLE`,
 > [19](./19-category-eligibility.md)), roster size bounds from the `LeagueRuleSet`, and the lock
-> on a withdrawn team. Rules are configurable per league/tier with a federation default
-> (`LeagueRuleSet`, [09](./09-league-model.md) §3).
+> on a withdrawn team. Rules are configurable per league/tier: each league owns a copy of a
+> federation template (`LeagueRuleSet`, [09](./09-league-model.md) §3,
+> [21](./21-rule-set-blueprints.md)).
 
 The right granularity in 6.1 **depends on this.** If rules (roster-freeze windows, eligibility,
 etc.) are **encoded and enforced** by the backend, fine-grained self-service (Option A/C) is

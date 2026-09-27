@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.teamparticipation;
 
+import de.dtfb.sportshub.backend.leaguerules.RuleSetSnapshotService;
 import de.dtfb.sportshub.backend.federation.Federation;
 import de.dtfb.sportshub.backend.group.Group;
 import de.dtfb.sportshub.backend.group.GroupRepository;
@@ -33,8 +34,10 @@ import java.util.Map;
  * {@link de.dtfb.sportshub.backend.history.EntityHistoryService} instead of duplicating the row),
  * so a cloned team keeps pointing at the very same club row, and a cloned roster entry keeps
  * pointing at the very same player row. Cloned groups reset to {@link GroupState#PLANNED}; last
- * season's fixtures/results (Round/MatchDay/Match/Standing) are NOT carried, and the shared
- * Category / LeagueRuleSet are referenced, not cloned. Each new participation records its
+ * season's fixtures/results (Round/MatchDay/Match/Standing) are NOT carried. The global Category is
+ * referenced; each league's (and tier override's) rule set is copied into a new snapshot for the new
+ * season, so last season's tuned rules carry over while last season's own rules stay untouched
+ * (docs/21-rule-set-blueprints.md). Each new participation records its
  * {@code copiedFromParticipationId} -- the promotion/relegation audit chain the region admin then
  * edits via the placement CRUD. Cloned participations stay DRAFT and roster entries are copied
  * with a direct save (no {@code RosterService} validation) -- this is a starting point for the new
@@ -53,11 +56,13 @@ public class CopyForwardService {
     private final TeamParticipationRepository participationRepository;
     private final RosterEntryRepository rosterEntryRepository;
     private final TeamService teamService;
+    private final RuleSetSnapshotService snapshots;
 
     public CopyForwardService(SeasonRepository seasonRepository, LeagueRepository leagueRepository,
                               TierRepository tierRepository, GroupRepository groupRepository,
                               TeamParticipationRepository participationRepository,
-                              RosterEntryRepository rosterEntryRepository, TeamService teamService) {
+                              RosterEntryRepository rosterEntryRepository, TeamService teamService,
+                              RuleSetSnapshotService snapshots) {
         this.seasonRepository = seasonRepository;
         this.leagueRepository = leagueRepository;
         this.tierRepository = tierRepository;
@@ -65,6 +70,7 @@ public class CopyForwardService {
         this.participationRepository = participationRepository;
         this.rosterEntryRepository = rosterEntryRepository;
         this.teamService = teamService;
+        this.snapshots = snapshots;
     }
 
     @Transactional
@@ -90,8 +96,11 @@ public class CopyForwardService {
             newLeague.setSeason(target);
             newLeague.setName(sourceLeague.getName());
             newLeague.setImportId(sourceLeague.getImportId());
+            newLeague.setLeagueIdentityId(sourceLeague.getLeagueIdentityId()); // same league, next season (SPO-28)
             newLeague.setCategory(sourceLeague.getCategory()); // Category is global -- reused, not cloned
-            newLeague.setRuleSet(sourceLeague.getRuleSet());    // RuleSet is shared -- referenced, not cloned
+            newLeague.setRuleSet(sourceLeague.getRuleSet() == null
+                ? snapshots.snapshotOf(snapshots.defaultBlueprintFor(target.getFederation()), target.getFederation())
+                : snapshots.snapshotOf(sourceLeague.getRuleSet(), target.getFederation()));
             newLeague = leagueRepository.save(newLeague);
             leagueBySourceId.put(sourceLeague.getId(), newLeague);
             leagues++;
@@ -101,7 +110,8 @@ public class CopyForwardService {
                 newTier.setLeague(newLeague);
                 newTier.setName(sourceTier.getName());
                 newTier.setLevel(sourceTier.getLevel()); // preserve the promote/relegate ladder order
-                newTier.setRuleSet(sourceTier.getRuleSet()); // shared -- referenced, not cloned
+                newTier.setRuleSet(sourceTier.getRuleSet() == null
+                    ? null : snapshots.snapshotOf(sourceTier.getRuleSet(), target.getFederation()));
                 newTier = tierRepository.save(newTier);
                 tiers++;
 
