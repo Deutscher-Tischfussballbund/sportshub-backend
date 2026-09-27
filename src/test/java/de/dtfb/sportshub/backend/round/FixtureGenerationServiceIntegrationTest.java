@@ -288,6 +288,51 @@ class FixtureGenerationServiceIntegrationTest extends AuthorizedControllerTest {
         Assertions.assertThat(matchDayRepository.findByRoundGroupId(groupId)).hasSize(1);
     }
 
+    @Test
+    void schedule_listsRoundsInOrderWithNamedFixtures() throws Exception {
+        String groupId = createGroup("DAY_BATCH", null);
+        for (String name : List.of("A", "B", "C", "D")) {
+            placeTeam(groupId, name);
+        }
+        String venueId = createLocation("Halle Süd");
+        mockMvc.perform(post("/v1/groups/" + groupId + "/fixtures/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(slotsBody(
+                    List.of("2027-03-20T09:00:00Z", "2027-03-20T12:00:00Z", "2027-03-21T08:30:00Z"), venueId)))
+            .andExpect(status().isOk());
+
+        String json = mockMvc.perform(get("/v1/groups/" + groupId + "/schedule"))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+
+        Assertions.assertThat((String) JsonPath.read(json, "$.groupName")).isEqualTo("Gruppe A");
+        Assertions.assertThat((String) JsonPath.read(json, "$.leagueId")).isEqualTo(leagueId);
+        List<Integer> indexes = JsonPath.read(json, "$.rounds[*].index");
+        Assertions.assertThat(indexes).containsExactly(1, 2, 3);
+        List<?> firstRound = JsonPath.read(json, "$.rounds[0].fixtures");
+        Assertions.assertThat(firstRound).hasSize(2);
+        Assertions.assertThat((String) JsonPath.read(json, "$.rounds[0].fixtures[0].locationName"))
+            .isEqualTo("Halle Süd");
+        Assertions.assertThat((String) JsonPath.read(json, "$.rounds[0].fixtures[0].teamHomeName")).isNotBlank();
+        Assertions.assertThat((String) JsonPath.read(json, "$.rounds[2].fixtures[0].startDate"))
+            .isEqualTo("2027-03-21T08:30:00Z");
+    }
+
+    @Test
+    void schedule_ofAGroupWithoutPlan_isEmpty() throws Exception {
+        String groupId = createGroup("DAY_BATCH", null);
+        String json = mockMvc.perform(get("/v1/groups/" + groupId + "/schedule"))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        Assertions.assertThat((List<?>) JsonPath.read(json, "$.rounds")).isEmpty();
+    }
+
+    @Test
+    void schedule_ofAnUnknownGroup_isNotFound() throws Exception {
+        mockMvc.perform(get("/v1/groups/does-not-exist/schedule"))
+            .andExpect(status().isNotFound());
+    }
+
     // --- helpers ---
 
     private String slotsBody(List<String> kickOffs, String locationId) {

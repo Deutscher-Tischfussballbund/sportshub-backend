@@ -124,6 +124,12 @@ venue before anyone has agreed on one.
    2026-09-27 with an optional slot editor (tournament days with date, venue and kick-off times;
    a live "n of m slots" counter against the round count), plus a row action to delete the plan
    (`delete-fixtures-dialog.component.ts`).
+4. **Admin: schedule view** — `region-group-schedule.component.ts` at
+   `/region/:regionId/leagues/:leagueId/groups/:groupId/schedule`, linked from the group rows: one
+   card per round (shared kick-off + venue, or the round's window, in the header) with home, away,
+   kick-off, venue, scheduling and result state per fixture. Backed by
+   `GET /v1/groups/{id}/schedule` (rounds → fixtures with team and venue names resolved, one call
+   instead of loading every team/round/matchday client-side).
 2. **Admin: `DAY_BATCH` bulk assignment** — `assign-schedule-dialog.component.ts`: an
    unscheduled-fixtures list using a new checkbox multi-select primitive added to `dtfb-table`
    (`selectable`/`rowId`/`selected`/`selectedChange`, scoped to all filtered rows, not just the
