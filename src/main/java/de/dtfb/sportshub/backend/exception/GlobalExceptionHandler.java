@@ -1,5 +1,7 @@
 package de.dtfb.sportshub.backend.exception;
 
+import de.dtfb.sportshub.backend.location.LocationDeletionBlockedError;
+import de.dtfb.sportshub.backend.location.LocationDeletionBlockedException;
 import de.dtfb.sportshub.backend.club.ClubDeletionBlockedError;
 import de.dtfb.sportshub.backend.club.ClubDeletionBlockedException;
 import de.dtfb.sportshub.backend.group.GroupDeletionBlockedError;
@@ -144,6 +146,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ClubDeletionBlockedError> handleClubDeletionBlocked(ClubDeletionBlockedException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new ClubDeletionBlockedError("CLUB_HAS_TEAMS_OR_MEMBERS", ex.getMessage()));
+    }
+
+    // Venue delete refused because fixtures are scheduled at it -- reassign or clear them first.
+    @ExceptionHandler(LocationDeletionBlockedException.class)
+    public ResponseEntity<LocationDeletionBlockedError> handleLocationDeletionBlocked(
+        LocationDeletionBlockedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new LocationDeletionBlockedError("LOCATION_IN_USE", ex.getMessage(), ex.getFixtureCount()));
     }
 
     // Rule-set template name already taken by another template of the same owner (docs/21) -- the

@@ -18,9 +18,10 @@ public class LocationController {
         this.service = service;
     }
 
+    /** All venues; with {@code federationId}, that region's own plus the global ones (for pickers). */
     @GetMapping
-    public List<LocationDto> getAllLocations() {
-        return service.getAll();
+    public List<LocationDto> getAllLocations(@RequestParam(required = false) String federationId) {
+        return service.getAll(federationId);
     }
 
     @PostMapping
