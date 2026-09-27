@@ -4,7 +4,7 @@
 > administrator** gets access on a fresh deployment. Companion to
 > [`03-authorization-model.md`](./03-authorization-model.md) (the DB-backed role/scope model).
 > Grounded in `application-prod.yaml`, `docker-compose.yaml`, `SecurityConfig`,
-> `BootstrapAdminInitializer`, and `PlayerRegistryService`.
+> `BootstrapAdminInitializer`, and `UserRegistryService`.
 
 ## 1. The backend is a pure OAuth2 *resource server*
 
@@ -42,13 +42,15 @@ Stateless; everything is `authenticated()` except `OPTIONS` (CORS preflight),
 
 ## 2. The identity link: the `dtfb_id` claim
 
-The backend resolves the caller with `PlayerRegistryService.currentPlayer(jwt)`, which reads
-**`jwt.getClaimAsString("dtfb_id")`** and finds-or-creates the matching `Player` row on the first
-authenticated request (profile fields stay null until then).
+The backend resolves the caller with `UserRegistryService.currentUser(jwt)`, which reads
+**`jwt.getClaimAsString("dtfb_id")`** and finds-or-creates the matching `User` (table `app_user`)
+on the first authenticated request, taking `email`/`given_name`/`family_name` from the token when
+present. The `User` is the login identity that roles hang on; a `Player` (the sporting record)
+links to it optionally (`docs/14`, User split — this used to be `PlayerRegistryService`).
 
 **Therefore Keycloak must stamp a `dtfb_id` claim into every user's access token** — a realm
 protocol-mapper configured in `dtfb-keycloak` (typically the username, or a user attribute).
-`dtfb_id` is the join key between a Keycloak account and a backend player. A token without it is
+`dtfb_id` is the join key between a Keycloak account and a backend user. A token without it is
 rejected (`401`, "Token missing dtfb_id claim").
 
 ## 3. Initial-admin bootstrap

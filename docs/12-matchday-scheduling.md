@@ -1,6 +1,7 @@
 # Matchday/fixture scheduling — generator + two scheduling conventions
 
-> **Kind: model + decision (backend + frontend implemented 2026-07-26).** Closes the
+> **Kind: model + decision (backend + frontend implemented 2026-07-26; fixed slots, gap between
+> rounds, schedule view and WINDOW-only negotiation added 2026-09-27, SPO-56/SPO-75).** Closes the
 > biggest gap between what's built and a real admin's workflow: until now, a season's fixtures
 > could only be created one `MatchDay` at a time via direct API/seed — no pairing generator, no
 > way to turn a draw into real calendar dates. See the `matchday-round-creation-gap` memory
@@ -97,7 +98,7 @@ scheduleProposedByDtfbId: String?
 scheduleConfirmedAt: Instant?
 ```
 
-- **`DAY_BATCH`**: the admin's bulk day-assignment (frontend, not yet built) writes directly via
+- **`DAY_BATCH`**: the admin's bulk day-assignment ("Assign dates", §4) writes directly via
   the existing full-entity `PUT /v1/matchdays/{id}`, which now always stamps `CONFIRMED` — a full
   admin PUT is authoritative over the whole fixture (same admin-bypass precedent as the roster
   edit bypass, PR #30) and finalizes any pending negotiation.
@@ -134,13 +135,11 @@ venue before anyone has agreed on one.
    (mirrors the Round-existence check used elsewhere) and `participationCount >= 2`. Since
    2026-09-27 with an optional slot editor (tournament days with date, venue and kick-off times;
    a live "n of m slots" counter against the round count), plus a row action to delete the plan
-   (`delete-fixtures-dialog.component.ts`).
-4. **Admin: schedule view** — `region-group-schedule.component.ts` at
-   `/region/:regionId/leagues/:leagueId/groups/:groupId/schedule`, linked from the group rows: one
-   card per round (shared kick-off + venue, or the round's window, in the header) with home, away,
-   kick-off, venue, scheduling and result state per fixture. Backed by
-   `GET /v1/groups/{id}/schedule` (rounds → fixtures with team and venue names resolved, one call
-   instead of loading every team/round/matchday client-side).
+   (`delete-fixtures-dialog.component.ts`). The dialog loads the group's effective rules
+   (`GET /v1/groups/{id}/rules`) and adapts: `DAY_BATCH` offers slots or a "gap between rounds"
+   (1–4 weeks → `roundSpacingDays`); `WINDOW` shows the window length from the rules instead; no
+   mode shows a warning and blocks generating. While fewer than two teams are placed, the group
+   row says so and links to the placement board (`?seasonId&leagueId&tierId` deep link).
 2. **Admin: `DAY_BATCH` bulk assignment** — `assign-schedule-dialog.component.ts`: an
    unscheduled-fixtures list using a new checkbox multi-select primitive added to `dtfb-table`
    (`selectable`/`rowId`/`selected`/`selectedChange`, scoped to all filtered rows, not just the
@@ -148,10 +147,23 @@ venue before anyone has agreed on one.
    `forkJoin`'d `PUT`s — no new bulk endpoint.
 3. **Team: `WINDOW` propose/accept UI** — `propose-schedule-dialog.component.ts`, reached from a
    new `+team/team-fixtures.{component,service}.ts` (mirrors `team-rosters.*`) mounted as a
-   `fixtures` sub-route under `/team/:teamId`.
+   `fixtures` sub-route under `/team/:teamId`. Since 2026-09-27 the buttons only appear for
+   fixtures whose round has a window; otherwise the row says the organizer sets the date.
+4. **Admin: schedule view** — `region-group-schedule.component.ts` at
+   `/region/:regionId/leagues/:leagueId/groups/:groupId/schedule`, linked from the group rows: one
+   card per round (shared kick-off + venue, or the round's window, in the header) with home, away,
+   kick-off, venue, scheduling and result state per fixture. Backed by
+   `GET /v1/groups/{id}/schedule` (rounds → fixtures with team and venue names resolved, one call
+   instead of loading every team/round/matchday client-side).
+5. **Admin: venues** — `region-venues.component.ts` at `/region/:regionId/venues` (SPO-77): the
+   region's own venues plus the nationwide ones (no region; editable by global admins only), with
+   add/edit/delete dialogs. The venue pickers in 1 and 2 only offer those
+   (`GET /v1/locations?federationId=`). Deleting a venue that fixtures use is refused with 409
+   `LOCATION_IN_USE`; a venue's region can't be changed. Where nationwide venues are maintained is
+   still open (agenda 2026-09-27).
 
-**Known gap:** true end-to-end click-through (generate → day-batch assign → team propose →
-opponent accept) was not exercised live — the dev seed has no fixture-free 2+-team group and no
-`MatchDay` rows for a team to test the propose/accept path against. TypeScript type-checks
-cleanly against the live regenerated API client; production build and `pnpm a11y` are clean on
-every new surface reachable in the current seed state.
+**Verified live 2026-09-27** (headless click-through against the dev stack): generate with a slot
+→ schedule view → delete → regenerate; DAY_BATCH every 2 weeks with home & away (round 2 exactly
+14 days later); WINDOW note on a window group; venue add → edit → use in a slot → blocked delete.
+Not yet exercised live: the team propose/accept path — the seed's team login only sees its newest
+team row, which has no fixtures (SPO-107).
