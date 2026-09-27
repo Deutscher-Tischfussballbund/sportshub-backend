@@ -42,14 +42,39 @@ a bye — whichever team lands on it sits that round out. `doubleRoundRobin` mir
 with home/away swapped instead of once. Home/away otherwise alternates by round parity — a
 standard approximation; perfect per-team balance isn't attempted.
 
-Guards: 409 if the group already has any `Round` (regeneration isn't supported — this mirrors the
-same "check reality, not a flag" style as `MatchDayRepository.existsByLeagueIdAndTeamId` in doc
+Guards: 409 if the group already has any `Round` (delete the plan first, see below — this mirrors
+the same "check reality, not a flag" style as `MatchDayRepository.existsByLeagueIdAndTeamId` in doc
 11), 409 if fewer than two teams are placed, 409 if the effective rule set has no
 `schedulingMode` configured (an admin must pick one explicitly — there is no silent default).
 
+**Fixed slots (tournament weekends, SPO-56/SPO-75, added 2026-09-27).** A league that is played
+as a tournament — the Regionalliga: all teams at one venue, Sat 10:00/13:00/15:30/18:00 and Sun
+9:30/12:00/14:00 — needs a real kick-off and venue per fixture from the start, not a 7-day
+spacing. The request takes an optional `slots: [{ startDate, locationId? }]`:
+
+- exactly one slot per generated round (else 400), in strictly ascending order (else 400);
+- round N is played at slot N: every fixture of that round gets the slot's `startDate` and
+  location — all matchups of a round start at the same time, the host assigns tables on site;
+- those fixtures are `CONFIRMED` right away (`scheduleConfirmedAt` set), like an admin PUT (§3) —
+  the organizer's slot is final, there is nothing to negotiate;
+- only in `DAY_BATCH` mode (409 in `WINDOW`, where the teams agree on dates themselves);
+- `startDate` in the request is then optional (the first slot is the start).
+
+Slots are a one-off input at generation time, not stored on the rule set: a tournament day's date
+and venue differ every season anyway, and the list covers one weekend (8 teams → 7 rounds → 7
+slots) as well as several tournament days. With 8 teams a single round robin fills exactly the
+seven Regionalliga slots.
+
+**Deleting a plan** — `DELETE /v1/groups/{id}/fixtures` (204, same `canOrganizeGroup` gate):
+removes the group's rounds, fixtures and their (still empty) games, so the plan can be generated
+again, e.g. after a wrong slot. Refused with 409 once any fixture has a result entered
+(`resultState` ≠ `OPEN`) — from then on the plan is history and standings may count it.
+
 **Deliberately out of scope:** auto-creating `Match` rows from `LeagueRuleSet.gamePlan` — the
 game plan exists but nothing reads it anywhere yet; that per-game breakdown is a separate,
-not-yet-built concern.
+not-yet-built concern (SPO-71). Precision to B-2026-09-21-9 ("the schedule within a matchup is
+already built"): that holds for *configuring* the game order in the rule-set dialog only — no
+games are created from it yet, so a generated fixture has nothing to hang single results on.
 
 ## 3. Turning a generated fixture into a real date
 
@@ -95,7 +120,10 @@ venue before anyone has agreed on one.
 
 1. **Admin: generate fixtures** — `generate-fixtures-dialog.component.ts`, triggered from a row
    action on `region-league-detail.component.ts`'s group rows, gated on `GroupRow.hasFixtures`
-   (mirrors the Round-existence check used elsewhere) and `participationCount >= 2`.
+   (mirrors the Round-existence check used elsewhere) and `participationCount >= 2`. Since
+   2026-09-27 with an optional slot editor (tournament days with date, venue and kick-off times;
+   a live "n of m slots" counter against the round count), plus a row action to delete the plan
+   (`delete-fixtures-dialog.component.ts`).
 2. **Admin: `DAY_BATCH` bulk assignment** — `assign-schedule-dialog.component.ts`: an
    unscheduled-fixtures list using a new checkbox multi-select primitive added to `dtfb-table`
    (`selectable`/`rowId`/`selected`/`selectedChange`, scoped to all filtered rows, not just the

@@ -61,4 +61,11 @@ public class GroupController {
     public List<RoundDto> generateFixtures(@PathVariable String id, @RequestBody GenerateFixturesRequest request) {
         return fixtureGenerationService.generate(id, request);
     }
+
+    @DeleteMapping("/{id}/fixtures")
+    @PreAuthorize("@authz.canOrganizeGroup(#id)")
+    public ResponseEntity<Void> deleteFixtures(@PathVariable String id) {
+        fixtureGenerationService.deleteFixtures(id);
+        return ResponseEntity.noContent().build();
+    }
 }
