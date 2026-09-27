@@ -18,6 +18,11 @@ public class GenerateFixturesRequest {
      * one-off choice at generation time, not a persisted ruleset setting. */
     private boolean doubleRoundRobin;
 
+    /** Optional gap between rounds in DAY_BATCH mode (default 7 days) -- the provisional dates the
+     * admin later refines. Not allowed in WINDOW mode (the rule set's window length is the gap)
+     * nor together with {@link #slots}. */
+    private Integer roundSpacingDays;
+
     /** Optional fixed slots (DAY_BATCH mode only): exactly one per generated round, in ascending
      * order. Round N gets slot N's date/time and venue, and its fixtures are CONFIRMED right away
      * — e.g. the Regionalliga weekend, Sat 10:00/13:00/15:30/18:00 + Sun 9:30/12:00/14:00. */

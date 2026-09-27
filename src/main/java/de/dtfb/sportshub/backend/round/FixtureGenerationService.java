@@ -113,13 +113,18 @@ public class FixtureGenerationService {
         if (!slots.isEmpty()) {
             validateSlots(slots, mode, roundCount);
         }
+        Integer requestedSpacing = request.getRoundSpacingDays();
+        if (requestedSpacing != null) {
+            validateSpacing(requestedSpacing, mode, slots);
+        }
         Instant startDate = slots.isEmpty() ? request.getStartDate() : slots.getFirst().getStartDate();
         if (startDate == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "startDate is required");
         }
         Function<String, Location> locationById = locationLookup();
 
-        int roundSpacingDays = mode == SchedulingMode.WINDOW ? windowDays : DAY_BATCH_DEFAULT_ROUND_SPACING_DAYS;
+        int roundSpacingDays = mode == SchedulingMode.WINDOW ? windowDays
+            : requestedSpacing != null ? requestedSpacing : DAY_BATCH_DEFAULT_ROUND_SPACING_DAYS;
         List<Round> rounds = new ArrayList<>();
         for (int i = 0; i < roundCount; i++) {
             int index = i + 1;
@@ -171,6 +176,20 @@ public class FixtureGenerationService {
             .allMatch(i -> slots.get(i).getStartDate().isAfter(slots.get(i - 1).getStartDate()));
         if (!ascending) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Slots must be in ascending order");
+        }
+    }
+
+    private void validateSpacing(int spacingDays, SchedulingMode mode, List<FixtureSlot> slots) {
+        if (mode != SchedulingMode.DAY_BATCH) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "roundSpacingDays only applies to the DAY_BATCH scheduling mode");
+        }
+        if (!slots.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "roundSpacingDays and slots can't be combined");
+        }
+        if (spacingDays < 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "roundSpacingDays must be at least 1");
         }
     }
 

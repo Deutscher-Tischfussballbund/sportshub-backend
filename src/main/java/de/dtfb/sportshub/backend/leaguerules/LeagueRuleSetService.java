@@ -3,6 +3,9 @@ package de.dtfb.sportshub.backend.leaguerules;
 import de.dtfb.sportshub.backend.federation.Federation;
 import de.dtfb.sportshub.backend.federation.FederationNotFoundException;
 import de.dtfb.sportshub.backend.federation.FederationRepository;
+import de.dtfb.sportshub.backend.group.Group;
+import de.dtfb.sportshub.backend.group.GroupNotFoundException;
+import de.dtfb.sportshub.backend.group.GroupRepository;
 import de.dtfb.sportshub.backend.league.League;
 import de.dtfb.sportshub.backend.league.LeagueNotFoundException;
 import de.dtfb.sportshub.backend.league.LeagueRepository;
@@ -34,6 +37,7 @@ public class LeagueRuleSetService {
     private final RuleSetSnapshotService snapshots;
     private final TeamParticipationRepository participationRepository;
     private final LeagueRuleResolver resolver;
+    private final GroupRepository groupRepository;
 
     public LeagueRuleSetService(LeagueRuleSetRepository repository,
                                 GamePlanEntryRepository gamePlanRepository,
@@ -43,7 +47,8 @@ public class LeagueRuleSetService {
                                 TierRepository tierRepository,
                                 RuleSetSnapshotService snapshots,
                                 TeamParticipationRepository participationRepository,
-                                LeagueRuleResolver resolver) {
+                                LeagueRuleResolver resolver,
+                                GroupRepository groupRepository) {
         this.repository = repository;
         this.gamePlanRepository = gamePlanRepository;
         this.mapper = mapper;
@@ -53,6 +58,7 @@ public class LeagueRuleSetService {
         this.snapshots = snapshots;
         this.participationRepository = participationRepository;
         this.resolver = resolver;
+        this.groupRepository = groupRepository;
     }
 
     /** The blueprint library (archived ones included, flagged). Snapshots are private to their owner. */
@@ -78,6 +84,18 @@ public class LeagueRuleSetService {
         TeamParticipation participation = participationRepository.findVisibleById(participationId)
             .orElseThrow(() -> new TeamParticipationNotFoundException(participationId));
         LeagueRuleSet rules = resolver.effectiveFor(participation);
+        return rules == null ? null : assemble(rules);
+    }
+
+    /**
+     * The rules that apply to a group (docs/21): its tier's own rules if the tier overrides them,
+     * otherwise the league's -- what the fixture generator reads (scheduling mode, window length).
+     * {@code null} only without any rules at all.
+     */
+    @Transactional(readOnly = true)
+    public LeagueRuleSetDto getEffectiveForGroup(String groupId) {
+        Group group = groupRepository.findById(groupId).orElseThrow(() -> new GroupNotFoundException(groupId));
+        LeagueRuleSet rules = resolver.effectiveFor(group);
         return rules == null ? null : assemble(rules);
     }
 

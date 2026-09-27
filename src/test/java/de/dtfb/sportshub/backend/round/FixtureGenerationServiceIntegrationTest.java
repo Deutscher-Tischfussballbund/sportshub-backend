@@ -333,6 +333,59 @@ class FixtureGenerationServiceIntegrationTest extends AuthorizedControllerTest {
             .andExpect(status().isNotFound());
     }
 
+    @Test
+    void roundSpacing_setsTheGapBetweenProvisionalRoundDates() throws Exception {
+        String groupId = createGroup("DAY_BATCH", null);
+        for (String name : List.of("A", "B", "C", "D")) {
+            placeTeam(groupId, name);
+        }
+        mockMvc.perform(post("/v1/groups/" + groupId + "/fixtures/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"startDate\":\"2027-01-09T00:00:00Z\",\"doubleRoundRobin\":false,\"roundSpacingDays\":14}"))
+            .andExpect(status().isOk());
+
+        for (MatchDay matchDay : matchDayRepository.findByRoundGroupId(groupId)) {
+            long offset = (matchDay.getRound().getIndex() - 1) * 14L;
+            Assertions.assertThat(matchDay.getStartDate())
+                .isEqualTo(Instant.parse("2027-01-09T00:00:00Z").plus(offset, java.time.temporal.ChronoUnit.DAYS));
+            Assertions.assertThat(matchDay.getSchedulingState()).isEqualTo(SchedulingState.DEFAULT);
+        }
+    }
+
+    @Test
+    void roundSpacing_isRejectedInWindowMode_withSlots_andWhenNotPositive() throws Exception {
+        String windowGroup = createGroup("WINDOW", 7);
+        placeTeam(windowGroup, "A");
+        placeTeam(windowGroup, "B");
+        mockMvc.perform(post("/v1/groups/" + windowGroup + "/fixtures/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"startDate\":\"2027-01-09T00:00:00Z\",\"roundSpacingDays\":14}"))
+            .andExpect(status().isConflict());
+
+        String batchGroup = createGroup("DAY_BATCH", null);
+        placeTeam(batchGroup, "C");
+        placeTeam(batchGroup, "D");
+        mockMvc.perform(post("/v1/groups/" + batchGroup + "/fixtures/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"roundSpacingDays\":14,\"slots\":[{\"startDate\":\"2027-03-20T09:00:00Z\"}]}"))
+            .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/v1/groups/" + batchGroup + "/fixtures/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"startDate\":\"2027-01-09T00:00:00Z\",\"roundSpacingDays\":0}"))
+            .andExpect(status().isBadRequest());
+        Assertions.assertThat(matchDayRepository.findByRoundGroupId(batchGroup)).isEmpty();
+    }
+
+    @Test
+    void groupRules_returnTheRulesTheGeneratorReads() throws Exception {
+        String groupId = createGroup("WINDOW", 10);
+        String json = mockMvc.perform(get("/v1/groups/" + groupId + "/rules"))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        Assertions.assertThat((String) JsonPath.read(json, "$.schedulingMode")).isEqualTo("WINDOW");
+        Assertions.assertThat((Integer) JsonPath.read(json, "$.schedulingWindowDays")).isEqualTo(10);
+    }
+
     // --- helpers ---
 
     private String slotsBody(List<String> kickOffs, String locationId) {

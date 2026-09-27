@@ -65,6 +65,13 @@ and venue differ every season anyway, and the list covers one weekend (8 teams �
 slots) as well as several tournament days. With 8 teams a single round robin fills exactly the
 seven Regionalliga slots.
 
+**Gap between rounds (DAY_BATCH, added 2026-09-27).** Without slots, the request can carry an
+optional `roundSpacingDays` (≥ 1, default 7) — the gap between the provisional round dates, e.g. 14
+for a league that plays every other week, so the admin has less to correct afterwards. Rejected in
+`WINDOW` mode (409; there the rule set's window length *is* the gap) and together with `slots`
+(400). `GET /v1/groups/{id}/rules` returns a group's effective rules (tier override, else league;
+204 if none), so the generate dialog knows the mode and window length up front.
+
 **Deleting a plan** — `DELETE /v1/groups/{id}/fixtures` (204, same `canOrganizeGroup` gate):
 removes the group's rounds, fixtures and their (still empty) games, so the plan can be generated
 again, e.g. after a wrong slot. Refused with 409 once any fixture has a result entered
