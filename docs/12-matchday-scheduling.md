@@ -112,6 +112,10 @@ scheduleConfirmedAt: Instant?
     (`MatchDayResultAuthorizationIntegrationTest`).
   - Both reuse the existing `@authz.canReportMatchDay` gate (team_admin of either team, or an
     admin above) — no new authz method needed.
+  - **Only in `WINDOW` leagues** (added 2026-09-27): both return 409 unless the group's effective
+    rules say `WINDOW`. With fixed matchdays (`DAY_BATCH`, incl. fixed slots) or no mode, the
+    organizer sets the dates — otherwise a captain could reopen a fixed tournament slot. The team
+    fixtures page shows the propose/accept buttons only for rounds with a window.
 
 **Kept lean for the (parked) tournament/competition block.** These scheduling fields describe a
 generic "is this date final, and who said so" workflow — nothing league-specific — so a future
