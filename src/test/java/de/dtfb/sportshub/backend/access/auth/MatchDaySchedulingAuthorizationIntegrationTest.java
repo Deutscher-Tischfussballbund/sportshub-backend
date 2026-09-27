@@ -62,25 +62,35 @@ class MatchDaySchedulingAuthorizationIntegrationTest {
     private String teamAwayId;
     private String locationId;
     private String roundId;
+    private String leagueId;
 
     @BeforeEach
     void setup() throws Exception {
         String federationId = create("/v1/federations", "{\"name\":\"Testverband\"}");
         String seasonId = create("/v1/seasons", "{\"name\":\"2025\",\"federationId\":\"" + federationId + "\"}");
         String categoryId = create("/v1/categories", "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
-        String leagueId = create("/v1/leagues",
+        leagueId = create("/v1/leagues",
             "{\"name\":\"Liga\",\"seasonId\":\"" + seasonId + "\",\"categoryId\":\"" + categoryId + "\"}");
-        String tierId = create("/v1/tiers", "{\"name\":\"1. Liga\",\"leagueId\":\"" + leagueId + "\"}");
-        String groupId = create("/v1/groups",
-            "{\"name\":\"Gruppe A\",\"tierId\":\"" + tierId + "\",\"groupState\":\"READY\"}");
-        roundId = create("/v1/rounds", "{\"name\":\"Runde1\",\"index\":1,\"groupId\":\"" + groupId + "\"}");
         locationId = create("/v1/locations", "{\"name\":\"Halle\",\"address\":\"Musterstr 1\"}");
-
         teamHomeId = seedTeam("Heim");
         teamAwayId = seedTeam("Gast");
-        matchDayId = create("/v1/matchdays", String.format(
-            "{\"name\":\"Spieltag\",\"roundId\":\"%s\",\"locationId\":\"%s\",\"teamHomeId\":\"%s\",\"teamAwayId\":\"%s\",\"startDate\":\"2025-01-01T00:00:00Z\"}",
-            roundId, locationId, teamHomeId, teamAwayId));
+        // Teams agree on dates only in a WINDOW league (docs/12 §1).
+        roundId = createRound("{\"schedulingMode\":\"WINDOW\",\"schedulingWindowDays\":14");
+        matchDayId = createMatchDay(roundId);
+    }
+
+    @Test
+    void withFixedMatchdays_teamsCannotProposeOrAccept() throws Exception {
+        String fixedRoundId = createRound("{\"schedulingMode\":\"DAY_BATCH\"");
+        String fixedMatchDayId = createMatchDay(fixedRoundId);
+        RequestPostProcessor home = teamAdmin("home", teamHomeId);
+        RequestPostProcessor away = teamAdmin("away", teamAwayId);
+
+        mockMvc.perform(post("/v1/matchdays/" + fixedMatchDayId + "/schedule/propose").with(home)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"startDate\":\"2025-02-01T18:00:00Z\"}"))
+            .andExpect(status().isConflict());
+        mockMvc.perform(post("/v1/matchdays/" + fixedMatchDayId + "/schedule/accept").with(away))
+            .andExpect(status().isConflict());
     }
 
     @Test
@@ -170,6 +180,24 @@ class MatchDaySchedulingAuthorizationIntegrationTest {
         team.setName(name);
         team.setClub(club);
         return teamRepository.save(team).getId();
+    }
+
+    /** A tier with its own rules (the given rule-set JSON, missing its name and closing brace),
+     * a group in it and a round in that group. */
+    private String createRound(String ruleSetJsonStart) throws Exception {
+        String ruleSetId = create("/v1/league-rule-sets",
+            ruleSetJsonStart + ",\"name\":\"" + TestIds.unique("Regeln") + "\"}");
+        String tierId = create("/v1/tiers", String.format(
+            "{\"name\":\"%s\",\"leagueId\":\"%s\",\"ruleSetId\":\"%s\"}", TestIds.unique("Liga"), leagueId, ruleSetId));
+        String groupId = create("/v1/groups",
+            "{\"name\":\"Gruppe A\",\"tierId\":\"" + tierId + "\",\"groupState\":\"READY\"}");
+        return create("/v1/rounds", "{\"name\":\"Runde1\",\"index\":1,\"groupId\":\"" + groupId + "\"}");
+    }
+
+    private String createMatchDay(String inRoundId) throws Exception {
+        return create("/v1/matchdays", String.format(
+            "{\"name\":\"Spieltag\",\"roundId\":\"%s\",\"locationId\":\"%s\",\"teamHomeId\":\"%s\",\"teamAwayId\":\"%s\",\"startDate\":\"2025-01-01T00:00:00Z\"}",
+            inRoundId, locationId, teamHomeId, teamAwayId));
     }
 
     private String create(String path, String body) throws Exception {

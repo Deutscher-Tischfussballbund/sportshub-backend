@@ -11,6 +11,8 @@ import java.util.Optional;
 public interface MatchDayRepository extends JpaRepository<MatchDay, String> {
     Optional<MatchDay> findByRoundAndName(Round round, String name);
 
+    List<MatchDay> findByRoundGroupId(String groupId);
+
     @Query("select e from MatchDay e where e.round.group.tier.league.season.archivedAt is null")
     List<MatchDay> findAllVisible();
 

@@ -5,6 +5,12 @@ import de.dtfb.sportshub.backend.support.TestIds;
 import com.jayway.jsonpath.JsonPath;
 import de.dtfb.sportshub.backend.club.Club;
 import de.dtfb.sportshub.backend.club.ClubRepository;
+import de.dtfb.sportshub.backend.location.Location;
+import de.dtfb.sportshub.backend.location.LocationRepository;
+import de.dtfb.sportshub.backend.matchday.MatchDay;
+import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
+import de.dtfb.sportshub.backend.matchday.ResultState;
+import de.dtfb.sportshub.backend.matchday.SchedulingState;
 import de.dtfb.sportshub.backend.support.AuthorizedControllerTest;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamRepository;
@@ -21,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -28,7 +35,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * {@link FixtureGenerationService}, end-to-end through {@code POST /v1/groups/{id}/fixtures/generate}:
  * the circle-method round-robin pairing (single + double, even + odd team counts), the WINDOW-mode
- * default date/window computation, and the regeneration guard. See docs/12-matchday-scheduling.md.
+ * default date/window computation, fixed slots (time + venue per round), the regeneration guard and
+ * deleting a plan. See docs/12-matchday-scheduling.md.
  */
 class FixtureGenerationServiceIntegrationTest extends AuthorizedControllerTest {
 
@@ -37,6 +45,12 @@ class FixtureGenerationServiceIntegrationTest extends AuthorizedControllerTest {
 
     @Autowired
     TeamRepository teamRepository;
+
+    @Autowired
+    LocationRepository locationRepository;
+
+    @Autowired
+    MatchDayRepository matchDayRepository;
 
     private String leagueId;
 
@@ -175,7 +189,223 @@ class FixtureGenerationServiceIntegrationTest extends AuthorizedControllerTest {
             .andExpect(status().isConflict());
     }
 
+    @Test
+    void slots_giveEveryRoundItsKickOffAndVenue_confirmedRightAway() throws Exception {
+        String groupId = createGroup("DAY_BATCH", null);
+        for (String name : List.of("A", "B", "C", "D")) {
+            placeTeam(groupId, name);
+        }
+        String venueId = createLocation("Halle Nord");
+        List<String> kickOffs = List.of("2027-03-20T09:00:00Z", "2027-03-20T12:00:00Z", "2027-03-21T08:30:00Z");
+
+        String json = mockMvc.perform(post("/v1/groups/" + groupId + "/fixtures/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(slotsBody(kickOffs, venueId)))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+
+        List<String> roundIds = JsonPath.read(json, "$[*].id");
+        Assertions.assertThat(roundIds).hasSize(3);
+        List<MatchDay> matchDays = matchDayRepository.findByRoundGroupId(groupId);
+        Assertions.assertThat(matchDays).hasSize(6);
+        for (MatchDay matchDay : matchDays) {
+            int roundIndex = matchDay.getRound().getIndex();
+            Assertions.assertThat(matchDay.getStartDate()).isEqualTo(Instant.parse(kickOffs.get(roundIndex - 1)));
+            Assertions.assertThat(matchDay.getLocation().getId()).isEqualTo(venueId);
+            Assertions.assertThat(matchDay.getSchedulingState())
+                .isEqualTo(SchedulingState.CONFIRMED);
+        }
+    }
+
+    @Test
+    void slots_mustMatchTheRoundCount() throws Exception {
+        String groupId = createGroup("DAY_BATCH", null);
+        placeTeam(groupId, "A");
+        placeTeam(groupId, "B");
+        placeTeam(groupId, "C");
+        placeTeam(groupId, "D");
+
+        mockMvc.perform(post("/v1/groups/" + groupId + "/fixtures/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(slotsBody(List.of("2027-03-20T09:00:00Z", "2027-03-20T12:00:00Z"), null)))
+            .andExpect(status().isBadRequest());
+        Assertions.assertThat(matchDayRepository.findByRoundGroupId(groupId)).isEmpty();
+    }
+
+    @Test
+    void slots_mustBeAscending() throws Exception {
+        String groupId = createGroup("DAY_BATCH", null);
+        placeTeam(groupId, "A");
+        placeTeam(groupId, "B");
+        placeTeam(groupId, "C");
+
+        mockMvc.perform(post("/v1/groups/" + groupId + "/fixtures/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(slotsBody(
+                    List.of("2027-03-20T12:00:00Z", "2027-03-20T09:00:00Z", "2027-03-21T08:30:00Z"), null)))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void slots_inWindowMode_areRejectedWithConflict() throws Exception {
+        String groupId = createGroup("WINDOW", 7);
+        placeTeam(groupId, "A");
+        placeTeam(groupId, "B");
+
+        mockMvc.perform(post("/v1/groups/" + groupId + "/fixtures/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(slotsBody(List.of("2027-03-20T09:00:00Z"), null)))
+            .andExpect(status().isConflict());
+    }
+
+    @Test
+    void deletingAPlan_allowsGeneratingItAgain() throws Exception {
+        String groupId = createGroup("DAY_BATCH", null);
+        placeTeam(groupId, "A");
+        placeTeam(groupId, "B");
+        generate(groupId, false);
+
+        mockMvc.perform(delete("/v1/groups/" + groupId + "/fixtures"))
+            .andExpect(status().isNoContent());
+        Assertions.assertThat(matchDayRepository.findByRoundGroupId(groupId)).isEmpty();
+
+        String json = generate(groupId, true);
+        Assertions.assertThat((List<?>) JsonPath.read(json, "$")).hasSize(2);
+    }
+
+    @Test
+    void deletingAPlan_withAnEnteredResult_isRejectedWithConflict() throws Exception {
+        String groupId = createGroup("DAY_BATCH", null);
+        placeTeam(groupId, "A");
+        placeTeam(groupId, "B");
+        generate(groupId, false);
+        MatchDay matchDay = matchDayRepository.findByRoundGroupId(groupId).getFirst();
+        matchDay.setResultState(ResultState.HOME_SUBMITTED);
+        matchDayRepository.save(matchDay);
+
+        mockMvc.perform(delete("/v1/groups/" + groupId + "/fixtures"))
+            .andExpect(status().isConflict());
+        Assertions.assertThat(matchDayRepository.findByRoundGroupId(groupId)).hasSize(1);
+    }
+
+    @Test
+    void schedule_listsRoundsInOrderWithNamedFixtures() throws Exception {
+        String groupId = createGroup("DAY_BATCH", null);
+        for (String name : List.of("A", "B", "C", "D")) {
+            placeTeam(groupId, name);
+        }
+        String venueId = createLocation("Halle Süd");
+        mockMvc.perform(post("/v1/groups/" + groupId + "/fixtures/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(slotsBody(
+                    List.of("2027-03-20T09:00:00Z", "2027-03-20T12:00:00Z", "2027-03-21T08:30:00Z"), venueId)))
+            .andExpect(status().isOk());
+
+        String json = mockMvc.perform(get("/v1/groups/" + groupId + "/schedule"))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+
+        Assertions.assertThat((String) JsonPath.read(json, "$.groupName")).isEqualTo("Gruppe A");
+        Assertions.assertThat((String) JsonPath.read(json, "$.leagueId")).isEqualTo(leagueId);
+        List<Integer> indexes = JsonPath.read(json, "$.rounds[*].index");
+        Assertions.assertThat(indexes).containsExactly(1, 2, 3);
+        List<?> firstRound = JsonPath.read(json, "$.rounds[0].fixtures");
+        Assertions.assertThat(firstRound).hasSize(2);
+        Assertions.assertThat((String) JsonPath.read(json, "$.rounds[0].fixtures[0].locationName"))
+            .isEqualTo("Halle Süd");
+        Assertions.assertThat((String) JsonPath.read(json, "$.rounds[0].fixtures[0].teamHomeName")).isNotBlank();
+        Assertions.assertThat((String) JsonPath.read(json, "$.rounds[2].fixtures[0].startDate"))
+            .isEqualTo("2027-03-21T08:30:00Z");
+    }
+
+    @Test
+    void schedule_ofAGroupWithoutPlan_isEmpty() throws Exception {
+        String groupId = createGroup("DAY_BATCH", null);
+        String json = mockMvc.perform(get("/v1/groups/" + groupId + "/schedule"))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        Assertions.assertThat((List<?>) JsonPath.read(json, "$.rounds")).isEmpty();
+    }
+
+    @Test
+    void schedule_ofAnUnknownGroup_isNotFound() throws Exception {
+        mockMvc.perform(get("/v1/groups/does-not-exist/schedule"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void roundSpacing_setsTheGapBetweenProvisionalRoundDates() throws Exception {
+        String groupId = createGroup("DAY_BATCH", null);
+        for (String name : List.of("A", "B", "C", "D")) {
+            placeTeam(groupId, name);
+        }
+        mockMvc.perform(post("/v1/groups/" + groupId + "/fixtures/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"startDate\":\"2027-01-09T00:00:00Z\",\"doubleRoundRobin\":false,\"roundSpacingDays\":14}"))
+            .andExpect(status().isOk());
+
+        for (MatchDay matchDay : matchDayRepository.findByRoundGroupId(groupId)) {
+            long offset = (matchDay.getRound().getIndex() - 1) * 14L;
+            Assertions.assertThat(matchDay.getStartDate())
+                .isEqualTo(Instant.parse("2027-01-09T00:00:00Z").plus(offset, java.time.temporal.ChronoUnit.DAYS));
+            Assertions.assertThat(matchDay.getSchedulingState()).isEqualTo(SchedulingState.DEFAULT);
+        }
+    }
+
+    @Test
+    void roundSpacing_isRejectedInWindowMode_withSlots_andWhenNotPositive() throws Exception {
+        String windowGroup = createGroup("WINDOW", 7);
+        placeTeam(windowGroup, "A");
+        placeTeam(windowGroup, "B");
+        mockMvc.perform(post("/v1/groups/" + windowGroup + "/fixtures/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"startDate\":\"2027-01-09T00:00:00Z\",\"roundSpacingDays\":14}"))
+            .andExpect(status().isConflict());
+
+        String batchGroup = createGroup("DAY_BATCH", null);
+        placeTeam(batchGroup, "C");
+        placeTeam(batchGroup, "D");
+        mockMvc.perform(post("/v1/groups/" + batchGroup + "/fixtures/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"roundSpacingDays\":14,\"slots\":[{\"startDate\":\"2027-03-20T09:00:00Z\"}]}"))
+            .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/v1/groups/" + batchGroup + "/fixtures/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"startDate\":\"2027-01-09T00:00:00Z\",\"roundSpacingDays\":0}"))
+            .andExpect(status().isBadRequest());
+        Assertions.assertThat(matchDayRepository.findByRoundGroupId(batchGroup)).isEmpty();
+    }
+
+    @Test
+    void groupRules_returnTheRulesTheGeneratorReads() throws Exception {
+        String groupId = createGroup("WINDOW", 10);
+        String json = mockMvc.perform(get("/v1/groups/" + groupId + "/rules"))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        Assertions.assertThat((String) JsonPath.read(json, "$.schedulingMode")).isEqualTo("WINDOW");
+        Assertions.assertThat((Integer) JsonPath.read(json, "$.schedulingWindowDays")).isEqualTo(10);
+    }
+
     // --- helpers ---
+
+    private String slotsBody(List<String> kickOffs, String locationId) {
+        StringBuilder slots = new StringBuilder();
+        for (String kickOff : kickOffs) {
+            if (!slots.isEmpty()) {
+                slots.append(',');
+            }
+            slots.append(locationId == null
+                ? String.format("{\"startDate\":\"%s\"}", kickOff)
+                : String.format("{\"startDate\":\"%s\",\"locationId\":\"%s\"}", kickOff, locationId));
+        }
+        return "{\"doubleRoundRobin\":false,\"slots\":[" + slots + "]}";
+    }
+
+    private String createLocation(String name) {
+        Location location = new Location();
+        location.setName(name);
+        return locationRepository.save(location).getId();
+    }
 
     private void assertEveryPairDistinctAndFromTeamSet(List<Object[]> pairs, List<String> teamIds) {
         Set<String> seen = new HashSet<>();

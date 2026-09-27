@@ -1,5 +1,8 @@
 package de.dtfb.sportshub.backend.matchday;
 
+import de.dtfb.sportshub.backend.leaguerules.LeagueRuleResolver;
+import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
+import de.dtfb.sportshub.backend.leaguerules.SchedulingMode;
 import de.dtfb.sportshub.backend.location.Location;
 import de.dtfb.sportshub.backend.location.LocationNotFoundException;
 import de.dtfb.sportshub.backend.location.LocationRepository;
@@ -31,10 +34,12 @@ public class MatchDayService {
     private final TeamRepository teamRepository;
     private final MatchRepository matchRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final LeagueRuleResolver ruleResolver;
 
     public MatchDayService(MatchDayRepository repository, MatchDayMapper mapper, RoundRepository roundRepository,
                            LocationRepository locationRepository, TeamRepository teamRepository,
-                           MatchRepository matchRepository, ApplicationEventPublisher eventPublisher) {
+                           MatchRepository matchRepository, ApplicationEventPublisher eventPublisher,
+                           LeagueRuleResolver ruleResolver) {
         this.repository = repository;
         this.mapper = mapper;
         this.roundRepository = roundRepository;
@@ -42,6 +47,7 @@ public class MatchDayService {
         this.teamRepository = teamRepository;
         this.matchRepository = matchRepository;
         this.eventPublisher = eventPublisher;
+        this.ruleResolver = ruleResolver;
     }
 
     @Transactional(readOnly = true)
@@ -143,7 +149,8 @@ public class MatchDayService {
     /**
      * A team representative proposes (or counter-proposes) a date/venue for a generated fixture.
      * Either side of the fixture may call this at any point — including to reopen an already
-     * {@code CONFIRMED} schedule, mirroring the roster lifecycle's {@code reopen}. See
+     * {@code CONFIRMED} schedule, mirroring the roster lifecycle's {@code reopen}. Only in a
+     * {@code WINDOW} league — with fixed matchdays the organizer sets the dates (409). See
      * docs/12-matchday-scheduling.md.
      */
     @Transactional
@@ -151,6 +158,7 @@ public class MatchDayService {
         MatchDay matchDay = repository.findById(matchDayId)
             .orElseThrow(() -> new MatchDayNotFoundException(matchDayId));
 
+        requireNegotiableDates(matchDay);
         if (request.getStartDate() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "startDate is required");
         }
@@ -184,6 +192,7 @@ public class MatchDayService {
         MatchDay matchDay = repository.findById(matchDayId)
             .orElseThrow(() -> new MatchDayNotFoundException(matchDayId));
 
+        requireNegotiableDates(matchDay);
         if (matchDay.getSchedulingState() != SchedulingState.PROPOSED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "No pending schedule proposal to accept");
         }
@@ -194,6 +203,17 @@ public class MatchDayService {
         matchDay.setSchedulingState(SchedulingState.CONFIRMED);
         matchDay.setScheduleConfirmedAt(Instant.now());
         return mapper.toDto(repository.save(matchDay));
+    }
+
+    /** Teams agree on dates only where the group's effective rules say so (WINDOW, docs/12 §1);
+     * otherwise — fixed matchdays, fixed slots, or no mode — the organizer sets them. */
+    private void requireNegotiableDates(MatchDay matchDay) {
+        Round round = matchDay.getRound();
+        LeagueRuleSet rules = round == null || round.getGroup() == null ? null : ruleResolver.effectiveFor(round.getGroup());
+        if (rules == null || rules.getSchedulingMode() != SchedulingMode.WINDOW) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "Dates in this league are set by the organizer; teams can only agree on dates in a scheduling window");
+        }
     }
 
     private void setDependants(MatchDayDto matchDayDto, MatchDay matchDay) {
