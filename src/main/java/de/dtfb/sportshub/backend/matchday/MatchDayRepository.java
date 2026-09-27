@@ -13,6 +13,8 @@ public interface MatchDayRepository extends JpaRepository<MatchDay, String> {
 
     List<MatchDay> findByRoundGroupId(String groupId);
 
+    long countByLocationId(String locationId);
+
     @Query("select e from MatchDay e where e.round.group.tier.league.season.archivedAt is null")
     List<MatchDay> findAllVisible();
 
