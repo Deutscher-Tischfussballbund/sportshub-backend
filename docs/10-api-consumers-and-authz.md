@@ -40,8 +40,8 @@ identity. Clients are just different front doors for the same users.
 ### Onboarding a new frontend — the touchpoints (none are authz code)
 
 1. **A Keycloak client** in the `dtfb` realm that emits the **`dtfb_id` claim** — same client scope /
-   protocol mapper as `dtfb-admin-web`. The backend keys on it, and `PlayerRegistryService`
-   lazily auto-provisions a `Player` from it (+ `email`/name claims) on first call.
+   protocol mapper as `dtfb-admin-web`. The backend keys on it, and `UserRegistryService`
+   lazily auto-provisions a `User` from it (+ `email`/name claims) on first call.
 2. **CORS origin** — add the frontend's origin to `sportshub.cors.allowed-origins` (per-profile).
 3. **Redirect URIs / web origins** on the client.
 4. **Allow-list the client id** — add it to `sportshub.security.allowed-clients` (§5). Without

@@ -74,9 +74,9 @@ Keycloak admin creds*.
 5. **Bind the dtfb_id into the account.** A **Keycloak custom authenticator / required-action (SPI)**
    validates the token (signature + TTL + single-use) and stamps `dtfb_id` as a user attribute; a
    standard protocol mapper then puts `dtfb_id` into every future JWT.
-6. **First login reconciles as usual.** When the new user hits sportshub, `PlayerRegistryService` sees
-   the `dtfb_id` claim and links to the existing `Player` — the same lazy path every login already
-   uses. No new privileged write path in the backend.
+6. **First login reconciles as usual.** When the new user hits sportshub, `UserRegistryService` sees
+   the `dtfb_id` claim and creates the `User`, which then links to the existing `Player` — the same
+   lazy path every login already uses (the linking step is not built yet). No new privileged write path in the backend.
 
 ### Why it's better — blast radius
 
@@ -116,8 +116,8 @@ That assumption is not yet settled:
 > `birthYear`? `nationalId`?), or is Keycloak the sole identity source?**
 
 - **Directory imported** → the claim model holds; proof strength depends on which fields land; the
-  inverted seam (§4) applies; `PlayerRegistryService` should *link* to the imported row on first login
-  rather than create a sparse one.
+  inverted seam (§4) applies; on first login the new `User` (`UserRegistryService`) should *link* to
+  the imported `Player` rather than leave it unlinked.
 - **Keycloak is sole identity source** → there is no record to claim; the inverted seam is moot. Design
   **Keycloak-native signup** + a separate decision on how `dtfb_id` is assigned downstream.
 

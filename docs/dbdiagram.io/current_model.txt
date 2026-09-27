@@ -100,14 +100,14 @@ Enum MatchdayDecision {
 }
 
 Enum SchedulingMode {
-  DAY_BATCH [note: 'An admin assigns real calendar dates directly, in batches per day']
-  WINDOW    [note: 'Each round gets a date window; the two teams of a fixture agree within it']
+  DAY_BATCH [note: 'The organizer sets the dates: in batches per day, or as fixed slots at generation (tournament weekend). Teams cannot propose.']
+  WINDOW    [note: 'Each round gets a date window; the two teams of a fixture agree within it (only mode with propose/accept)']
 }
 
 Enum SchedulingState {
   DEFAULT   [note: 'start_date/location are just the generated default']
   PROPOSED  [note: 'One side has proposed a real date/location']
-  CONFIRMED [note: 'Both sides have agreed']
+  CONFIRMED [note: 'Final: both sides agreed (WINDOW), an admin set it, or a fixed slot at generation']
 }
 
 Enum Role {
@@ -211,7 +211,7 @@ Table location {
   id varchar(14) [pk]
   name varchar
   address varchar
-  federation_id varchar [note: 'null = global venue']
+  federation_id varchar [note: 'Owning region, fixed after creation; null = global/nationwide venue (API only, open decision)']
 }
 
 Table role_assignment {
