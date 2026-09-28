@@ -13,6 +13,10 @@ public interface MatchDayMapper {
     @Mapping(source = "round.id", target = "roundId")
     @Mapping(source = "teamAway.id", target = "teamAwayId")
     @Mapping(source = "teamHome.id", target = "teamHomeId")
+    @Mapping(source = "teamHome.teamIdentityId", target = "teamHomeIdentityId")
+    @Mapping(source = "teamAway.teamIdentityId", target = "teamAwayIdentityId")
+    @Mapping(source = "teamHome.name", target = "teamHomeName")
+    @Mapping(source = "teamAway.name", target = "teamAwayName")
     @Mapping(source = "location.id", target = "locationId")
     MatchDayDto toDto(MatchDay matchDay);
 
