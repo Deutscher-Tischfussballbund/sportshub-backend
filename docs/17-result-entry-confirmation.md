@@ -76,7 +76,11 @@ wholesale rather than designed afresh.
   to the current version yet — or a neutral admin. A team member who isn't a captain can't confirm.
   Since a captain's own entry already counts as their side's agreement, nobody ends up confirming
   their own entry.
-- **When it is final:** once **each side's captain has agreed to the current version**. A captain
+- **Only a decided fixture can become final** (Marvin, 2026-09-28): the entered games must decide it
+  under the rule set's **matchday decision** — `ALL_GAMES` (also when none is set): every game has a
+  score; `FIRST_TO` N: one side has won N games, the rest may stay unplayed. Before that, captains
+  can agree to what's entered, but no confirmation and no admin entry makes it final.
+- **When it is final:** once it is decided and **each side's captain has agreed to the current version**. A captain
   agrees by confirming it, or by entering/editing it themselves. So:
 
   | Who enters | Then needed |
@@ -135,9 +139,13 @@ wholesale rather than designed afresh.
   the league's federation, or league admin of the league (the same set that organizes the league);
   team member = captain, admin above the team, or `RosterEntryRepository.isOnActiveRoster` (a
   `Player` linked to the login on the team's current roster in that league).
-- **Scores** are checked for structure only: the games belong to the fixture, none twice, scores
-  present and ≥ 0; a game gets `PLAYED` and its `winner`. Completeness and validity under the rule
-  set (sets per game, points per set, "first to N") wait for the Regionalliga format (SPO-58).
+- **Scores** are checked for structure: the games belong to the fixture, none twice, scores present
+  and ≥ 0; a game gets `PLAYED` and its `winner`. **Decided** (`MatchDayResultService.isDecided`,
+  `ALL_GAMES` / `FIRST_TO` as above) gates every finalization: a confirmation that would finalize an
+  undecided result is `409`, and a neutral admin's entry of an undecided result stays `SUBMITTED`.
+  The result view carries `gamesEntered`, `gamesTotal` and `decided`; `canConfirm` is false where a
+  confirmation would finalize an undecided result. Validity of a single game's score (sets per game,
+  points per set, draws in a game) still waits for the Regionalliga format (SPO-58).
 - **Standings** are recomputed for the whole group from its `CONFIRMED` fixtures on every
   finalization (`StandingService.recompute`), so an admin correction replaces the old result
   instead of counting twice (SPO-73).

@@ -249,6 +249,60 @@ class MatchDayResultAuthorizationIntegrationTest {
             .andExpect(status().isUnauthorized());
     }
 
+    // --- only a decided fixture can become final (rule set's matchday decision) ---
+
+    @Test
+    void aPartialResult_cannotBecomeFinal_neitherByTheCaptainsNorByAnAdmin() throws Exception {
+        addGame("DOUBLE");
+        addGame("SINGLE"); // 3 games, no decision set -> all games count
+        enter(captain("cap-h", teamHomeId), 5, 2)
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.gamesEntered").value(1))
+            .andExpect(jsonPath("$.gamesTotal").value(3))
+            .andExpect(jsonPath("$.decided").value(false));
+
+        mockMvc.perform(get("/v1/matchdays/" + matchDayId + "/result").with(captain("cap-a", teamAwayId)))
+            .andExpect(jsonPath("$.canConfirm").value(false));
+        confirm(captain("cap-a", teamAwayId)).andExpect(status().isConflict());
+        confirm(ADMIN).andExpect(status().isConflict());
+        enter(ADMIN, 5, 2)
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.resultState").value("SUBMITTED")); // an admin's partial entry isn't final
+    }
+
+    @Test
+    void allGamesEntered_theResultCanBecomeFinal() throws Exception {
+        String second = addGame("DOUBLE");
+        mockMvc.perform(post("/v1/matchdays/" + matchDayId + "/result").with(captain("cap-h", teamHomeId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"matches\":[{\"matchId\":\"" + matchId + "\",\"homeScore\":5,\"awayScore\":2},"
+                    + "{\"matchId\":\"" + second + "\",\"homeScore\":3,\"awayScore\":5}]}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.decided").value(true));
+
+        confirm(captain("cap-a", teamAwayId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.resultState").value("CONFIRMED"));
+    }
+
+    @Test
+    void firstToTwo_isDecidedWithAGameLeftUnplayed() throws Exception {
+        String second = addGame("DOUBLE");
+        addGame("SINGLE");
+        setLeagueDecision("FIRST_TO", 2);
+        mockMvc.perform(post("/v1/matchdays/" + matchDayId + "/result").with(captain("cap-h", teamHomeId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"matches\":[{\"matchId\":\"" + matchId + "\",\"homeScore\":5,\"awayScore\":2},"
+                    + "{\"matchId\":\"" + second + "\",\"homeScore\":5,\"awayScore\":4}]}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.gamesEntered").value(2))
+            .andExpect(jsonPath("$.decided").value(true));
+
+        confirm(captain("cap-a", teamAwayId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.resultState").value("CONFIRMED"));
+    }
+
     // --- live table ---
 
     @Test
@@ -323,6 +377,22 @@ class MatchDayResultAuthorizationIntegrationTest {
         List<Integer> values = JsonPath.read(json, "$[?(@.teamId == '" + teamId + "')]." + field);
         assertThat(values).hasSize(1);
         return values.getFirst();
+    }
+
+    private String addGame(String type) throws Exception {
+        return create("/v1/matches", "{\"matchDayId\":\"" + matchDayId + "\","
+            + "\"startTime\":\"2025-01-01T10:00:00Z\",\"type\":\"" + type + "\"}");
+    }
+
+    /** Sets the matchday decision on the league's own rules (the group's effective rule set). */
+    private void setLeagueDecision(String decision, int target) throws Exception {
+        String leagueJson = mockMvc.perform(get("/v1/leagues/" + leagueId).with(ADMIN))
+            .andReturn().getResponse().getContentAsString();
+        String ruleSetId = JsonPath.read(leagueJson, "$.ruleSetId");
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/v1/league-rule-sets/" + ruleSetId)
+                .with(ADMIN).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Liga-Regeln\",\"matchdayDecision\":\"" + decision + "\",\"matchdayTarget\":" + target + "}"))
+            .andExpect(status().isOk());
     }
 
     private String standings(boolean provisional) throws Exception {
