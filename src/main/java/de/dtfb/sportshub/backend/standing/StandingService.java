@@ -17,7 +17,14 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
 
 @Service
 public class StandingService {
@@ -38,20 +45,44 @@ public class StandingService {
         this.matchDayRepository = matchDayRepository;
     }
 
+    /** The official table: only final ({@code CONFIRMED}) fixtures count. Stored, recomputed on every finalization. */
     @Transactional(readOnly = true)
     public List<StandingDto> getByGroup(String groupId) {
         Group group = groupRepository.findVisibleById(groupId)
             .orElseThrow(() -> new GroupNotFoundException(groupId));
         return standingRepository.findByGroupOrderByPointsDescSetsWonDesc(group).stream()
-            .map(this::toDto)
+            .map(standing -> toDto(standing, false))
+            .toList();
+    }
+
+    /**
+     * The live table: final fixtures plus entered but not yet confirmed ones ({@code SUBMITTED}), with
+     * the games scored so far -- so it moves with every game a team enters. Computed on request, never
+     * stored. A row is {@code provisional} if at least one of the team's counted fixtures isn't final.
+     */
+    @Transactional(readOnly = true)
+    public List<StandingDto> getProvisionalByGroup(String groupId) {
+        Group group = groupRepository.findVisibleById(groupId)
+            .orElseThrow(() -> new GroupNotFoundException(groupId));
+        Set<String> provisionalTeams = new HashSet<>();
+        List<Standing> table = tally(group, matchDay -> {
+            if (matchDay.getResultState() == ResultState.SUBMITTED) {
+                provisionalTeams.add(matchDay.getTeamHome().getId());
+                provisionalTeams.add(matchDay.getTeamAway().getId());
+                return true;
+            }
+            return matchDay.getResultState() == ResultState.CONFIRMED;
+        });
+        return table.stream()
+            .sorted(TABLE_ORDER)
+            .map(standing -> toDto(standing, provisionalTeams.contains(standing.getTeam().getId())))
             .toList();
     }
 
     /**
      * A fixture became final (or a final one was corrected by an admin): recompute the group's whole
      * table from all its final fixtures, so a correction replaces the old result instead of counting
-     * twice (SPO-73). Points come from the group's effective {@code LeagueRuleSet} (tier's own, else
-     * the league's), falling back to 2/1/0 when no rule set is configured.
+     * twice (SPO-73).
      */
     @EventListener
     @Transactional
@@ -61,19 +92,29 @@ public class StandingService {
         recompute(round.getGroup());
     }
 
-    /** Rebuilds the group's standings from scratch out of its {@code CONFIRMED} fixtures. */
+    /** Rebuilds the group's stored standings from scratch out of its {@code CONFIRMED} fixtures. */
     @Transactional
     public void recompute(Group group) {
         standingRepository.deleteAll(standingRepository.findByGroupOrderByPointsDescSetsWonDesc(group));
         standingRepository.flush();
+        standingRepository.saveAll(tally(group, matchDay -> matchDay.getResultState() == ResultState.CONFIRMED));
+    }
 
+    /**
+     * Tallies the group's table (unsaved rows) over the fixtures {@code counts} accepts. Per fixture,
+     * the side with more game wins wins; the game scores add up to sets won/lost. Points come from
+     * the group's effective {@code LeagueRuleSet} (tier's own, else the league's), falling back to
+     * 2/1/0 when no rule set is configured.
+     */
+    private List<Standing> tally(Group group, Predicate<MatchDay> counts) {
         LeagueRuleSet rules = ruleResolver.effectiveFor(group);
         int pointsWin = ruleResolver.pointsWin(rules);
         int pointsDraw = ruleResolver.pointsDraw(rules);
         int pointsLoss = ruleResolver.pointsLoss(rules);
 
+        Map<String, Standing> byTeam = new LinkedHashMap<>();
         for (MatchDay matchDay : matchDayRepository.findByRoundGroupId(group.getId())) {
-            if (matchDay.getResultState() != ResultState.CONFIRMED) continue;
+            if (!counts.test(matchDay)) continue;
 
             int homeWins = 0, awayWins = 0;
             int homeSets = 0, awaySets = 0;
@@ -91,23 +132,25 @@ public class StandingService {
             boolean awayWon = awayWins > homeWins;
             boolean isDraw = homeWins == awayWins;
 
-            updateStanding(group, matchDay.getTeamHome(), homeWon, isDraw, awayWon, homeSets, awaySets,
+            add(row(byTeam, group, matchDay.getTeamHome()), homeWon, isDraw, homeSets, awaySets,
                 pointsWin, pointsDraw, pointsLoss);
-            updateStanding(group, matchDay.getTeamAway(), awayWon, isDraw, homeWon, awaySets, homeSets,
+            add(row(byTeam, group, matchDay.getTeamAway()), awayWon, isDraw, awaySets, homeSets,
                 pointsWin, pointsDraw, pointsLoss);
         }
+        return new ArrayList<>(byTeam.values());
     }
 
-    private void updateStanding(Group group, Team team, boolean won, boolean draw, boolean lost,
-                                 int setsFor, int setsAgainst,
-                                 int pointsWin, int pointsDraw, int pointsLoss) {
-        Standing standing = standingRepository.findByGroupAndTeam(group, team).orElseGet(() -> {
+    private static Standing row(Map<String, Standing> byTeam, Group group, Team team) {
+        return byTeam.computeIfAbsent(team.getId(), id -> {
             Standing s = new Standing();
             s.setGroup(group);
             s.setTeam(team);
             return s;
         });
+    }
 
+    private static void add(Standing standing, boolean won, boolean draw, int setsFor, int setsAgainst,
+                            int pointsWin, int pointsDraw, int pointsLoss) {
         standing.setPlayed(standing.getPlayed() + 1);
         standing.setSetsWon(standing.getSetsWon() + setsFor);
         standing.setSetsLost(standing.getSetsLost() + setsAgainst);
@@ -122,12 +165,16 @@ public class StandingService {
             standing.setLosses(standing.getLosses() + 1);
             standing.setPoints(standing.getPoints() + pointsLoss);
         }
-
-        standingRepository.save(standing);
     }
 
-    private StandingDto toDto(Standing s) {
+    /** Same order as the stored table's query: points, then sets won. */
+    private static final Comparator<Standing> TABLE_ORDER =
+        Comparator.comparingInt(Standing::getPoints).reversed()
+            .thenComparing(Comparator.comparingInt(Standing::getSetsWon).reversed());
+
+    private StandingDto toDto(Standing s, boolean provisional) {
         StandingDto dto = new StandingDto();
+        dto.setProvisional(provisional);
         dto.setTeamId(s.getTeam().getId());
         dto.setTeamName(s.getTeam().getName());
         dto.setPlayed(s.getPlayed());

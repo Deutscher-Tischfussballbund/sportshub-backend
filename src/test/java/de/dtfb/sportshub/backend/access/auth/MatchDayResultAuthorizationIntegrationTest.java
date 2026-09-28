@@ -249,6 +249,33 @@ class MatchDayResultAuthorizationIntegrationTest {
             .andExpect(status().isUnauthorized());
     }
 
+    // --- live table ---
+
+    @Test
+    void theLiveTable_countsAnEnteredResult_markedProvisional_whileTheOfficialOneDoesNot() throws Exception {
+        enter(captain("cap-h", teamHomeId), 5, 2).andExpect(status().isOk());
+
+        assertThat((List<?>) JsonPath.read(standings(false), "$")).isEmpty();
+        String live = standings(true);
+        assertThat((List<Integer>) JsonPath.read(live, "$[?(@.teamId == '" + teamHomeId + "')].wins")).containsExactly(1);
+        assertThat((List<Boolean>) JsonPath.read(live, "$[*].provisional")).containsOnly(true);
+
+        confirm(captain("cap-a", teamAwayId)).andExpect(status().isOk());
+
+        assertThat((List<Boolean>) JsonPath.read(standings(true), "$[*].provisional")).containsOnly(false);
+        assertThat(standingField(teamHomeId, "wins")).isEqualTo(1);
+    }
+
+    @Test
+    void theLiveTable_followsAnEdit() throws Exception {
+        enter(captain("cap-h", teamHomeId), 5, 2).andExpect(status().isOk());
+        enter(captain("cap-a", teamAwayId), 2, 5).andExpect(status().isOk());
+
+        String live = standings(true);
+        assertThat((List<Integer>) JsonPath.read(live, "$[?(@.teamId == '" + teamAwayId + "')].wins")).containsExactly(1);
+        assertThat((List<Integer>) JsonPath.read(live, "$[?(@.teamId == '" + teamHomeId + "')].played")).containsExactly(1);
+    }
+
     // --- request checks and the read side ---
 
     @Test
@@ -296,6 +323,11 @@ class MatchDayResultAuthorizationIntegrationTest {
         List<Integer> values = JsonPath.read(json, "$[?(@.teamId == '" + teamId + "')]." + field);
         assertThat(values).hasSize(1);
         return values.getFirst();
+    }
+
+    private String standings(boolean provisional) throws Exception {
+        return mockMvc.perform(get("/v1/groups/" + groupId + "/standings?provisional=" + provisional).with(ADMIN))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
     }
 
     private static RequestPostProcessor jwtFor(String dtfbId) {

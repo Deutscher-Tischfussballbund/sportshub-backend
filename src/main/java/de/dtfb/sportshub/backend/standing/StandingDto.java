@@ -16,4 +16,6 @@ public class StandingDto {
     private int setsWon;
     private int setsLost;
     private int setDifference;
+    /** Live table only: the row counts at least one entered but not yet confirmed fixture. */
+    private boolean provisional;
 }
