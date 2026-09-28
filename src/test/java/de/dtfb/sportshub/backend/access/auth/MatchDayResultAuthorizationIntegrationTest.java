@@ -303,6 +303,20 @@ class MatchDayResultAuthorizationIntegrationTest {
             .andExpect(jsonPath("$.resultState").value("CONFIRMED"));
     }
 
+    @Test
+    void gameBased_theListScoreIsGamesWon() throws Exception {
+        String second = addGame("DOUBLE");
+        mockMvc.perform(post("/v1/matchdays/" + matchDayId + "/result").with(captain("cap-h", teamHomeId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"matches\":[{\"matchId\":\"" + matchId + "\",\"homeScore\":5,\"awayScore\":2},"
+                    + "{\"matchId\":\"" + second + "\",\"homeScore\":5,\"awayScore\":4}]}"))
+            .andExpect(status().isOk());
+        mockMvc.perform(get("/v1/matchdays/" + matchDayId).with(ADMIN))
+            .andExpect(jsonPath("$.scoreHome").value(2))
+            .andExpect(jsonPath("$.scoreAway").value(0))
+            .andExpect(jsonPath("$.gamesEntered").value(2));
+    }
+
     // --- live table ---
 
     @Test

@@ -18,6 +18,11 @@ public interface MatchDayMapper {
     @Mapping(source = "teamHome.name", target = "teamHomeName")
     @Mapping(source = "teamAway.name", target = "teamAwayName")
     @Mapping(source = "location.id", target = "locationId")
+    // Filled by the service from the fixture's games (FixtureScoreService).
+    @Mapping(target = "scoreHome", ignore = true)
+    @Mapping(target = "scoreAway", ignore = true)
+    @Mapping(target = "gamesEntered", ignore = true)
+    @Mapping(target = "gamesTotal", ignore = true)
     MatchDayDto toDto(MatchDay matchDay);
 
     @Mapping(target = "id", ignore = true)

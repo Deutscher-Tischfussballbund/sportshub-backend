@@ -23,4 +23,10 @@ public class ScheduleFixtureDto {
     private ResultState resultState;
     /** The fixture against the bye (no away team; scored with the rule set's bye score, docs/22). */
     private boolean bye;
+    /** Read-only: the score as lists show it (docs/22) -- race: running score; games: games won; bye: bye score. Null = nothing entered. */
+    private Integer scoreHome;
+    private Integer scoreAway;
+    /** Read-only: games (segments) entered / total, for "(3/7)". */
+    private int gamesEntered;
+    private int gamesTotal;
 }

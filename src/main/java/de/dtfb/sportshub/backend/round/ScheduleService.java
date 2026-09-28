@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.round;
 
+import de.dtfb.sportshub.backend.matchday.FixtureScoreService;
 import de.dtfb.sportshub.backend.group.Group;
 import de.dtfb.sportshub.backend.group.GroupNotFoundException;
 import de.dtfb.sportshub.backend.group.GroupRepository;
@@ -25,19 +26,24 @@ public class ScheduleService {
     private final GroupRepository groupRepository;
     private final RoundRepository roundRepository;
     private final MatchDayRepository matchDayRepository;
+    private final FixtureScoreService fixtureScores;
 
     public ScheduleService(GroupRepository groupRepository, RoundRepository roundRepository,
-                           MatchDayRepository matchDayRepository) {
+                           MatchDayRepository matchDayRepository,
+                           FixtureScoreService fixtureScores) {
         this.groupRepository = groupRepository;
         this.roundRepository = roundRepository;
         this.matchDayRepository = matchDayRepository;
+        this.fixtureScores = fixtureScores;
     }
 
     @Transactional(readOnly = true)
     public ScheduleDto getSchedule(String groupId) {
         Group group = groupRepository.findById(groupId)
             .orElseThrow(() -> new GroupNotFoundException(groupId));
-        Map<String, List<MatchDay>> fixturesByRound = matchDayRepository.findByRoundGroupId(groupId).stream()
+        List<MatchDay> fixtures = matchDayRepository.findByRoundGroupId(groupId);
+        Map<String, FixtureScoreService.FixtureScore> scores = fixtureScores.scores(fixtures);
+        Map<String, List<MatchDay>> fixturesByRound = fixtures.stream()
             .collect(Collectors.groupingBy(matchDay -> matchDay.getRound().getId()));
 
         ScheduleDto schedule = new ScheduleDto();
@@ -51,23 +57,26 @@ public class ScheduleService {
             }
         }
         schedule.setRounds(roundRepository.findByGroupIdOrderByIndex(groupId).stream()
-            .map(round -> toRound(round, fixturesByRound.getOrDefault(round.getId(), List.of())))
+            .map(round -> toRound(round, fixturesByRound.getOrDefault(round.getId(), List.of()), scores))
             .toList());
         return schedule;
     }
 
-    private ScheduleRoundDto toRound(Round round, List<MatchDay> matchDays) {
+    private ScheduleRoundDto toRound(Round round, List<MatchDay> matchDays,
+                                     Map<String, FixtureScoreService.FixtureScore> scores) {
         ScheduleRoundDto dto = new ScheduleRoundDto();
         dto.setId(round.getId());
         dto.setName(round.getName());
         dto.setIndex(round.getIndex());
         dto.setWindowStart(round.getWindowStart());
         dto.setWindowEnd(round.getWindowEnd());
-        dto.setFixtures(matchDays.stream().sorted(KICK_OFF_ORDER).map(this::toFixture).toList());
+        dto.setFixtures(matchDays.stream().sorted(KICK_OFF_ORDER)
+            .map(matchDay -> toFixture(matchDay, scores.get(matchDay.getId()))).toList());
         return dto;
     }
 
-    private ScheduleFixtureDto toFixture(MatchDay matchDay) {
+    private ScheduleFixtureDto toFixture(MatchDay matchDay,
+                                         FixtureScoreService.FixtureScore score) {
         ScheduleFixtureDto dto = new ScheduleFixtureDto();
         dto.setId(matchDay.getId());
         if (matchDay.getTeamHome() != null) {
@@ -86,6 +95,12 @@ public class ScheduleService {
         dto.setSchedulingState(matchDay.getSchedulingState());
         dto.setResultState(matchDay.getResultState());
         dto.setBye(matchDay.isBye());
+        if (score != null) {
+            dto.setScoreHome(score.home());
+            dto.setScoreAway(score.away());
+            dto.setGamesEntered(score.gamesEntered());
+            dto.setGamesTotal(score.gamesTotal());
+        }
         return dto;
     }
 }

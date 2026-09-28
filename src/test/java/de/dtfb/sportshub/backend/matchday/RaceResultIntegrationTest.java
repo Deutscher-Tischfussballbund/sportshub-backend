@@ -208,6 +208,27 @@ class RaceResultIntegrationTest extends AuthorizedControllerTest {
         assertThat((List<String>) JsonPath.read(stranger, "$[*].matchDayId")).doesNotContain(fixture.getId());
     }
 
+    @Test
+    void listsShowTheFixtureScore_runningScoreAndProgress_andTheByeScore() throws Exception {
+        MatchDay fixture = firstRealFixture();
+        enter(captain("race-h", fixture.getTeamHome()), fixture.getId(), new int[][] {{6, 4}, {12, 9}, {18, 15}})
+            .andExpect(status().isOk());
+
+        String schedule = mockMvc.perform(get("/v1/groups/" + groupId + "/schedule"))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String path = "$.rounds[*].fixtures[?(@.id == '" + fixture.getId() + "')]";
+        assertThat((List<Integer>) JsonPath.read(schedule, path + ".scoreHome")).containsExactly(18);
+        assertThat((List<Integer>) JsonPath.read(schedule, path + ".scoreAway")).containsExactly(15);
+        assertThat((List<Integer>) JsonPath.read(schedule, path + ".gamesEntered")).containsExactly(3);
+        assertThat((List<Integer>) JsonPath.read(schedule, path + ".gamesTotal")).containsExactly(7);
+        assertThat((List<Integer>) JsonPath.read(schedule, "$.rounds[*].fixtures[?(@.bye == true)].scoreHome"))
+            .containsOnly(42);
+
+        mockMvc.perform(get("/v1/matchdays/" + fixture.getId()))
+            .andExpect(jsonPath("$.scoreHome").value(18))
+            .andExpect(jsonPath("$.scoreAway").value(15));
+    }
+
     // --- helpers ---
 
     private static final RequestPostProcessor ADMIN = jwt().jwt(token -> token.claim("dtfb_id", "admin"));
