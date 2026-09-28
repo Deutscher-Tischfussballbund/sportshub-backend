@@ -280,7 +280,29 @@ class MatchPlanIntegrationTest extends AuthorizedControllerTest {
         Assertions.assertThat(matchPlan.backfill()).isZero();
     }
 
+    @Test
+    void backfill_doesNotCountFixturesOfAGroupWithoutGamePlan() throws Exception {
+        setTierPlan("[]");
+        Round round = new Round();
+        round.setGroup(groupRepository.findById(groupId).orElseThrow());
+        round.setIndex(1);
+        round.setName("Spieltag 1");
+        MatchDay planless = oldFixture(roundRepository.save(round), ResultState.OPEN);
+
+        matchPlan.backfill();
+
+        Assertions.assertThat(games(planless)).isEmpty();
+        Assertions.assertThat(matchPlan.backfill()).isZero(); // no endless "filled" on every startup
+    }
+
     // --- helpers ---
+
+    private void setTierPlan(String gamePlan) throws Exception {
+        mockMvc.perform(put("/v1/league-rule-sets/" + tierRuleSetId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(ruleSetBody("Spielfolge", 2, gamePlan)))
+            .andExpect(status().isOk());
+    }
 
     private void setLeaguePlan(String gamePlan) throws Exception {
         String leagueJson = mockMvc.perform(get("/v1/leagues/" + leagueId))

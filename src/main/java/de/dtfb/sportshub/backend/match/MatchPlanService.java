@@ -55,11 +55,15 @@ public class MatchPlanService {
         this.tierRepository = tierRepository;
     }
 
-    /** Creates a new fixture's games from its group's effective game plan. No group or no plan: no games. */
+    /**
+     * Creates a new fixture's games from its group's effective game plan and returns how many. No
+     * group or no plan: no games.
+     */
     @Transactional
-    public void createGames(MatchDay matchDay) {
+    public int createGames(MatchDay matchDay) {
         Group group = matchDay.getRound() == null ? null : matchDay.getRound().getGroup();
-        for (GamePlanEntry entry : gamePlanOf(group)) {
+        List<GamePlanEntry> plan = gamePlanOf(group);
+        for (GamePlanEntry entry : plan) {
             Match match = new Match();
             match.setMatchDay(matchDay);
             match.setPosition(entry.getPosition());
@@ -68,6 +72,7 @@ public class MatchPlanService {
             match.setStartTime(matchDay.getStartDate());
             matchRepository.save(match);
         }
+        return plan.size();
     }
 
     /** Deletes a fixture's games, e.g. before the fixture itself is deleted. */
@@ -147,14 +152,16 @@ public class MatchPlanService {
 
     /**
      * Gives fixtures from before SPO-71 their games: every fixture of a group that has no games and
-     * no result yet. Idempotent. Returns the number of fixtures filled.
+     * no result yet. Idempotent. Returns the number of fixtures that got games -- fixtures of a group
+     * without a game plan stay without games and aren't counted.
      */
     @Transactional
     public int backfill() {
         int filled = 0;
         for (MatchDay matchDay : matchDayRepository.findWithoutGames(ResultState.OPEN)) {
-            createGames(matchDay);
-            filled++;
+            if (createGames(matchDay) > 0) {
+                filled++;
+            }
         }
         return filled;
     }
