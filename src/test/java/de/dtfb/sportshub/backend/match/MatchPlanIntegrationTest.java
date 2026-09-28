@@ -333,7 +333,7 @@ class MatchPlanIntegrationTest extends AuthorizedControllerTest {
     }
 
     private void enterResult(MatchDay fixture) {
-        fixture.setResultState(ResultState.HOME_SUBMITTED);
+        fixture.setResultState(ResultState.SUBMITTED);
         matchDayRepository.save(fixture);
     }
 

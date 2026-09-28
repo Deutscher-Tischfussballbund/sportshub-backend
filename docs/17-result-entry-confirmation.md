@@ -1,6 +1,6 @@
 # Result entry & confirmation — who may record a match result, and when it becomes final
 
-> **Decision, 2026-09-21. Not yet implemented.** A match result is recorded by *either* team and
+> **Decision, 2026-09-21. Backend implemented 2026-09-28 (SPO-15, §Implementation); frontend pending (SPO-57).** A match result is recorded by *either* team and
 > becomes official only once the *opposing* team confirms it. Any team member of either side may
 > enter or edit; each edit re-opens confirmation for the other side; a two-sided confirmation
 > **freezes** the result, after which only a league/federation admin may change it. An admin may
@@ -25,7 +25,7 @@
 
 No frontend lets a captain record anything. The backend has an older two-step flow that falls short
 of this decision: `POST /v1/matchdays/{id}/result` (sets the `Match` scores, `resultState =
-HOME_SUBMITTED`) and `POST /v1/matchdays/{id}/confirm` (`CONFIRMED`, confirmer ≠ submitter), both
+HOME_SUBMITTED`, since renamed `SUBMITTED`) and `POST /v1/matchdays/{id}/confirm` (`CONFIRMED`, confirmer ≠ submitter), both
 gated by `canReportMatchDay` (a team's `team_admin` or an admin above it). It has no edit/re-open
 cycle (submit requires `OPEN`), no league-admin access and no notification. *(Update 2026-09-28,
 SPO-71: generated fixtures now carry their games from the rule set's game plan, doc 12 §5; before,
@@ -72,9 +72,10 @@ wholesale rather than designed afresh.
 **Rules:**
 
 - **Who may enter or edit:** any team member of either side, and any neutral admin.
-- **Who may confirm:** only a **captain of the other side** than the one whose version it is — or a
-  neutral admin. A team member who isn't a captain can't confirm, and nobody can confirm their own
-  side's version.
+- **Who may confirm:** only a **captain**, for **their own side**, as long as that side hasn't agreed
+  to the current version yet — or a neutral admin. A team member who isn't a captain can't confirm.
+  Since a captain's own entry already counts as their side's agreement, nobody ends up confirming
+  their own entry.
 - **When it is final:** once **each side's captain has agreed to the current version**. A captain
   agrees by confirming it, or by entering/editing it themselves. So:
 
@@ -111,6 +112,33 @@ wholesale rather than designed afresh.
 
 **Consequence for M1:** every team needs at least one captain with a login before the weekend
 (SPO-111). If a captain doesn't respond, the result waits for a neutral admin (see "Stalled cycles").
+
+## Implementation (backend, 2026-09-28)
+
+- **States** (`MatchDay.resultState`): `OPEN` → `SUBMITTED` → `CONFIRMED`. The old `HOME_SUBMITTED`
+  became `SUBMITTED` (either side can enter); Flyway `V15` renames existing rows and turns the
+  column into a plain `varchar`. Each side's agreement is `homeConfirmedAt` / `awayConfirmedAt`
+  (null = not agreed to the current version), the last editor `submittedByDtfbId`.
+- **Endpoints** (`MatchDayController`, logic in `MatchDayResultService`):
+  - `GET /v1/matchdays/{id}/result` — games with scores, both agreements, and for the current user
+    `canEdit`, `canConfirm`, `neutralAdmin`, `side`, so the result screen doesn't re-derive the rules;
+  - `POST /v1/matchdays/{id}/result` — enter or edit (`{ matches: [{ matchId, homeScore, awayScore }] }`),
+    gated by `@authz.canEnterResult`;
+  - `POST /v1/matchdays/{id}/confirm` — gated by `@authz.canConfirmResult`.
+  Both return the same result view. Refusals: `403` (not allowed / side ambiguous), `409` (final
+  result edited by a team, nothing to confirm, own side already agreed), `400` (malformed scores).
+- **Who is who** — `AuthorizationService.resultActor`: neutral admin = global admin, region admin of
+  the league's federation, or league admin of the league (the same set that organizes the league);
+  team member = captain, admin above the team, or `RosterEntryRepository.isOnActiveRoster` (a
+  `Player` linked to the login on the team's current roster in that league).
+- **Scores** are checked for structure only: the games belong to the fixture, none twice, scores
+  present and ≥ 0; a game gets `PLAYED` and its `winner`. Completeness and validity under the rule
+  set (sets per game, points per set, "first to N") wait for the Regionalliga format (SPO-58).
+- **Standings** are recomputed for the whole group from its `CONFIRMED` fixtures on every
+  finalization (`StandingService.recompute`), so an admin correction replaces the old result
+  instead of counting twice (SPO-73).
+- Tested end-to-end in `MatchDayResultAuthorizationIntegrationTest` (15 cases).
+- **Not yet:** notifications (see Open questions), the frontend (SPO-57).
 
 ## What did NOT need to change
 
