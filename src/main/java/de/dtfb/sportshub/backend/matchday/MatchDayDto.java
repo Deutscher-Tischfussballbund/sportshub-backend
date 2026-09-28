@@ -14,6 +14,12 @@ public class MatchDayDto {
     private String locationId;
     private String teamAwayId;
     private String teamHomeId;
+    /** Read-only: the teams' identities (stable across seasons) -- the team area matches fixtures by them. */
+    private String teamHomeIdentityId;
+    private String teamAwayIdentityId;
+    /** Read-only: the teams' names, so lists don't have to resolve every team row. */
+    private String teamHomeName;
+    private String teamAwayName;
     private Instant startDate;
     private Instant endDate;
     private ResultState resultState;
