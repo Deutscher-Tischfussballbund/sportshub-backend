@@ -28,6 +28,14 @@ public class MatchDayResultDto {
     private Instant awayAgreedAt;
 
     private List<GameResultDto> games;
+    /** How many of the fixture's games have both scores. */
+    private int gamesEntered;
+    private int gamesTotal;
+    /**
+     * The entered games decide the fixture under the rule set's matchday decision (all games, or one
+     * side reached "first to N"). Only a decided result can become final.
+     */
+    private boolean decided;
 
     /** For the current user: may enter or edit the result now. */
     private boolean canEdit;

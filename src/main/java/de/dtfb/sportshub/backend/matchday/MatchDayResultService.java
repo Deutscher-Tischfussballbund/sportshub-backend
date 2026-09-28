@@ -1,6 +1,9 @@
 package de.dtfb.sportshub.backend.matchday;
 
 import de.dtfb.sportshub.backend.access.auth.AuthorizationService;
+import de.dtfb.sportshub.backend.leaguerules.LeagueRuleResolver;
+import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
+import de.dtfb.sportshub.backend.leaguerules.MatchdayDecision;
 import de.dtfb.sportshub.backend.match.Match;
 import de.dtfb.sportshub.backend.match.MatchNotFoundException;
 import de.dtfb.sportshub.backend.match.MatchRepository;
@@ -26,6 +29,12 @@ import java.util.Set;
  * cancels the other side's agreement. A neutral admin's entry, edit or confirmation is final at
  * once, and only a neutral admin may change a final result. Every finalization publishes
  * {@link MatchDayConfirmedEvent}, from which the standings are recomputed.
+ *
+ * <p>A result only becomes final once it is <b>decided</b> under the rule set's matchday decision:
+ * {@code ALL_GAMES} (also when none is set) -- every game has a score; {@code FIRST_TO} -- one side
+ * has won {@code matchdayTarget} games (the rest may stay unplayed). Until then captains can agree to
+ * the entered games, but nothing finalizes: a confirmation that would is refused (409), and a neutral
+ * admin's entry stays pending like a team's.
  */
 @Service
 public class MatchDayResultService {
@@ -34,13 +43,16 @@ public class MatchDayResultService {
     private final MatchRepository matchRepository;
     private final AuthorizationService authz;
     private final ApplicationEventPublisher eventPublisher;
+    private final LeagueRuleResolver ruleResolver;
 
     public MatchDayResultService(MatchDayRepository repository, MatchRepository matchRepository,
-                                 AuthorizationService authz, ApplicationEventPublisher eventPublisher) {
+                                 AuthorizationService authz, ApplicationEventPublisher eventPublisher,
+                                 LeagueRuleResolver ruleResolver) {
         this.repository = repository;
         this.matchRepository = matchRepository;
         this.authz = authz;
         this.eventPublisher = eventPublisher;
+        this.ruleResolver = ruleResolver;
     }
 
     @Transactional(readOnly = true)
@@ -59,11 +71,18 @@ public class MatchDayResultService {
 
         if (actor.neutralAdmin()) {
             applyScores(matchDay, request);
-            Instant now = Instant.now();
             matchDay.setSubmittedByDtfbId(dtfbId);
-            matchDay.setHomeConfirmedAt(now);
-            matchDay.setAwayConfirmedAt(now);
-            return finalize(matchDay, actor);
+            if (isDecided(matchDay)) {
+                Instant now = Instant.now();
+                matchDay.setHomeConfirmedAt(now);
+                matchDay.setAwayConfirmedAt(now);
+                return finalize(matchDay, actor);
+            }
+            // Not decided yet (e.g. a correction mid-day): pending, no side's agreement carried over.
+            matchDay.setHomeConfirmedAt(null);
+            matchDay.setAwayConfirmedAt(null);
+            matchDay.setResultState(ResultState.SUBMITTED);
+            return toDto(repository.save(matchDay), actor);
         }
 
         ResultActor.Side side = actor.memberSide();
@@ -96,6 +115,7 @@ public class MatchDayResultService {
 
         Instant now = Instant.now();
         if (actor.neutralAdmin()) {
+            requireDecided(matchDay);
             if (matchDay.getHomeConfirmedAt() == null) {
                 matchDay.setHomeConfirmedAt(now);
             }
@@ -114,6 +134,11 @@ public class MatchDayResultService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                 "Your team has already agreed; waiting for the other team's captain");
         }
+        boolean otherSideAgreed = side == ResultActor.Side.HOME
+            ? matchDay.getAwayConfirmedAt() != null : matchDay.getHomeConfirmedAt() != null;
+        if (otherSideAgreed) {
+            requireDecided(matchDay); // this confirmation would finalize
+        }
         if (side == ResultActor.Side.HOME) {
             matchDay.setHomeConfirmedAt(now);
         } else {
@@ -123,6 +148,38 @@ public class MatchDayResultService {
             return finalize(matchDay, actor);
         }
         return toDto(repository.save(matchDay), actor);
+    }
+
+    private void requireDecided(MatchDay matchDay) {
+        if (!isDecided(matchDay)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "The fixture isn't decided yet under the rule set's matchday decision; enter the missing games first");
+        }
+    }
+
+    /** Whether the entered games decide the fixture under the rule set's matchday decision (see class doc). */
+    private boolean isDecided(MatchDay matchDay) {
+        List<Match> games = matchRepository.findByMatchDay(matchDay);
+        if (games.isEmpty()) {
+            return false;
+        }
+        LeagueRuleSet rules = matchDay.getRound() == null ? null : ruleResolver.effectiveFor(matchDay.getRound().getGroup());
+        MatchdayDecision decision = rules == null ? null : rules.getMatchdayDecision();
+        Integer target = rules == null ? null : rules.getMatchdayTarget();
+        if (decision == MatchdayDecision.FIRST_TO && target != null && target > 0) {
+            int homeWins = 0;
+            int awayWins = 0;
+            for (Match game : games) {
+                if (game.getHomeScore() == null || game.getAwayScore() == null) continue;
+                if (game.getHomeScore() > game.getAwayScore()) homeWins++;
+                else if (game.getAwayScore() > game.getHomeScore()) awayWins++;
+            }
+            if (Math.max(homeWins, awayWins) >= target) {
+                return true;
+            }
+        }
+        // ALL_GAMES, no decision set, or FIRST_TO where nobody reached the target: every game counts.
+        return games.stream().allMatch(game -> game.getHomeScore() != null && game.getAwayScore() != null);
     }
 
     private MatchDayResultDto finalize(MatchDay matchDay, ResultActor actor) {
@@ -188,14 +245,23 @@ public class MatchDayResultService {
             .map(MatchDayResultService::toGameDto)
             .toList());
 
+        List<MatchDayResultDto.GameResultDto> games = dto.getGames();
+        dto.setGamesTotal(games.size());
+        dto.setGamesEntered((int) games.stream().filter(g -> g.getHomeScore() != null && g.getAwayScore() != null).count());
+        boolean decided = isDecided(matchDay);
+        dto.setDecided(decided);
+
         ResultState state = matchDay.getResultState();
         ResultActor.Side memberSide = actor.memberSide();
         ResultActor.Side captainSide = actor.captainSide();
         dto.setNeutralAdmin(actor.neutralAdmin());
         dto.setSide(memberSide);
         dto.setCanEdit(actor.neutralAdmin() || (memberSide != null && state != ResultState.CONFIRMED));
-        dto.setCanConfirm(state == ResultState.SUBMITTED
-            && (actor.neutralAdmin() || (captainSide != null && agreedAt(matchDay, captainSide) == null)));
+        boolean otherSideAgreed = captainSide != null && agreedAt(matchDay,
+            captainSide == ResultActor.Side.HOME ? ResultActor.Side.AWAY : ResultActor.Side.HOME) != null;
+        dto.setCanConfirm(state == ResultState.SUBMITTED && (actor.neutralAdmin()
+            ? decided
+            : captainSide != null && agreedAt(matchDay, captainSide) == null && (decided || !otherSideAgreed)));
         return dto;
     }
 
