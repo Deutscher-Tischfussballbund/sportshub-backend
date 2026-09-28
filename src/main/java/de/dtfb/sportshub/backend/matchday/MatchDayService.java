@@ -20,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class MatchDayService {
@@ -30,10 +31,12 @@ public class MatchDayService {
     private final TeamRepository teamRepository;
     private final LeagueRuleResolver ruleResolver;
     private final MatchPlanService matchPlan;
+    private final FixtureScoreService fixtureScores;
 
     public MatchDayService(MatchDayRepository repository, MatchDayMapper mapper, RoundRepository roundRepository,
                            LocationRepository locationRepository, TeamRepository teamRepository,
-                           LeagueRuleResolver ruleResolver, MatchPlanService matchPlan) {
+                           LeagueRuleResolver ruleResolver, MatchPlanService matchPlan,
+                           FixtureScoreService fixtureScores) {
         this.repository = repository;
         this.mapper = mapper;
         this.roundRepository = roundRepository;
@@ -41,18 +44,31 @@ public class MatchDayService {
         this.teamRepository = teamRepository;
         this.ruleResolver = ruleResolver;
         this.matchPlan = matchPlan;
+        this.fixtureScores = fixtureScores;
     }
 
     @Transactional(readOnly = true)
     public List<MatchDayDto> getAll() {
-        return mapper.toDtoList(repository.findAllVisible());
+        List<MatchDay> matchDays = repository.findAllVisible();
+        Map<String, FixtureScoreService.FixtureScore> scores = fixtureScores.scores(matchDays);
+        return matchDays.stream().map(matchDay -> withScore(mapper.toDto(matchDay), scores.get(matchDay.getId()))).toList();
+    }
+
+    private static MatchDayDto withScore(MatchDayDto dto, FixtureScoreService.FixtureScore score) {
+        if (score != null) {
+            dto.setScoreHome(score.home());
+            dto.setScoreAway(score.away());
+            dto.setGamesEntered(score.gamesEntered());
+            dto.setGamesTotal(score.gamesTotal());
+        }
+        return dto;
     }
 
     @Transactional(readOnly = true)
     public MatchDayDto get(String id) {
         MatchDay matchDay = repository.findVisibleById(id).orElseThrow(
             () -> new MatchDayNotFoundException(id));
-        return mapper.toDto(matchDay);
+        return withScore(mapper.toDto(matchDay), fixtureScores.scores(List.of(matchDay)).get(matchDay.getId()));
     }
 
     @Transactional

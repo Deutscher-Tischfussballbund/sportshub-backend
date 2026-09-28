@@ -6,12 +6,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 public interface MatchRepository extends JpaRepository<Match, String> {
     Optional<Match> findByMatchDayAndEndTime(MatchDay matchDay, Instant endTime);
     List<Match> findByMatchDay(MatchDay matchDay);
+
+    /** The games of many fixtures in one query (fixture scores in lists). */
+    List<Match> findByMatchDayIn(Collection<MatchDay> matchDays);
 
     /** Whether any game in the group already has a score (game plan lock, SPO-71). */
     @Query("select count(m) > 0 from Match m where m.matchDay.round.group.id = :groupId "
