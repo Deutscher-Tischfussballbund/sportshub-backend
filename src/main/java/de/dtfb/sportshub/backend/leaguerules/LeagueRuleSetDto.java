@@ -21,6 +21,8 @@ public class LeagueRuleSetDto {
     private String sourceBlueprintId;
     /** Read-only, snapshots: the owner's season has ended, so the rules can no longer change. */
     private Boolean frozen;
+    /** Read-only, snapshots: a result has been entered where these rules apply, so the game plan is fixed (SPO-71). */
+    private Boolean gamePlanLocked;
 
     private PlaySystem playSystem;
 

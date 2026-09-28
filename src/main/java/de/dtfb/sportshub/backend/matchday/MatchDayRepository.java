@@ -13,6 +13,14 @@ public interface MatchDayRepository extends JpaRepository<MatchDay, String> {
 
     List<MatchDay> findByRoundGroupId(String groupId);
 
+    /** Whether any fixture of the group has left {@code state} -- i.e. has a result entered (game plan lock). */
+    boolean existsByRound_Group_IdAndResultStateNot(String groupId, ResultState state);
+
+    /** Fixtures in a group, in {@code state}, without any games yet (game backfill, SPO-71). */
+    @Query("select d from MatchDay d where d.round.group is not null and d.resultState = :state "
+        + "and not exists (select m from Match m where m.matchDay = d)")
+    List<MatchDay> findWithoutGames(@Param("state") ResultState state);
+
     long countByLocationId(String locationId);
 
     @Query("select e from MatchDay e where e.round.group.tier.league.season.archivedAt is null")

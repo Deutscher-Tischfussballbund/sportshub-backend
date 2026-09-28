@@ -1,7 +1,8 @@
 # Matchday/fixture scheduling — generator + two scheduling conventions
 
 > **Kind: model + decision (backend + frontend implemented 2026-07-26; fixed slots, gap between
-> rounds, schedule view and WINDOW-only negotiation added 2026-09-27, SPO-56/SPO-75).** Closes the
+> rounds, schedule view and WINDOW-only negotiation added 2026-09-27, SPO-56/SPO-75; the games of
+> a fixture from the game plan added 2026-09-28, SPO-71, §5).** Closes the
 > biggest gap between what's built and a real admin's workflow: until now, a season's fixtures
 > could only be created one `MatchDay` at a time via direct API/seed — no pairing generator, no
 > way to turn a draw into real calendar dates. See the `matchday-round-creation-gap` memory
@@ -78,11 +79,9 @@ removes the group's rounds, fixtures and their (still empty) games, so the plan 
 again, e.g. after a wrong slot. Refused with 409 once any fixture has a result entered
 (`resultState` ≠ `OPEN`) — from then on the plan is history and standings may count it.
 
-**Deliberately out of scope:** auto-creating `Match` rows from `LeagueRuleSet.gamePlan` — the
-game plan exists but nothing reads it anywhere yet; that per-game breakdown is a separate,
-not-yet-built concern (SPO-71). Precision to B-2026-09-21-9 ("the schedule within a matchup is
-already built"): that holds for *configuring* the game order in the rule-set dialog only — no
-games are created from it yet, so a generated fixture has nothing to hang single results on.
+**The games of each fixture** come from the rule set's game plan — see §5 (SPO-71, 2026-09-28).
+Until then B-2026-09-21-9 ("the schedule within a matchup is already built") held for *configuring*
+the game order in the rule-set dialog only.
 
 ## 3. Turning a generated fixture into a real date
 
@@ -167,3 +166,40 @@ venue before anyone has agreed on one.
 14 days later); WINDOW note on a window group; venue add → edit → use in a slot → blocked delete.
 Not yet exercised live: the team propose/accept path — the seed's team login only sees its newest
 team row, which has no fixtures (SPO-107).
+
+## 5. The games of a fixture (SPO-71, 2026-09-28)
+
+A fixture (`MatchDay`) consists of individual games (`Match`: single, double, goalie). Their order
+and types come from the game plan of the group's **effective** rule set — the tier's override, else
+the league's (docs/21) — e.g. `[1:DOUBLE, 2:DOUBLE, 3:SINGLE]` (docs/09 §3.1). `MatchPlanService`
+creates one `Match` per plan entry (`position` and `type` from the entry, state `PLANNED`,
+`startTime` = the fixture's kick-off):
+
+- when the generator creates a fixture (§2), and when an admin creates one via `POST /v1/matchdays`;
+- once on startup for fixtures from before SPO-71 that have no games and no result yet
+  (`MatchPlanBackfill`, after the rule-set snapshot backfill). A group without a game plan gets
+  fixtures without games, as before.
+
+Deleting a fixture or a whole plan deletes its games.
+
+**The game plan is fixed from the first entered result on** (decided by Marvin 2026-09-28). A
+change that alters the effective game plan of a group — editing the league's/tier's rules, applying
+a blueprint to it, a league switching blueprint, a tier override added or removed — then works like
+this:
+
+- **no result entered yet** in that group: every fixture of the group gets its games rebuilt from
+  the new plan. Dates, venues, fixed slots and scheduling state stay as they are, so a mistake in the
+  plan never forces deleting and regenerating a schedule;
+- **a result entered** — any fixture with `resultState` ≠ `OPEN` (already on submit, not only on
+  confirmation), or any game with a score: the change is refused with **`409 GAME_PLAN_LOCKED`**
+  and rolled back as a whole.
+
+All other rule fields (points, sets, roster sizes, scheduling) stay editable until the season ends
+(`RULE_SET_FROZEN`, docs/21). The rule-set DTO carries a read-only `gamePlanLocked` so the dialog
+can show the plan as fixed up front. Groups whose plan a change doesn't touch are left alone — e.g.
+a tier with its own override when the league's plan changes.
+
+**Not yet:** checking entered scores against `setsPerGame`, `pointsToWinSet` and
+`matchdayDecision` (e.g. "first to N"). What a valid Regionalliga result looks like depends on the
+format being clarified with the competition management (SPO-58); this belongs to result entry
+(SPO-15/57, docs/17).

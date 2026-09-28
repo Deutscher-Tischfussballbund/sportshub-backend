@@ -12,9 +12,10 @@ public interface LeagueRuleSetMapper {
     @Mapping(source = "federation.id", target = "federationId")
     @Mapping(source = "sourceBlueprint.id", target = "sourceBlueprintId")
     // gamePlan is held as separate GamePlanEntry rows; the service assembles it. frozen needs the
-    // owner's season, which the service resolves.
+    // owner's season, gamePlanLocked the owner's fixtures -- both resolved by the service.
     @Mapping(target = "gamePlan", ignore = true)
     @Mapping(target = "frozen", ignore = true)
+    @Mapping(target = "gamePlanLocked", ignore = true)
     LeagueRuleSetDto toDto(LeagueRuleSet ruleSet);
 
     @Mapping(target = "id", ignore = true)

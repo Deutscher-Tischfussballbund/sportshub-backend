@@ -6,11 +6,14 @@ import de.dtfb.sportshub.backend.league.LeagueRepository;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSetRepository;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetSnapshotService;
+import de.dtfb.sportshub.backend.group.Group;
 import de.dtfb.sportshub.backend.group.GroupRepository;
+import de.dtfb.sportshub.backend.match.MatchPlanService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -21,19 +24,22 @@ public class TierService {
     private final LeagueRuleSetRepository ruleSetRepository;
     private final GroupRepository groupRepository;
     private final RuleSetSnapshotService snapshots;
+    private final MatchPlanService matchPlan;
 
     public TierService(TierRepository repository,
                        TierMapper mapper,
                        LeagueRepository leagueRepository,
                        LeagueRuleSetRepository ruleSetRepository,
                        GroupRepository groupRepository,
-                       RuleSetSnapshotService snapshots) {
+                       RuleSetSnapshotService snapshots,
+                       MatchPlanService matchPlan) {
         this.repository = repository;
         this.mapper = mapper;
         this.leagueRepository = leagueRepository;
         this.ruleSetRepository = ruleSetRepository;
         this.groupRepository = groupRepository;
         this.snapshots = snapshots;
+        this.matchPlan = matchPlan;
     }
 
     @Transactional(readOnly = true)
@@ -63,7 +69,9 @@ public class TierService {
     /**
      * Updates the tier's meta and its rules override: a new/different blueprint creates or resets the
      * override; sending neither a blueprint nor the current override id removes it (the league's rules
-     * apply again). Any change to the override is refused once the season has ended.
+     * apply again). Any change to the override is refused once the season has ended, and
+     * ({@code 409 GAME_PLAN_LOCKED}) if it changes the game plan after a result has been entered in
+     * the tier (SPO-71).
      */
     @Transactional
     public TierDto update(String id, TierDto tierDto) {
@@ -74,6 +82,8 @@ public class TierService {
 
         LeagueRuleSet current = tier.getRuleSet();
         LeagueRuleSet blueprint = chosenBlueprint(tierDto);
+        List<Group> groups = matchPlan.groupsOfTier(tier.getId());
+        Map<String, List<String>> plansBefore = matchPlan.planSignatures(groups);
         LeagueRuleSet removed = null;
         if (blueprint != null) {
             if (current == null) {
@@ -89,6 +99,7 @@ public class TierService {
             removed = current;
         }
         TierDto saved = mapper.toDto(repository.save(tier));
+        matchPlan.afterRuleChange(groups, plansBefore);
         if (removed != null) {
             repository.flush();
             snapshots.delete(removed);

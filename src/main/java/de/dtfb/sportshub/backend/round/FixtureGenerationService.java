@@ -9,7 +9,7 @@ import de.dtfb.sportshub.backend.leaguerules.SchedulingMode;
 import de.dtfb.sportshub.backend.location.Location;
 import de.dtfb.sportshub.backend.location.LocationNotFoundException;
 import de.dtfb.sportshub.backend.location.LocationRepository;
-import de.dtfb.sportshub.backend.match.MatchRepository;
+import de.dtfb.sportshub.backend.match.MatchPlanService;
 import de.dtfb.sportshub.backend.matchday.MatchDay;
 import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
 import de.dtfb.sportshub.backend.matchday.ResultState;
@@ -34,9 +34,8 @@ import java.util.stream.IntStream;
 
 /**
  * Generates a group's round-robin fixtures: pairs its placed teams into {@link Round}s of
- * {@link MatchDay}s via the standard circle (polygon) method. Deliberately does not create
- * {@link de.dtfb.sportshub.backend.match.Match} rows — the per-game breakdown from a rule set's
- * game plan is a separate, not-yet-built concern. Optional fixed slots give every round a real
+ * {@link MatchDay}s via the standard circle (polygon) method; each fixture gets its individual
+ * games from the rule set's game plan ({@link MatchPlanService}, SPO-71). Optional fixed slots give every round a real
  * kick-off time and venue up front (tournament weekends). A plan can be deleted again while no
  * result has been entered. See docs/12-matchday-scheduling.md.
  */
@@ -54,7 +53,7 @@ public class FixtureGenerationService {
     private final RoundMapper roundMapper;
     private final LeagueRuleResolver ruleResolver;
     private final LocationRepository locationRepository;
-    private final MatchRepository matchRepository;
+    private final MatchPlanService matchPlan;
 
     public FixtureGenerationService(GroupRepository groupRepository,
                                      TeamParticipationRepository participationRepository,
@@ -63,7 +62,7 @@ public class FixtureGenerationService {
                                      RoundMapper roundMapper,
                                      LeagueRuleResolver ruleResolver,
                                      LocationRepository locationRepository,
-                                     MatchRepository matchRepository) {
+                                     MatchPlanService matchPlan) {
         this.groupRepository = groupRepository;
         this.participationRepository = participationRepository;
         this.roundRepository = roundRepository;
@@ -71,7 +70,7 @@ public class FixtureGenerationService {
         this.roundMapper = roundMapper;
         this.ruleResolver = ruleResolver;
         this.locationRepository = locationRepository;
-        this.matchRepository = matchRepository;
+        this.matchPlan = matchPlan;
     }
 
     @Transactional
@@ -154,7 +153,7 @@ public class FixtureGenerationService {
                 "Fixtures with entered results cannot be deleted");
         }
         for (MatchDay matchDay : matchDays) {
-            matchRepository.deleteAll(matchRepository.findByMatchDay(matchDay));
+            matchPlan.deleteGames(matchDay);
         }
         matchDayRepository.deleteAll(matchDays);
         roundRepository.deleteAll(roundRepository.findByGroupIdOrderByIndex(groupId));
@@ -238,7 +237,7 @@ public class FixtureGenerationService {
                 matchDay.setSchedulingState(SchedulingState.CONFIRMED);
                 matchDay.setScheduleConfirmedAt(Instant.now());
             }
-            matchDayRepository.save(matchDay);
+            matchPlan.createGames(matchDayRepository.save(matchDay));
         }
         return round;
     }
