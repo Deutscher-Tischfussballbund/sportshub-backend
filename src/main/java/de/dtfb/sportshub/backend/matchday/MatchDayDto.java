@@ -25,6 +25,8 @@ public class MatchDayDto {
     private ResultState resultState;
     private Instant homeConfirmedAt;
     private Instant awayConfirmedAt;
+    /** Read-only: the fixture against the bye (no away team; scored with the rule set's bye score). */
+    private boolean bye;
     private SchedulingState schedulingState;
     private String scheduleProposedByDtfbId;
     private Instant scheduleConfirmedAt;

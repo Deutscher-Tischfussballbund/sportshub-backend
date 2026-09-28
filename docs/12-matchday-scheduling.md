@@ -183,6 +183,11 @@ creates one `Match` per plan entry (`position` and `type` from the entry, state 
 
 Deleting a fixture or a whole plan deletes its games.
 
+**Byes in a Race league (2026-09-29, docs/22).** With an odd team count, the team sitting a round out
+gets a fixture against the bye (`MatchDay.bye`, no away team, no games), final at once and scored in
+the table with the rule set's bye score (42 : 30). Deleting a plan and the game-plan lock ignore these
+fixtures; outside `RACE` rule sets the bye stays a plain gap, as before.
+
 **The game plan is fixed from the first entered result on** (decided by Marvin 2026-09-28). A
 change that alters the effective game plan of a group — editing the league's/tier's rules, applying
 a blueprint to it, a league switching blueprint, a tier override added or removed — then works like

@@ -54,6 +54,15 @@ public class MatchDayController {
         service.delete(id);
     }
 
+    /**
+     * Entered, not yet final results the current user has to act on -- as a captain of a side (the
+     * countdown banner) or as a neutral admin (the league admin's overview), overdue first (docs/22).
+     */
+    @GetMapping("/pending-results")
+    public List<MatchDayResultDto> getPendingResults() {
+        return resultService.pending();
+    }
+
     /** The fixture's result for the result screen, incl. what the current user may do (docs/17). */
     @GetMapping("/{id}/result")
     public MatchDayResultDto getResult(@PathVariable String id) {

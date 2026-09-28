@@ -242,6 +242,13 @@ public class LeagueRuleSetService {
 
     private boolean changesRuleAffectingFields(LeagueRuleSet current, LeagueRuleSetDto dto) {
         return !Objects.equals(current.getPlaySystem(), dto.getPlaySystem())
+            || !Objects.equals(current.getFixtureMode(), dto.getFixtureMode())
+            || !Objects.equals(current.getRaceTarget(), dto.getRaceTarget())
+            || !Objects.equals(current.getRaceStep(), dto.getRaceStep())
+            || !Objects.equals(current.getRaceEndRule(), dto.getRaceEndRule())
+            || !Objects.equals(current.getRaceByeScoreWinner(), dto.getRaceByeScoreWinner())
+            || !Objects.equals(current.getRaceByeScoreLoser(), dto.getRaceByeScoreLoser())
+            || !Objects.equals(current.getConfirmationMinutes(), dto.getConfirmationMinutes())
             || !Objects.equals(current.getPointsWin(), dto.getPointsWin())
             || !Objects.equals(current.getPointsDraw(), dto.getPointsDraw())
             || !Objects.equals(current.getPointsLoss(), dto.getPointsLoss())

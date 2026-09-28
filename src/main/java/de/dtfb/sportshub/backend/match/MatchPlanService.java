@@ -61,6 +61,9 @@ public class MatchPlanService {
      */
     @Transactional
     public int createGames(MatchDay matchDay) {
+        if (matchDay.isBye()) {
+            return 0; // no games against the bye (docs/22)
+        }
         Group group = matchDay.getRound() == null ? null : matchDay.getRound().getGroup();
         List<GamePlanEntry> plan = gamePlanOf(group);
         for (GamePlanEntry entry : plan) {
@@ -167,7 +170,7 @@ public class MatchPlanService {
     }
 
     private boolean hasResult(Group group) {
-        return matchDayRepository.existsByRound_Group_IdAndResultStateNot(group.getId(), ResultState.OPEN)
+        return matchDayRepository.existsByRound_Group_IdAndResultStateNotAndByeFalse(group.getId(), ResultState.OPEN)
             || matchRepository.existsScoredInGroup(group.getId());
     }
 
