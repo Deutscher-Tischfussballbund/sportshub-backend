@@ -91,6 +91,10 @@ wholesale rather than designed afresh.
   it thereafter; an admin change is final at once.
 - **Admin authority:** a neutral admin may enter, edit, or confirm a result at any point,
   including confirming on behalf of a stalled cycle. This is unconditional, not a fallback.
+- **When captains confirm** (Marvin, 2026-09-28): any time within the match day, typically before
+  their team's next match — not necessarily right after the game. There is no technical deadline;
+  the result screen should put a captain's open confirmations up front (SPO-57), so they are done
+  between matches.
 - **Notification:** each transition notifies the side that now has to act (push/message channel
   not yet chosen).
 - **Scope:** applies to league fixtures and to `Race to 42` alike — there is no reason to diverge.
@@ -158,8 +162,10 @@ wholesale rather than designed afresh.
 
 - **Notification channel.** "Push notification" was the word used, but the system has no push
   infrastructure; email or in-app notification may be the first implementation.
-- **Stalled cycles.** Nothing currently forces a conclusion if the opponent never responds. Does a
-  result auto-confirm after a deadline, or does it simply wait for an admin? Undecided.
+- **Stalled cycles.** Confirming is expected within the match day (see Decision). Nothing forces a
+  conclusion after that: the result stays `SUBMITTED` (it counts in the live table, not the
+  official one) until a neutral admin confirms or corrects it. Proposal: no auto-confirm, and the
+  league admin gets a list of results still open after the day. Not built yet.
 - **Line-ups on paper.** Revisit once a real weekend has been played: if the paper sheet turns out
   to be the thing people actually want digital, this is where the decision reopens.
 - **Rule set dependency.** The scoring rules of the Regionalliga (`Race to 42` or otherwise) are
