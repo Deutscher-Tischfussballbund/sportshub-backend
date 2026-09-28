@@ -348,6 +348,8 @@ public class MatchDayResultService {
         dto.setHomeTeamName(home == null ? null : home.getName());
         dto.setAwayTeamId(away == null ? null : away.getId());
         dto.setAwayTeamName(away == null ? null : away.getName());
+        dto.setHomeTeamIdentityId(home == null ? null : home.getTeamIdentityId());
+        dto.setAwayTeamIdentityId(away == null ? null : away.getTeamIdentityId());
         dto.setHomeAgreedAt(matchDay.getHomeConfirmedAt());
         dto.setAwayAgreedAt(matchDay.getAwayConfirmedAt());
         dto.setGames(matchRepository.findByMatchDay(matchDay).stream()
