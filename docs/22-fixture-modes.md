@@ -1,7 +1,7 @@
 # Fixture modes — Race to 42 as a rule profile, with a confirmation deadline
 
-> **Decision (proposed) 2026-09-29 by Marvin, to confirm with the competition management (Daniel,
-> SPO-58). Not yet built.** A rule set gets a **`fixtureMode`** that picks how a fixture is played and
+> **Decision 2026-09-29 by Marvin, to confirm with the competition management (Daniel, SPO-58).
+> Backend built 2026-09-29 (§Implementation); frontend pending.** A rule set gets a **`fixtureMode`** that picks how a fixture is played and
 > decided: **`RACE`** (Race to N — one running score over the game plan's segments, used by the
 > Regionalliga and the Bundesliga; the M1 mode) or **`GAMES`** (separate games with sets — later, out
 > of scope for now). The mode is a *profile*: it decides which rule fields apply and are shown. For
@@ -121,6 +121,35 @@ beyond that (lot / penalty) is set by an admin. (SPO-21/22, SPO-74.)
   for a league run under a regional federation they need a `league_admin` grant on it.
 - **League admins** get an overview of pending and overdue results for their league(s). "Kick-off
   passed, nothing entered" needs the fixture's expected duration and comes later.
+
+## Implementation (backend, 2026-09-29)
+
+- **Rule set** (`V16`): `fixtureMode` (`FixtureMode` `RACE`/`GAMES`), `raceTarget`, `raceStep`,
+  `raceEndRule` (`RaceEndRule` `DRAW_ALLOWED`/`TWO_POINT_LEAD`), `raceByeScoreWinner`/`Loser`,
+  `confirmationMinutes`; part of the "rules changed" check, so they freeze with the season (doc 21).
+  `RaceBlueprintSeeder` creates `rs-race42` ("Race to 42 (DTFB)") and `rs-race42-ko` on startup if
+  missing (dev and prod alike) — archive, don't delete, to hide one.
+- **Segments** — `RaceScoring` (pure, unit-tested): the running score per segment, entered in order,
+  never going down, segment k exactly at k × step with the other side below, the last one under the
+  end rule. `MatchDayResultService` checks every save (400 with the reason) and uses
+  `RaceScoring.decided` as doc 17's "decided".
+- **Deadline** — `MatchDay.decidedAt` is set when a result first becomes decided (cleared if an edit
+  undoes it); deadline = `decidedAt` + `confirmationMinutes`. After it a team's confirm or edit is
+  `409`; the result view carries `decidedAt`, `confirmDeadline`, `overdue`, and `canEdit`/`canConfirm`
+  turn false for teams.
+- **`GET /v1/matchdays/pending-results`** — the `SUBMITTED` results the current user has to act on
+  (captain of a side, or neutral admin), overdue first, then by deadline; with league/group names
+  for the banner and the league admin's overview.
+- **Byes** — in a `RACE` group the generator gives the team sitting out a fixture against the bye
+  (`MatchDay.bye`, no away team, no games, `CONFIRMED` at once); it scores the bye score in the table.
+  Deleting a plan and the game-plan lock (doc 12 §5) ignore bye fixtures. `ScheduleFixtureDto.bye`.
+- **Table** — `StandingService` computes both tables from the fixtures: a race fixture's score is
+  its final running score; order points → goal difference → head-to-head (mini-table of the tied
+  teams) → goals for → name; `StandingDto` gains `place`, `goalsFor`, `goalsAgainst`,
+  `goalDifference`. The stored `Standing` rows stay as the official table cache for guards.
+- Tests: `RaceScoringTest` (7), `RaceResultIntegrationTest` (6).
+- **Not yet:** the frontend (mode dropdown, segment entry, countdown banner, admin overview, table);
+  "kick-off passed, nothing entered"; manual tie order (lot/penalty); the playoffs (SPO-99).
 
 ## Questions for the competition management (Daniel)
 

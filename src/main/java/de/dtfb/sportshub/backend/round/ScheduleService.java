@@ -85,6 +85,7 @@ public class ScheduleService {
         }
         dto.setSchedulingState(matchDay.getSchedulingState());
         dto.setResultState(matchDay.getResultState());
+        dto.setBye(matchDay.isBye());
         return dto;
     }
 }

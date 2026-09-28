@@ -21,4 +21,6 @@ public class ScheduleFixtureDto {
     private String locationName;
     private SchedulingState schedulingState;
     private ResultState resultState;
+    /** The fixture against the bye (no away team; scored with the rule set's bye score, docs/22). */
+    private boolean bye;
 }

@@ -13,8 +13,11 @@ public interface MatchDayRepository extends JpaRepository<MatchDay, String> {
 
     List<MatchDay> findByRoundGroupId(String groupId);
 
-    /** Whether any fixture of the group has left {@code state} -- i.e. has a result entered (game plan lock). */
-    boolean existsByRound_Group_IdAndResultStateNot(String groupId, ResultState state);
+    /**
+     * Whether any fixture of the group (other than a bye fixture, final from the start) has left
+     * {@code state} -- i.e. has a result entered (game plan lock).
+     */
+    boolean existsByRound_Group_IdAndResultStateNotAndByeFalse(String groupId, ResultState state);
 
     /** Fixtures in a group, in {@code state}, without any games yet (game backfill, SPO-71). */
     @Query("select d from MatchDay d where d.round.group is not null and d.resultState = :state "
@@ -22,6 +25,10 @@ public interface MatchDayRepository extends JpaRepository<MatchDay, String> {
     List<MatchDay> findWithoutGames(@Param("state") ResultState state);
 
     long countByLocationId(String locationId);
+
+    /** Entered, not yet final results in seasons that aren't archived (pending-results overview). */
+    @Query("select e from MatchDay e where e.resultState = :state and e.round.group.tier.league.season.archivedAt is null")
+    List<MatchDay> findVisibleByResultState(@Param("state") ResultState state);
 
     @Query("select e from MatchDay e where e.round.group.tier.league.season.archivedAt is null")
     List<MatchDay> findAllVisible();

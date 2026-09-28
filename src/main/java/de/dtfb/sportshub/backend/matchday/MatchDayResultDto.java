@@ -16,6 +16,13 @@ import java.util.List;
 public class MatchDayResultDto {
     private String matchDayId;
     private ResultState resultState;
+    private Instant startDate;
+    /** Where the fixture belongs -- for overviews across leagues. */
+    private String federationId;
+    private String leagueId;
+    private String leagueName;
+    private String groupId;
+    private String groupName;
 
     private String homeTeamId;
     private String homeTeamName;
@@ -36,6 +43,22 @@ public class MatchDayResultDto {
      * side reached "first to N"). Only a decided result can become final.
      */
     private boolean decided;
+    /** A fixture against the bye: no result to enter (docs/22). */
+    private boolean bye;
+
+    /** The rule profile the fixture is played under (docs/22); GAMES when none is set. */
+    private de.dtfb.sportshub.backend.leaguerules.FixtureMode fixtureMode;
+    /** RACE only: the target (42), the step per segment (6) and how the last segment ends. */
+    private Integer raceTarget;
+    private Integer raceStep;
+    private de.dtfb.sportshub.backend.leaguerules.RaceEndRule raceEndRule;
+
+    /** When the result became decided -- start of the time to confirm. */
+    private Instant decidedAt;
+    /** Until when the captains can confirm; null without a deadline. */
+    private Instant confirmDeadline;
+    /** The deadline has passed: only the tournament management can confirm or change it now. */
+    private boolean overdue;
 
     /** For the current user: may enter or edit the result now. */
     private boolean canEdit;

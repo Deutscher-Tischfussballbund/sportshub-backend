@@ -1,6 +1,7 @@
 package de.dtfb.sportshub.backend.matchday;
 
 import de.dtfb.sportshub.backend.access.auth.AuthorizationService;
+import de.dtfb.sportshub.backend.leaguerules.FixtureMode;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleResolver;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
 import de.dtfb.sportshub.backend.leaguerules.MatchdayDecision;
@@ -35,6 +36,12 @@ import java.util.Set;
  * has won {@code matchdayTarget} games (the rest may stay unplayed). Until then captains can agree to
  * the entered games, but nothing finalizes: a confirmation that would is refused (409), and a neutral
  * admin's entry stays pending like a team's.
+ *
+ * <p>In a {@code RACE} rule set (docs/22) the games are the segments of one running score: every save
+ * is checked with {@link RaceScoring} (400 on a violation), and "decided" means the last segment is
+ * complete under the end rule. Once decided, the captains have {@code confirmationMinutes} to confirm;
+ * after that the teams can neither confirm nor edit (409) and only a neutral admin -- the tournament
+ * management -- can. Fixtures against the bye take no result at all.
  */
 @Service
 public class MatchDayResultService {
@@ -62,16 +69,37 @@ public class MatchDayResultService {
         return toDto(matchDay, authz.resultActor(matchDay));
     }
 
+    /**
+     * Entered, not yet final results the current user has to act on (docs/22): as a captain of either
+     * side (the countdown banner) or as a neutral admin (the league admin's overview), soonest
+     * deadline first, overdue ones on top.
+     */
+    @Transactional(readOnly = true)
+    public List<MatchDayResultDto> pending() {
+        return repository.findVisibleByResultState(ResultState.SUBMITTED).stream()
+            .map(matchDay -> {
+                ResultActor actor = authz.resultActor(matchDay);
+                return actor.neutralAdmin() || actor.homeCaptain() || actor.awayCaptain() ? toDto(matchDay, actor) : null;
+            })
+            .filter(java.util.Objects::nonNull)
+            .sorted(Comparator.comparing(MatchDayResultDto::isOverdue).reversed()
+                .thenComparing(MatchDayResultDto::getConfirmDeadline, Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(MatchDayResultDto::getStartDate, Comparator.nullsLast(Comparator.naturalOrder())))
+            .toList();
+    }
+
     /** Enters or edits the result (docs/17 "Who may enter or edit"). */
     @Transactional
     public MatchDayResultDto enter(String matchDayId, MatchDayResultRequest request, String dtfbId) {
         MatchDay matchDay = repository.findById(matchDayId)
             .orElseThrow(() -> new MatchDayNotFoundException(matchDayId));
         ResultActor actor = authz.resultActor(matchDay);
+        requireNotBye(matchDay);
 
         if (actor.neutralAdmin()) {
             applyScores(matchDay, request);
             matchDay.setSubmittedByDtfbId(dtfbId);
+            trackDecided(matchDay);
             if (isDecided(matchDay)) {
                 Instant now = Instant.now();
                 matchDay.setHomeConfirmedAt(now);
@@ -94,7 +122,9 @@ public class MatchDayResultService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                 "The result is final; only a league or federation admin can change it");
         }
+        requireNotOverdue(matchDay);
         applyScores(matchDay, request);
+        trackDecided(matchDay);
         Instant ownAgreement = actor.captainSide() == side ? Instant.now() : null;
         matchDay.setHomeConfirmedAt(side == ResultActor.Side.HOME ? ownAgreement : null);
         matchDay.setAwayConfirmedAt(side == ResultActor.Side.AWAY ? ownAgreement : null);
@@ -109,6 +139,7 @@ public class MatchDayResultService {
         MatchDay matchDay = repository.findById(matchDayId)
             .orElseThrow(() -> new MatchDayNotFoundException(matchDayId));
         ResultActor actor = authz.resultActor(matchDay);
+        requireNotBye(matchDay);
         if (matchDay.getResultState() != ResultState.SUBMITTED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "There is no entered result to confirm");
         }
@@ -130,6 +161,7 @@ public class MatchDayResultService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                 "Only a captain of one of the two teams can confirm the result");
         }
+        requireNotOverdue(matchDay);
         if (agreedAt(matchDay, side) != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                 "Your team has already agreed; waiting for the other team's captain");
@@ -163,7 +195,10 @@ public class MatchDayResultService {
         if (games.isEmpty()) {
             return false;
         }
-        LeagueRuleSet rules = matchDay.getRound() == null ? null : ruleResolver.effectiveFor(matchDay.getRound().getGroup());
+        LeagueRuleSet rules = rulesOf(matchDay);
+        if (isRace(rules)) {
+            return RaceScoring.decided(segments(games), RaceScoring.Rules.of(rules, games.size()));
+        }
         MatchdayDecision decision = rules == null ? null : rules.getMatchdayDecision();
         Integer target = rules == null ? null : rules.getMatchdayTarget();
         if (decision == MatchdayDecision.FIRST_TO && target != null && target > 0) {
@@ -182,6 +217,59 @@ public class MatchDayResultService {
         return games.stream().allMatch(game -> game.getHomeScore() != null && game.getAwayScore() != null);
     }
 
+    private LeagueRuleSet rulesOf(MatchDay matchDay) {
+        return matchDay.getRound() == null ? null : ruleResolver.effectiveFor(matchDay.getRound().getGroup());
+    }
+
+    private static boolean isRace(LeagueRuleSet rules) {
+        return rules != null && rules.getFixtureMode() == FixtureMode.RACE;
+    }
+
+    /** The fixture's games as race segments, in game-plan order. */
+    private static List<RaceScoring.Segment> segments(List<Match> games) {
+        return games.stream()
+            .sorted(Comparator.comparing(Match::getPosition, Comparator.nullsLast(Comparator.naturalOrder())))
+            .map(game -> new RaceScoring.Segment(game.getHomeScore(), game.getAwayScore()))
+            .toList();
+    }
+
+    private static void requireNotBye(MatchDay matchDay) {
+        if (matchDay.isBye()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A fixture against the bye has no result to enter");
+        }
+    }
+
+    /** Remembers when the result first became decided (start of the deadline); cleared if an edit undoes it. */
+    private void trackDecided(MatchDay matchDay) {
+        if (!isDecided(matchDay)) {
+            matchDay.setDecidedAt(null);
+        } else if (matchDay.getDecidedAt() == null) {
+            matchDay.setDecidedAt(Instant.now());
+        }
+    }
+
+    /** The end of the time to confirm, or null without a deadline (not decided, or none configured). */
+    private Instant confirmDeadline(MatchDay matchDay) {
+        LeagueRuleSet rules = rulesOf(matchDay);
+        Integer minutes = rules == null ? null : rules.getConfirmationMinutes();
+        if (minutes == null || minutes <= 0 || matchDay.getDecidedAt() == null) {
+            return null;
+        }
+        return matchDay.getDecidedAt().plus(minutes, java.time.temporal.ChronoUnit.MINUTES);
+    }
+
+    private boolean isOverdue(MatchDay matchDay) {
+        Instant deadline = confirmDeadline(matchDay);
+        return matchDay.getResultState() == ResultState.SUBMITTED && deadline != null && Instant.now().isAfter(deadline);
+    }
+
+    private void requireNotOverdue(MatchDay matchDay) {
+        if (isOverdue(matchDay)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "The time to confirm has run out; only the tournament management can confirm or change the result now");
+        }
+    }
+
     private MatchDayResultDto finalize(MatchDay matchDay, ResultActor actor) {
         matchDay.setResultState(ResultState.CONFIRMED);
         MatchDay saved = repository.save(matchDay);
@@ -190,9 +278,9 @@ public class MatchDayResultService {
     }
 
     /**
-     * Writes the scores of the listed games. Checks only structure: the games belong to this fixture,
-     * each at most once, scores present and not negative. Whether the scores are a valid result under
-     * the rule set (sets, points per set, "first to N") waits for the Regionalliga format (SPO-58).
+     * Writes the scores of the listed games. Checks structure (the games belong to this fixture, each at
+     * most once, scores present and not negative) and, in a RACE rule set, the whole race so far
+     * ({@link RaceScoring#violation}). Sets per game (GAMES mode) are a later topic (docs/22).
      */
     private void applyScores(MatchDay matchDay, MatchDayResultRequest request) {
         List<MatchDayResultRequest.MatchResultEntry> entries =
@@ -222,6 +310,14 @@ public class MatchDayResultService {
             match.setState(MatchState.PLAYED);
             matchRepository.save(match);
         }
+        LeagueRuleSet rules = rulesOf(matchDay);
+        if (isRace(rules)) {
+            List<Match> games = matchRepository.findByMatchDay(matchDay);
+            String violation = RaceScoring.violation(segments(games), RaceScoring.Rules.of(rules, games.size()));
+            if (violation != null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, violation);
+            }
+        }
     }
 
     private static Instant agreedAt(MatchDay matchDay, ResultActor.Side side) {
@@ -232,6 +328,20 @@ public class MatchDayResultService {
         MatchDayResultDto dto = new MatchDayResultDto();
         dto.setMatchDayId(matchDay.getId());
         dto.setResultState(matchDay.getResultState());
+        dto.setStartDate(matchDay.getStartDate());
+        if (matchDay.getRound() != null && matchDay.getRound().getGroup() != null) {
+            var group = matchDay.getRound().getGroup();
+            dto.setGroupId(group.getId());
+            dto.setGroupName(group.getName());
+            if (group.getTier() != null && group.getTier().getLeague() != null) {
+                dto.setLeagueId(group.getTier().getLeague().getId());
+                dto.setLeagueName(group.getTier().getLeague().getName());
+                if (group.getTier().getLeague().getSeason() != null
+                        && group.getTier().getLeague().getSeason().getFederation() != null) {
+                    dto.setFederationId(group.getTier().getLeague().getSeason().getFederation().getId());
+                }
+            }
+        }
         Team home = matchDay.getTeamHome();
         Team away = matchDay.getTeamAway();
         dto.setHomeTeamId(home == null ? null : home.getId());
@@ -250,18 +360,32 @@ public class MatchDayResultService {
         dto.setGamesEntered((int) games.stream().filter(g -> g.getHomeScore() != null && g.getAwayScore() != null).count());
         boolean decided = isDecided(matchDay);
         dto.setDecided(decided);
+        LeagueRuleSet rules = rulesOf(matchDay);
+        dto.setBye(matchDay.isBye());
+        dto.setFixtureMode(rules == null || rules.getFixtureMode() == null ? FixtureMode.GAMES : rules.getFixtureMode());
+        if (isRace(rules)) {
+            RaceScoring.Rules race = RaceScoring.Rules.of(rules, games.size());
+            dto.setRaceTarget(race.target());
+            dto.setRaceStep(race.step());
+            dto.setRaceEndRule(race.endRule());
+        }
+        dto.setDecidedAt(matchDay.getDecidedAt());
+        dto.setConfirmDeadline(confirmDeadline(matchDay));
+        boolean overdue = isOverdue(matchDay);
+        dto.setOverdue(overdue);
 
         ResultState state = matchDay.getResultState();
         ResultActor.Side memberSide = actor.memberSide();
         ResultActor.Side captainSide = actor.captainSide();
         dto.setNeutralAdmin(actor.neutralAdmin());
         dto.setSide(memberSide);
-        dto.setCanEdit(actor.neutralAdmin() || (memberSide != null && state != ResultState.CONFIRMED));
+        dto.setCanEdit(!matchDay.isBye()
+            && (actor.neutralAdmin() || (memberSide != null && state != ResultState.CONFIRMED && !overdue)));
         boolean otherSideAgreed = captainSide != null && agreedAt(matchDay,
             captainSide == ResultActor.Side.HOME ? ResultActor.Side.AWAY : ResultActor.Side.HOME) != null;
         dto.setCanConfirm(state == ResultState.SUBMITTED && (actor.neutralAdmin()
             ? decided
-            : captainSide != null && agreedAt(matchDay, captainSide) == null && (decided || !otherSideAgreed)));
+            : !overdue && captainSide != null && agreedAt(matchDay, captainSide) == null && (decided || !otherSideAgreed)));
         return dto;
     }
 

@@ -5,6 +5,7 @@ import de.dtfb.sportshub.backend.location.Location;
 import de.dtfb.sportshub.backend.round.Round;
 import de.dtfb.sportshub.backend.team.Team;
 import jakarta.persistence.*;
+import org.hibernate.annotations.ColumnDefault;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -46,6 +47,17 @@ public class MatchDay extends BaseEntity {
     private Instant homeConfirmedAt;
 
     private Instant awayConfirmedAt;
+
+    /**
+     * The fixture against the bye (docs/22): {@code teamHome} sits the round out, {@code teamAway} is
+     * null, and the rule set's bye score counts as its win. Created final by the generator; no games.
+     */
+    @Column(nullable = false)
+    @ColumnDefault("false") // rows inserted without it (dev seed, V16 on existing data) are regular fixtures
+    private boolean bye;
+
+    /** When the result first became decided -- start of the confirmation deadline (docs/22). */
+    private Instant decidedAt;
 
     // Scheduling lifecycle for startDate/location above — separate from the result lifecycle.
     // See docs/12-matchday-scheduling.md.

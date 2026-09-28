@@ -296,6 +296,8 @@ Table match_day {
   submitted_by_dtfb_id varchar
   home_confirmed_at datetime
   away_confirmed_at datetime
+  bye boolean [not null, default: false, note: 'Fixture against the bye: team_away_id NULL, scored with the bye score (docs/22)']
+  decided_at datetime [note: 'When the result became decided -- start of the confirmation deadline']
   // Scheduling lifecycle for start_date/location -- independent of result_state above; see
   // docs/12-matchday-scheduling.md.
   scheduling_state SchedulingState [not null, default: 'DEFAULT']
@@ -398,6 +400,13 @@ Table league_rule_set {
   max_roster_size int [note: 'Enforced by RosterService on addPlayer; null = unconstrained']
   scheduling_mode SchedulingMode [note: 'Read by FixtureGenerationService; null = no convention configured yet (generation requires picking one)']
   scheduling_window_days int [note: 'Only meaningful when scheduling_mode = WINDOW']
+  fixture_mode varchar [note: 'Rule profile RACE | GAMES (docs/22); NULL behaves as GAMES']
+  race_target int [note: 'RACE: e.g. 42']
+  race_step int [note: 'RACE: points per segment, e.g. 6']
+  race_end_rule varchar [note: 'RACE: DRAW_ALLOWED (41:41) | TWO_POINT_LEAD']
+  race_bye_score_winner int [note: 'RACE: bye fixture score, e.g. 42']
+  race_bye_score_loser int [note: 'RACE: e.g. 30']
+  confirmation_minutes int [note: 'Time to confirm once decided; NULL = no deadline']
 }
 
 Table game_plan_entry {

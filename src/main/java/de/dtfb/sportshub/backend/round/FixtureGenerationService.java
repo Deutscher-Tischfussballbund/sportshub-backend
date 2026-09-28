@@ -9,7 +9,9 @@ import de.dtfb.sportshub.backend.leaguerules.SchedulingMode;
 import de.dtfb.sportshub.backend.location.Location;
 import de.dtfb.sportshub.backend.location.LocationNotFoundException;
 import de.dtfb.sportshub.backend.location.LocationRepository;
+import de.dtfb.sportshub.backend.leaguerules.FixtureMode;
 import de.dtfb.sportshub.backend.match.MatchPlanService;
+import de.dtfb.sportshub.backend.standing.StandingService;
 import de.dtfb.sportshub.backend.matchday.MatchDay;
 import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
 import de.dtfb.sportshub.backend.matchday.ResultState;
@@ -37,7 +39,9 @@ import java.util.stream.IntStream;
  * {@link MatchDay}s via the standard circle (polygon) method; each fixture gets its individual
  * games from the rule set's game plan ({@link MatchPlanService}, SPO-71). Optional fixed slots give every round a real
  * kick-off time and venue up front (tournament weekends). A plan can be deleted again while no
- * result has been entered. See docs/12-matchday-scheduling.md.
+ * result has been entered. In a RACE rule set (docs/22) a team that sits a round out gets a fixture
+ * against the bye, final at once and scored with the rule set's bye score (e.g. 42 : 30). See
+ * docs/12-matchday-scheduling.md.
  */
 @Service
 public class FixtureGenerationService {
@@ -54,6 +58,7 @@ public class FixtureGenerationService {
     private final LeagueRuleResolver ruleResolver;
     private final LocationRepository locationRepository;
     private final MatchPlanService matchPlan;
+    private final StandingService standings;
 
     public FixtureGenerationService(GroupRepository groupRepository,
                                      TeamParticipationRepository participationRepository,
@@ -62,7 +67,8 @@ public class FixtureGenerationService {
                                      RoundMapper roundMapper,
                                      LeagueRuleResolver ruleResolver,
                                      LocationRepository locationRepository,
-                                     MatchPlanService matchPlan) {
+                                     MatchPlanService matchPlan,
+                                     StandingService standings) {
         this.groupRepository = groupRepository;
         this.participationRepository = participationRepository;
         this.roundRepository = roundRepository;
@@ -71,6 +77,7 @@ public class FixtureGenerationService {
         this.ruleResolver = ruleResolver;
         this.locationRepository = locationRepository;
         this.matchPlan = matchPlan;
+        this.standings = standings;
     }
 
     @Transactional
@@ -131,8 +138,10 @@ public class FixtureGenerationService {
             Instant defaultDate = startDate.plus((long) i * roundSpacingDays, ChronoUnit.DAYS);
             FixtureSlot slot = slots.isEmpty() ? null : slots.get(i);
             rounds.add(createRound(group, index, mode, defaultDate, roundSpacingDays, legs.get(i), secondLeg,
-                slot, slot == null ? null : locationById.apply(slot.getLocationId())));
+                slot, slot == null ? null : locationById.apply(slot.getLocationId()),
+                ruleSet.getFixtureMode() == FixtureMode.RACE));
         }
+        standings.recompute(group); // bye wins count from the start
 
         return roundMapper.toDtoList(rounds);
     }
@@ -148,7 +157,8 @@ public class FixtureGenerationService {
             throw new GroupNotFoundException(groupId);
         }
         List<MatchDay> matchDays = matchDayRepository.findByRoundGroupId(groupId);
-        if (matchDays.stream().anyMatch(matchDay -> matchDay.getResultState() != ResultState.OPEN)) {
+        // A bye fixture is final from the start, but it's part of the plan, not an entered result.
+        if (matchDays.stream().anyMatch(matchDay -> !matchDay.isBye() && matchDay.getResultState() != ResultState.OPEN)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                 "Fixtures with entered results cannot be deleted");
         }
@@ -157,6 +167,7 @@ public class FixtureGenerationService {
         }
         matchDayRepository.deleteAll(matchDays);
         roundRepository.deleteAll(roundRepository.findByGroupIdOrderByIndex(groupId));
+        groupRepository.findById(groupId).ifPresent(standings::recompute);
     }
 
     private void validateSlots(List<FixtureSlot> slots, SchedulingMode mode, int roundCount) {
@@ -201,7 +212,7 @@ public class FixtureGenerationService {
 
     private Round createRound(Group group, int index, SchedulingMode mode, Instant windowStart,
                                int roundSpacingDays, List<Team> pairingSlots, boolean swapHomeAway,
-                               FixtureSlot slot, Location slotLocation) {
+                               FixtureSlot slot, Location slotLocation, boolean byeFixtures) {
         Round round = new Round();
         round.setGroup(group);
         round.setIndex(index);
@@ -217,6 +228,9 @@ public class FixtureGenerationService {
             Team teamA = pairingSlots.get(i);
             Team teamB = pairingSlots.get(i + 1);
             if (teamA == null || teamB == null) {
+                if (byeFixtures && (teamA != null || teamB != null)) {
+                    createByeFixture(round, teamA != null ? teamA : teamB, windowStart, slot, slotLocation);
+                }
                 continue; // bye
             }
             Team home = swapHomeAway ? teamB : teamA;
@@ -240,6 +254,24 @@ public class FixtureGenerationService {
             matchPlan.createGames(matchDayRepository.save(matchDay));
         }
         return round;
+    }
+
+    /** The team sitting this round out, against the bye: final at once, no games (docs/22). */
+    private void createByeFixture(Round round, Team team, Instant windowStart, FixtureSlot slot, Location slotLocation) {
+        Instant now = Instant.now();
+        MatchDay bye = new MatchDay();
+        bye.setRound(round);
+        bye.setTeamHome(team);
+        bye.setTeamAway(null);
+        bye.setBye(true);
+        bye.setStartDate(slot == null ? windowStart : slot.getStartDate());
+        bye.setLocation(slot == null ? null : slotLocation);
+        bye.setSchedulingState(slot == null ? SchedulingState.DEFAULT : SchedulingState.CONFIRMED);
+        bye.setResultState(ResultState.CONFIRMED);
+        bye.setHomeConfirmedAt(now);
+        bye.setAwayConfirmedAt(now);
+        bye.setDecidedAt(now);
+        matchDayRepository.save(bye);
     }
 
     /**
