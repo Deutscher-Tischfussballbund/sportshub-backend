@@ -137,7 +137,15 @@ wholesale rather than designed afresh.
 - **Standings** are recomputed for the whole group from its `CONFIRMED` fixtures on every
   finalization (`StandingService.recompute`), so an admin correction replaces the old result
   instead of counting twice (SPO-73).
-- Tested end-to-end in `MatchDayResultAuthorizationIntegrationTest` (15 cases).
+- **Live table** — `GET /v1/groups/{id}/standings?provisional=true` also counts entered but not yet
+  confirmed fixtures (`SUBMITTED`) with the games scored so far, computed on request and never
+  stored; rows with such a fixture carry `provisional: true`. Since entry accepts some of a
+  fixture's games, a team can enter each game as soon as it is played and the live table moves
+  with it; the captains confirm at the end. Without the parameter the endpoint returns the official
+  table (final results only), as before. A goal-by-goal ticker is a separate, later topic (SPO-116).
+  Whether the public display shows provisional results is decided with SPO-110 (proposal: yes,
+  clearly marked).
+- Tested end-to-end in `MatchDayResultAuthorizationIntegrationTest` (17 cases).
 - **Not yet:** notifications (see Open questions), the frontend (SPO-57).
 
 ## What did NOT need to change
