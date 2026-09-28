@@ -28,6 +28,9 @@ public class MatchDayResultDto {
     private String homeTeamName;
     private String awayTeamId;
     private String awayTeamName;
+    /** The teams' identities -- the team area's address, e.g. for links from the countdown banner. */
+    private String homeTeamIdentityId;
+    private String awayTeamIdentityId;
 
     /** When the home side's captain agreed to the current version; null = not (yet). */
     private Instant homeAgreedAt;
