@@ -1,7 +1,7 @@
 # Fixture modes — Race to 42 as a rule profile, with a confirmation deadline
 
 > **Decision 2026-09-29 by Marvin, to confirm with the competition management (Daniel, SPO-58).
-> Backend built 2026-09-29 (§Implementation); frontend pending.** A rule set gets a **`fixtureMode`** that picks how a fixture is played and
+> Built 2026-09-29, backend and frontend (§Implementation).** A rule set gets a **`fixtureMode`** that picks how a fixture is played and
 > decided: **`RACE`** (Race to N — one running score over the game plan's segments, used by the
 > Regionalliga and the Bundesliga; the M1 mode) or **`GAMES`** (separate games with sets — later, out
 > of scope for now). The mode is a *profile*: it decides which rule fields apply and are shown. For
@@ -148,8 +148,14 @@ beyond that (lot / penalty) is set by an admin. (SPO-21/22, SPO-74.)
   teams) → goals for → name; `StandingDto` gains `place`, `goalsFor`, `goalsAgainst`,
   `goalDifference`. The stored `Standing` rows stay as the official table cache for guards.
 - Tests: `RaceScoringTest` (7), `RaceResultIntegrationTest` (6).
-- **Not yet:** the frontend (mode dropdown, segment entry, countdown banner, admin overview, table);
-  "kick-off passed, nothing entered"; manual tie order (lot/penalty); the playoffs (SPO-99).
+- **Frontend** (`dtfb-frontend-ng`): mode dropdown and race section in the rule-set dialog (new rule
+  sets start as Race to 42); race entry on the result page with the step rules checked as you type
+  (`race-check.ts` mirrors `RaceScoring`), countdown and overdue note; a countdown banner at the top
+  of the app for both captains, and per-region counts for neutral admins; the region page "Open
+  results" (tournament management); the group table (Live/Official) on the schedule page; byes read
+  "Bye".
+- **Not yet:** "kick-off passed, nothing entered"; manual tie order (lot/penalty); the playoffs
+  (SPO-99); the table in the team area and on the public page (SPO-110).
 
 ## Questions for the competition management (Daniel)
 
