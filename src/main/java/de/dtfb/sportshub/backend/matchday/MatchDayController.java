@@ -15,9 +15,11 @@ import java.util.List;
 public class MatchDayController {
 
     private final MatchDayService service;
+    private final MatchDayResultService resultService;
 
-    public MatchDayController(MatchDayService service) {
+    public MatchDayController(MatchDayService service, MatchDayResultService resultService) {
         this.service = service;
+        this.resultService = resultService;
     }
 
     @GetMapping
@@ -52,23 +54,27 @@ public class MatchDayController {
         service.delete(id);
     }
 
+    /** The fixture's result for the result screen, incl. what the current user may do (docs/17). */
+    @GetMapping("/{id}/result")
+    public MatchDayResultDto getResult(@PathVariable String id) {
+        return resultService.get(id);
+    }
+
+    /** Enters or edits the result: a team member of either side, or a neutral admin (docs/17). */
     @PostMapping("/{id}/result")
-    @PreAuthorize("@authz.canReportMatchDay(#id)")
-    public MatchDayDto submitResult(
+    @PreAuthorize("@authz.canEnterResult(#id)")
+    public MatchDayResultDto enterResult(
             @PathVariable String id,
             @RequestBody MatchDayResultRequest request,
             @AuthenticationPrincipal Jwt jwt) {
-        String dtfbId = jwt.getClaimAsString("dtfb_id");
-        return service.submitResult(id, request, dtfbId);
+        return resultService.enter(id, request, jwt.getClaimAsString("dtfb_id"));
     }
 
+    /** A captain agrees for their side, or a neutral admin finalizes the result (docs/17). */
     @PostMapping("/{id}/confirm")
-    @PreAuthorize("@authz.canReportMatchDay(#id)")
-    public MatchDayDto confirmResult(
-            @PathVariable String id,
-            @AuthenticationPrincipal Jwt jwt) {
-        String dtfbId = jwt.getClaimAsString("dtfb_id");
-        return service.confirmResult(id, dtfbId);
+    @PreAuthorize("@authz.canConfirmResult(#id)")
+    public MatchDayResultDto confirmResult(@PathVariable String id) {
+        return resultService.confirm(id);
     }
 
     @PostMapping("/{id}/schedule/propose")

@@ -40,9 +40,9 @@ Enum GroupState {
 }
 
 Enum ResultState {
-  OPEN           [note: 'No result submitted yet']
-  HOME_SUBMITTED [note: 'Home team submitted; awaiting opponent confirmation']
-  CONFIRMED      [note: 'Confirmed by the opponent -> standings recomputed']
+  OPEN      [note: 'No result entered yet']
+  SUBMITTED [note: 'Entered by a team member; waiting for both captains to agree (home/away_confirmed_at)']
+  CONFIRMED [note: 'Both captains agreed, or a neutral admin entered/confirmed -> standings recomputed']
 }
 
 Enum MatchState {

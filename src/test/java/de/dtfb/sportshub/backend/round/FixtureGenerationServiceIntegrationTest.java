@@ -280,7 +280,7 @@ class FixtureGenerationServiceIntegrationTest extends AuthorizedControllerTest {
         placeTeam(groupId, "B");
         generate(groupId, false);
         MatchDay matchDay = matchDayRepository.findByRoundGroupId(groupId).getFirst();
-        matchDay.setResultState(ResultState.HOME_SUBMITTED);
+        matchDay.setResultState(ResultState.SUBMITTED);
         matchDayRepository.save(matchDay);
 
         mockMvc.perform(delete("/v1/groups/" + groupId + "/fixtures"))
