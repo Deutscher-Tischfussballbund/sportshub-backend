@@ -1,0 +1,787 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3662" height="2263" viewBox="0 0 3662 2263" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif">
+<rect width="100%" height="100%" fill="#f7f7f8"/>
+<path d="M442.0,843.0 L332.0,843.0 L332.0,1262.0 L312.0,1262.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M442,837 L432,843 L442,849" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M320,1256 L320,1268" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M442.0,867.0 L432.0,867.0 L432.0,895.0 L702.0,895.0 L702.0,795.0 L692.0,795.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M442,861 L432,867 L442,873" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M700,789 L700,801" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1892.0,866.0 L1062.0,866.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M1892,860 L1882,866 L1892,872" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1070,860 L1070,872" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1892.0,914.0 L1806.0,914.0 L1806.0,1075.0 L1782.0,1075.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M1892,908 L1882,914 L1892,920" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1790,1069 L1790,1081" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1532.0,1711.0 L1422.0,1711.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M1532,1705 L1522,1711 L1532,1717" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1430,1705 L1430,1717" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1892.0,1573.0 L1792.0,1573.0 L1792.0,1687.0 L1782.0,1687.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M1892,1567 L1882,1573 L1892,1579" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1790,1681 L1790,1693" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1892.0,1597.0 L1806.0,1597.0 L1806.0,1075.0 L1782.0,1075.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M1892,1591 L1882,1597 L1892,1603" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1790,1069 L1790,1081" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1172.0,795.0 L692.0,795.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M1172,789 L1162,795 L1172,801" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M700,789 L700,801" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1532.0,2071.0 L1426.0,2071.0 L1426.0,1717.0 L1422.0,1717.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M1532,2065 L1522,2071 L1532,2077" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1430,1711 L1430,1723" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M812.0,914.0 L712.0,914.0 L712.0,795.0 L692.0,795.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M812,908 L802,914 L812,920" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M700,789 L700,801" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1172.0,1124.0 L1072.0,1124.0 L1072.0,866.0 L1062.0,866.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M1172,1118 L1162,1124 L1172,1130" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1070,860 L1070,872" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1172.0,1148.0 L1062.0,1148.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M1172,1142 L1162,1148 L1172,1154" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1070,1142 L1070,1154" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1172.0,1172.0 L1072.0,1172.0 L1072.0,1262.0 L312.0,1262.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M1172,1166 L1162,1172 L1172,1178" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M320,1256 L320,1268" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1532.0,1333.0 L1432.0,1333.0 L1432.0,1076.0 L1422.0,1076.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M1532,1327 L1522,1333 L1532,1339" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1430,1070 L1430,1082" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1532.0,1357.0 L1072.0,1357.0 L1072.0,1262.0 L312.0,1262.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M1532,1351 L1522,1357 L1532,1363" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M320,1256 L320,1268" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1892.0,1243.0 L1792.0,1243.0 L1792.0,1309.0 L1782.0,1309.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M1892,1237 L1882,1243 L1892,1249" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1790,1303 L1790,1315" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2252.0,1549.0 L2166.0,1549.0 L2166.0,1219.0 L2142.0,1219.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M2252,1543 L2242,1549 L2252,1555" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2150,1213 L2150,1225" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2612.0,488.0 L2526.0,488.0 L2526.0,1525.0 L2502.0,1525.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M2612,482 L2602,488 L2612,494" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2510,1519 L2510,1531" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2612.0,512.0 L2512.0,512.0 L2512.0,723.0 L1422.0,723.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M2612,506 L2602,512 L2612,518" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1430,717 L1430,729" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2612.0,536.0 L2540.0,536.0 L2540.0,842.0 L2142.0,842.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M2612,530 L2602,536 L2612,542" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2150,836 L2150,848" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2612.0,560.0 L2540.0,560.0 L2540.0,842.0 L2142.0,842.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M2612,554 L2602,560 L2612,566" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2150,836 L2150,848" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2972.0,608.0 L2872.0,608.0 L2872.0,464.0 L2862.0,464.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M2972,602 L2962,608 L2972,614" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2870,458 L2870,470" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M3332.0,584.0 L3222.0,584.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M3332,578 L3322,584 L3332,590" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M3230,578 L3230,590" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M3332.0,818.0 L3232.0,818.0 L3232.0,584.0 L3222.0,584.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M3332,812 L3322,818 L3332,824" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M3230,578 L3230,590" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M3332.0,842.0 L2142.0,842.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M3332,836 L3322,842 L3332,848" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2150,836 L2150,848" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2252.0,1225.0 L2142.0,1225.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M2252,1219 L2242,1225 L2252,1231" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2150,1219 L2150,1231" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2252.0,1249.0 L2174.0,1249.0 L2174.0,848.0 L2142.0,848.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M2252,1243 L2242,1249 L2252,1255" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2150,842 L2150,854" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2252.0,937.0 L2180.0,937.0 L2180.0,842.0 L2142.0,842.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M2252,931 L2242,937 L2252,943" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2150,836 L2150,848" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2252.0,961.0 L2152.0,961.0 L2152.0,1004.0 L1432.0,1004.0 L1432.0,1076.0 L1422.0,1076.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M2252,955 L2242,961 L2252,967" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1430,1070 L1430,1082" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2252.0,985.0 L2166.0,985.0 L2166.0,1219.0 L2142.0,1219.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M2252,979 L2242,985 L2252,991" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2150,1213 L2150,1225" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2612.0,1663.0 L2540.0,1663.0 L2540.0,913.0 L2502.0,913.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M2612,1657 L2602,1663 L2612,1669" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2510,907 L2510,919" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M2612.0,1687.0 L1782.0,1687.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M2612,1681 L2602,1687 L2612,1693" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1790,1681 L1790,1693" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M442.0,1357.0 L332.0,1357.0 L332.0,1262.0 L312.0,1262.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M442,1351 L432,1357 L442,1363" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M320,1256 L320,1268" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M62.0,1358.0 L52.0,1358.0 L52.0,1722.0 L322.0,1722.0 L322.0,1262.0 L312.0,1262.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M62,1352 L52,1358 L62,1364" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M320,1256 L320,1268" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1432.0,142.0 L1322.0,142.0" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M1432,136 L1422,142 L1432,148" fill="none" stroke="#6b7280" stroke-width="1.6"/>
+<path d="M1330,136 L1330,148" stroke="#6b7280" stroke-width="1.6"/>
+<text x="342.0" y="1259.0" font-size="11" font-weight="700" fill="#374151">0..1</text>
+<text x="706.0" y="792.0" font-size="11" font-weight="700" fill="#374151">0..1</text>
+<text x="1076.0" y="863.0" font-size="11" font-weight="700" fill="#374151">0..1</text>
+<text x="1812.0" y="1072.0" font-size="11" font-weight="700" fill="#374151">0..1</text>
+<text x="1436.0" y="1708.0" font-size="11" font-weight="700" fill="#374151">0..1</text>
+<text x="1796.0" y="1684.0" font-size="11" font-weight="700" fill="#374151">0..1</text>
+<text x="1436.0" y="1729.0" font-size="11" font-weight="700" fill="#374151">1</text>
+<text x="1076.0" y="1145.0" font-size="11" font-weight="700" fill="#374151">0..1</text>
+<text x="1436.0" y="1073.0" font-size="11" font-weight="700" fill="#374151">0..1</text>
+<text x="1812.0" y="1306.0" font-size="11" font-weight="700" fill="#374151">0..1</text>
+<text x="2182.0" y="1216.0" font-size="11" font-weight="700" fill="#374151">0..1</text>
+<text x="2554.0" y="1522.0" font-size="11" font-weight="700" fill="#374151">0..1</text>
+<text x="1436.0" y="720.0" font-size="11" font-weight="700" fill="#374151">0..1</text>
+<text x="2156.0" y="839.0" font-size="11" font-weight="700" fill="#374151">0..1</text>
+<text x="2876.0" y="461.0" font-size="11" font-weight="700" fill="#374151">0..1</text>
+<text x="3236.0" y="581.0" font-size="11" font-weight="700" fill="#374151">0..1</text>
+<text x="2156.0" y="1237.0" font-size="11" font-weight="700" fill="#374151">1</text>
+<text x="2156.0" y="860.0" font-size="11" font-weight="700" fill="#374151">1</text>
+<text x="2532.0" y="910.0" font-size="11" font-weight="700" fill="#374151">0..1</text>
+<text x="1336.0" y="139.0" font-size="11" font-weight="700" fill="#374151">1</text>
+<text x="420.0" y="845.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="420.0" y="869.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="1870.0" y="868.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="1870.0" y="916.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="1510.0" y="1713.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="1870.0" y="1575.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="1870.0" y="1599.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="1150.0" y="797.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="1510.0" y="2073.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="790.0" y="916.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="1150.0" y="1126.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="1150.0" y="1150.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="1150.0" y="1174.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="1510.0" y="1335.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="1510.0" y="1359.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="1870.0" y="1245.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="2230.0" y="1551.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="2590.0" y="490.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="2590.0" y="514.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="2590.0" y="538.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="2590.0" y="562.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="2950.0" y="610.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="3310.0" y="586.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="3310.0" y="820.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="3310.0" y="844.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="2230.0" y="1227.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="2230.0" y="1251.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="2230.0" y="939.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="2230.0" y="963.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="2230.0" y="987.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="2590.0" y="1665.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="2590.0" y="1689.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="420.0" y="1359.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="40.0" y="1360.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<text x="1410.0" y="144.0" font-size="15" font-weight="700" fill="#374151">*</text>
+<g><rect x="442" y="749" width="250" height="136" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M442,757 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#0f766e"/>
+<text x="454" y="771" font-size="14" font-weight="700" fill="#ffffff">federation</text>
+<text x="454" y="799" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="680" y="799" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="443" y="807" width="248" height="24" fill="#f3f4f6"/>
+<text x="454" y="823" font-size="12.5" font-weight="400" fill="#111827">name</text>
+<text x="680" y="823" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="454" y="847" font-size="12.5" font-weight="400" fill="#111827">default_rule_set_id ↗</text>
+<text x="680" y="847" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="443" y="855" width="248" height="24" fill="#f3f4f6"/>
+<text x="454" y="871" font-size="12.5" font-weight="400" fill="#111827">parent_federation_id ↗</text>
+<text x="680" y="871" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+</g>
+<g><rect x="1532" y="1029" width="250" height="184" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M1532,1037 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#b45309"/>
+<text x="1544" y="1051" font-size="14" font-weight="700" fill="#ffffff">club</text>
+<text x="1544" y="1079" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="1770" y="1079" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="1533" y="1087" width="248" height="24" fill="#f3f4f6"/>
+<text x="1544" y="1103" font-size="12.5" font-weight="400" fill="#111827">name</text>
+<text x="1770" y="1103" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<text x="1544" y="1127" font-size="12.5" font-weight="400" fill="#111827">short_name</text>
+<text x="1770" y="1127" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="1533" y="1135" width="248" height="24" fill="#f3f4f6"/>
+<text x="1544" y="1151" font-size="12.5" font-weight="400" fill="#111827">city</text>
+<text x="1770" y="1151" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="1544" y="1175" font-size="12.5" font-weight="400" fill="#111827">active</text>
+<text x="1770" y="1175" font-size="11.5" text-anchor="end" fill="#6b7280">boolean !</text>
+<rect x="1533" y="1183" width="248" height="24" fill="#f3f4f6"/>
+<text x="1544" y="1199" font-size="12.5" font-weight="400" fill="#111827">federation_id</text>
+<text x="1770" y="1199" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+</g>
+<g><rect x="1892" y="796" width="250" height="184" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M1892,804 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#b45309"/>
+<text x="1904" y="818" font-size="14" font-weight="700" fill="#ffffff">team</text>
+<text x="1904" y="846" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="2130" y="846" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="1893" y="854" width="248" height="24" fill="#f3f4f6"/>
+<text x="1904" y="870" font-size="12.5" font-weight="400" fill="#111827">season_id ↗</text>
+<text x="2130" y="870" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="1904" y="894" font-size="12.5" font-weight="400" fill="#111827">name</text>
+<text x="2130" y="894" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="1893" y="902" width="248" height="24" fill="#f3f4f6"/>
+<text x="1904" y="918" font-size="12.5" font-weight="400" fill="#111827">club_id ↗</text>
+<text x="2130" y="918" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="1904" y="942" font-size="12.5" font-weight="400" fill="#111827">team_identity_id</text>
+<text x="2130" y="942" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<rect x="1893" y="950" width="248" height="24" fill="#f3f4f6"/>
+<text x="1904" y="966" font-size="12.5" font-weight="400" fill="#111827">copied_from_team_id</text>
+<text x="2130" y="966" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+</g>
+<g><rect x="1172" y="1665" width="250" height="160" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M1172,1673 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#1d4ed8"/>
+<text x="1184" y="1687" font-size="14" font-weight="700" fill="#ffffff">app_user</text>
+<text x="1184" y="1715" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="1410" y="1715" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="1173" y="1723" width="248" height="24" fill="#f3f4f6"/>
+<text x="1184" y="1739" font-size="12.5" font-weight="400" fill="#111827">dtfb_id</text>
+<text x="1410" y="1739" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<text x="1184" y="1763" font-size="12.5" font-weight="400" fill="#111827">email</text>
+<text x="1410" y="1763" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="1173" y="1771" width="248" height="24" fill="#f3f4f6"/>
+<text x="1184" y="1787" font-size="12.5" font-weight="400" fill="#111827">first_name</text>
+<text x="1410" y="1787" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="1184" y="1811" font-size="12.5" font-weight="400" fill="#111827">last_name</text>
+<text x="1410" y="1811" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+</g>
+<g><rect x="1532" y="1641" width="250" height="304" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M1532,1649 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#1d4ed8"/>
+<text x="1544" y="1663" font-size="14" font-weight="700" fill="#ffffff">player</text>
+<text x="1544" y="1691" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="1770" y="1691" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="1533" y="1699" width="248" height="24" fill="#f3f4f6"/>
+<text x="1544" y="1715" font-size="12.5" font-weight="400" fill="#111827">user_id ↗</text>
+<text x="1770" y="1715" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="1544" y="1739" font-size="12.5" font-weight="400" fill="#111827">first_name</text>
+<text x="1770" y="1739" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<rect x="1533" y="1747" width="248" height="24" fill="#f3f4f6"/>
+<text x="1544" y="1763" font-size="12.5" font-weight="400" fill="#111827">last_name</text>
+<text x="1770" y="1763" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<text x="1544" y="1787" font-size="12.5" font-weight="400" fill="#111827">national_id</text>
+<text x="1770" y="1787" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="1533" y="1795" width="248" height="24" fill="#f3f4f6"/>
+<text x="1544" y="1811" font-size="12.5" font-weight="400" fill="#111827">international_id</text>
+<text x="1770" y="1811" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="1544" y="1835" font-size="12.5" font-weight="400" fill="#111827">nationality</text>
+<text x="1770" y="1835" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="1533" y="1843" width="248" height="24" fill="#f3f4f6"/>
+<text x="1544" y="1859" font-size="12.5" font-weight="400" fill="#111827">birth_year</text>
+<text x="1770" y="1859" font-size="11.5" text-anchor="end" fill="#6b7280">int !</text>
+<text x="1544" y="1883" font-size="12.5" font-weight="400" fill="#111827">gender</text>
+<text x="1770" y="1883" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<rect x="1533" y="1891" width="248" height="24" fill="#f3f4f6"/>
+<text x="1544" y="1907" font-size="12.5" font-weight="400" fill="#111827">national_license</text>
+<text x="1770" y="1907" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="1544" y="1931" font-size="12.5" font-weight="400" fill="#111827">active</text>
+<text x="1770" y="1931" font-size="11.5" text-anchor="end" fill="#6b7280">boolean !</text>
+</g>
+<g><rect x="1892" y="1503" width="250" height="160" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M1892,1511 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#1d4ed8"/>
+<text x="1904" y="1525" font-size="14" font-weight="700" fill="#ffffff">club_membership</text>
+<text x="1904" y="1553" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="2130" y="1553" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="1893" y="1561" width="248" height="24" fill="#f3f4f6"/>
+<text x="1904" y="1577" font-size="12.5" font-weight="400" fill="#111827">player_id ↗</text>
+<text x="2130" y="1577" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="1904" y="1601" font-size="12.5" font-weight="400" fill="#111827">club_id ↗</text>
+<text x="2130" y="1601" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="1893" y="1609" width="248" height="24" fill="#f3f4f6"/>
+<text x="1904" y="1625" font-size="12.5" font-weight="400" fill="#111827">joined_at</text>
+<text x="2130" y="1625" font-size="11.5" text-anchor="end" fill="#6b7280">datetime !</text>
+<text x="1904" y="1649" font-size="12.5" font-weight="400" fill="#111827">left_at</text>
+<text x="2130" y="1649" font-size="11.5" text-anchor="end" fill="#6b7280">datetime</text>
+</g>
+<g><rect x="392" y="72" width="250" height="232" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M392,80 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#4b5563"/>
+<text x="404" y="94" font-size="14" font-weight="700" fill="#ffffff">entity_history</text>
+<text x="404" y="122" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="630" y="122" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="393" y="130" width="248" height="24" fill="#f3f4f6"/>
+<text x="404" y="146" font-size="12.5" font-weight="400" fill="#111827">entity_type</text>
+<text x="630" y="146" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="404" y="170" font-size="12.5" font-weight="400" fill="#111827">entity_id</text>
+<text x="630" y="170" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="393" y="178" width="248" height="24" fill="#f3f4f6"/>
+<text x="404" y="194" font-size="12.5" font-weight="400" fill="#111827">field_name</text>
+<text x="630" y="194" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="404" y="218" font-size="12.5" font-weight="400" fill="#111827">old_value</text>
+<text x="630" y="218" font-size="11.5" text-anchor="end" fill="#6b7280">text</text>
+<rect x="393" y="226" width="248" height="24" fill="#f3f4f6"/>
+<text x="404" y="242" font-size="12.5" font-weight="400" fill="#111827">new_value</text>
+<text x="630" y="242" font-size="11.5" text-anchor="end" fill="#6b7280">text</text>
+<text x="404" y="266" font-size="12.5" font-weight="400" fill="#111827">changed_at</text>
+<text x="630" y="266" font-size="11.5" text-anchor="end" fill="#6b7280">datetime !</text>
+<rect x="393" y="274" width="248" height="24" fill="#f3f4f6"/>
+<text x="404" y="290" font-size="12.5" font-weight="400" fill="#111827">changed_by_dtfb_id</text>
+<text x="630" y="290" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+</g>
+<g><rect x="812" y="1102" width="250" height="136" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M812,1110 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#0f766e"/>
+<text x="824" y="1124" font-size="14" font-weight="700" fill="#ffffff">category</text>
+<text x="824" y="1152" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="1050" y="1152" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="813" y="1160" width="248" height="24" fill="#f3f4f6"/>
+<text x="824" y="1176" font-size="12.5" font-weight="400" fill="#111827">name</text>
+<text x="1050" y="1176" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<text x="824" y="1200" font-size="12.5" font-weight="400" fill="#111827">short_name</text>
+<text x="1050" y="1200" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<rect x="813" y="1208" width="248" height="24" fill="#f3f4f6"/>
+<text x="824" y="1224" font-size="12.5" font-weight="400" fill="#111827">eligible_side</text>
+<text x="1050" y="1224" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+</g>
+<g><rect x="1172" y="677" width="250" height="136" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M1172,685 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#0f766e"/>
+<text x="1184" y="699" font-size="14" font-weight="700" fill="#ffffff">location</text>
+<text x="1184" y="727" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="1410" y="727" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="1173" y="735" width="248" height="24" fill="#f3f4f6"/>
+<text x="1184" y="751" font-size="12.5" font-weight="400" fill="#111827">name</text>
+<text x="1410" y="751" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="1184" y="775" font-size="12.5" font-weight="400" fill="#111827">address</text>
+<text x="1410" y="775" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="1173" y="783" width="248" height="24" fill="#f3f4f6"/>
+<text x="1184" y="799" font-size="12.5" font-weight="400" fill="#111827">federation_id ↗</text>
+<text x="1410" y="799" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+</g>
+<g><rect x="1532" y="1995" width="250" height="208" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M1532,2003 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#1d4ed8"/>
+<text x="1544" y="2017" font-size="14" font-weight="700" fill="#ffffff">role_assignment</text>
+<text x="1544" y="2045" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="1770" y="2045" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="1533" y="2053" width="248" height="24" fill="#f3f4f6"/>
+<text x="1544" y="2069" font-size="12.5" font-weight="400" fill="#111827">user_id ↗</text>
+<text x="1770" y="2069" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<text x="1544" y="2093" font-size="12.5" font-weight="400" fill="#111827">role</text>
+<text x="1770" y="2093" font-size="11.5" text-anchor="end" fill="#6b7280">Role !</text>
+<rect x="1533" y="2101" width="248" height="24" fill="#f3f4f6"/>
+<text x="1544" y="2117" font-size="12.5" font-weight="400" fill="#111827">scope_type</text>
+<text x="1770" y="2117" font-size="11.5" text-anchor="end" fill="#6b7280">ScopeType !</text>
+<text x="1544" y="2141" font-size="12.5" font-weight="400" fill="#111827">scope_id</text>
+<text x="1770" y="2141" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="1533" y="2149" width="248" height="24" fill="#f3f4f6"/>
+<text x="1544" y="2165" font-size="12.5" font-weight="400" fill="#111827">granted_by_dtfb_id</text>
+<text x="1770" y="2165" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="1544" y="2189" font-size="12.5" font-weight="400" fill="#111827">created_at</text>
+<text x="1770" y="2189" font-size="11.5" text-anchor="end" fill="#6b7280">datetime !</text>
+</g>
+<g><rect x="732" y="72" width="250" height="256" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M732,80 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#4b5563"/>
+<text x="744" y="94" font-size="14" font-weight="700" fill="#ffffff">api_key</text>
+<text x="744" y="122" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="970" y="122" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="733" y="130" width="248" height="24" fill="#f3f4f6"/>
+<text x="744" y="146" font-size="12.5" font-weight="400" fill="#111827">name</text>
+<text x="970" y="146" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<text x="744" y="170" font-size="12.5" font-weight="400" fill="#111827">key_prefix</text>
+<text x="970" y="170" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<rect x="733" y="178" width="248" height="24" fill="#f3f4f6"/>
+<text x="744" y="194" font-size="12.5" font-weight="400" fill="#111827">key_hash</text>
+<text x="970" y="194" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<text x="744" y="218" font-size="12.5" font-weight="400" fill="#111827">active</text>
+<text x="970" y="218" font-size="11.5" text-anchor="end" fill="#6b7280">boolean !</text>
+<rect x="733" y="226" width="248" height="24" fill="#f3f4f6"/>
+<text x="744" y="242" font-size="12.5" font-weight="400" fill="#111827">expires_at</text>
+<text x="970" y="242" font-size="11.5" text-anchor="end" fill="#6b7280">date</text>
+<text x="744" y="266" font-size="12.5" font-weight="400" fill="#111827">created_at</text>
+<text x="970" y="266" font-size="11.5" text-anchor="end" fill="#6b7280">timestamp !</text>
+<rect x="733" y="274" width="248" height="24" fill="#f3f4f6"/>
+<text x="744" y="290" font-size="12.5" font-weight="400" fill="#111827">created_by_dtfb_id</text>
+<text x="970" y="290" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="744" y="314" font-size="12.5" font-weight="400" fill="#111827">last_used_at</text>
+<text x="970" y="314" font-size="11.5" text-anchor="end" fill="#6b7280">timestamp</text>
+</g>
+<g><rect x="812" y="820" width="250" height="232" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M812,828 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#0f766e"/>
+<text x="824" y="842" font-size="14" font-weight="700" fill="#ffffff">season</text>
+<text x="824" y="870" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="1050" y="870" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="813" y="878" width="248" height="24" fill="#f3f4f6"/>
+<text x="824" y="894" font-size="12.5" font-weight="400" fill="#111827">name</text>
+<text x="1050" y="894" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="824" y="918" font-size="12.5" font-weight="400" fill="#111827">federation_id ↗</text>
+<text x="1050" y="918" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="813" y="926" width="248" height="24" fill="#f3f4f6"/>
+<text x="824" y="942" font-size="12.5" font-weight="400" fill="#111827">start_date</text>
+<text x="1050" y="942" font-size="11.5" text-anchor="end" fill="#6b7280">date</text>
+<text x="824" y="966" font-size="12.5" font-weight="400" fill="#111827">end_date</text>
+<text x="1050" y="966" font-size="11.5" text-anchor="end" fill="#6b7280">date</text>
+<rect x="813" y="974" width="248" height="24" fill="#f3f4f6"/>
+<text x="824" y="990" font-size="12.5" font-weight="400" fill="#111827">registration_opens_at</text>
+<text x="1050" y="990" font-size="11.5" text-anchor="end" fill="#6b7280">date</text>
+<text x="824" y="1014" font-size="12.5" font-weight="400" fill="#111827">registration_closes_at</text>
+<text x="1050" y="1014" font-size="11.5" text-anchor="end" fill="#6b7280">date</text>
+<rect x="813" y="1022" width="248" height="24" fill="#f3f4f6"/>
+<text x="824" y="1038" font-size="12.5" font-weight="400" fill="#111827">archived_at</text>
+<text x="1050" y="1038" font-size="11.5" text-anchor="end" fill="#6b7280">datetime</text>
+</g>
+<g><rect x="1172" y="1030" width="250" height="208" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M1172,1038 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#0f766e"/>
+<text x="1184" y="1052" font-size="14" font-weight="700" fill="#ffffff">league</text>
+<text x="1184" y="1080" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="1410" y="1080" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="1173" y="1088" width="248" height="24" fill="#f3f4f6"/>
+<text x="1184" y="1104" font-size="12.5" font-weight="400" fill="#111827">league_identity_id</text>
+<text x="1410" y="1104" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<text x="1184" y="1128" font-size="12.5" font-weight="400" fill="#111827">season_id ↗</text>
+<text x="1410" y="1128" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="1173" y="1136" width="248" height="24" fill="#f3f4f6"/>
+<text x="1184" y="1152" font-size="12.5" font-weight="400" fill="#111827">category_id ↗</text>
+<text x="1410" y="1152" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="1184" y="1176" font-size="12.5" font-weight="400" fill="#111827">rule_set_id ↗</text>
+<text x="1410" y="1176" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="1173" y="1184" width="248" height="24" fill="#f3f4f6"/>
+<text x="1184" y="1200" font-size="12.5" font-weight="400" fill="#111827">name</text>
+<text x="1410" y="1200" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="1184" y="1224" font-size="12.5" font-weight="400" fill="#111827">import_id</text>
+<text x="1410" y="1224" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+</g>
+<g><rect x="1532" y="1263" width="250" height="160" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M1532,1271 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#0f766e"/>
+<text x="1544" y="1285" font-size="14" font-weight="700" fill="#ffffff">tier</text>
+<text x="1544" y="1313" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="1770" y="1313" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="1533" y="1321" width="248" height="24" fill="#f3f4f6"/>
+<text x="1544" y="1337" font-size="12.5" font-weight="400" fill="#111827">league_id ↗</text>
+<text x="1770" y="1337" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="1544" y="1361" font-size="12.5" font-weight="400" fill="#111827">rule_set_id ↗</text>
+<text x="1770" y="1361" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="1533" y="1369" width="248" height="24" fill="#f3f4f6"/>
+<text x="1544" y="1385" font-size="12.5" font-weight="400" fill="#111827">name</text>
+<text x="1770" y="1385" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="1544" y="1409" font-size="12.5" font-weight="400" fill="#111827">level</text>
+<text x="1770" y="1409" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+</g>
+<g><rect x="1892" y="1173" width="250" height="136" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M1892,1181 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#0f766e"/>
+<text x="1904" y="1195" font-size="14" font-weight="700" fill="#ffffff">comp_group</text>
+<text x="1904" y="1223" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="2130" y="1223" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="1893" y="1231" width="248" height="24" fill="#f3f4f6"/>
+<text x="1904" y="1247" font-size="12.5" font-weight="400" fill="#111827">tier_id ↗</text>
+<text x="2130" y="1247" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="1904" y="1271" font-size="12.5" font-weight="400" fill="#111827">name</text>
+<text x="2130" y="1271" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="1893" y="1279" width="248" height="24" fill="#f3f4f6"/>
+<text x="1904" y="1295" font-size="12.5" font-weight="400" fill="#111827">group_state</text>
+<text x="2130" y="1295" font-size="11.5" text-anchor="end" fill="#6b7280">GroupState !</text>
+</g>
+<g><rect x="2252" y="1479" width="250" height="184" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M2252,1487 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#b91c1c"/>
+<text x="2264" y="1501" font-size="14" font-weight="700" fill="#ffffff">round</text>
+<text x="2264" y="1529" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="2490" y="1529" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="2253" y="1537" width="248" height="24" fill="#f3f4f6"/>
+<text x="2264" y="1553" font-size="12.5" font-weight="400" fill="#111827">group_id ↗</text>
+<text x="2490" y="1553" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="2264" y="1577" font-size="12.5" font-weight="400" fill="#111827">name</text>
+<text x="2490" y="1577" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="2253" y="1585" width="248" height="24" fill="#f3f4f6"/>
+<text x="2264" y="1601" font-size="12.5" font-weight="400" fill="#111827">round_index</text>
+<text x="2490" y="1601" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<text x="2264" y="1625" font-size="12.5" font-weight="400" fill="#111827">window_start</text>
+<text x="2490" y="1625" font-size="11.5" text-anchor="end" fill="#6b7280">datetime</text>
+<rect x="2253" y="1633" width="248" height="24" fill="#f3f4f6"/>
+<text x="2264" y="1649" font-size="12.5" font-weight="400" fill="#111827">window_end</text>
+<text x="2490" y="1649" font-size="11.5" text-anchor="end" fill="#6b7280">datetime</text>
+</g>
+<g><rect x="2612" y="418" width="250" height="400" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M2612,426 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#b91c1c"/>
+<text x="2624" y="440" font-size="14" font-weight="700" fill="#ffffff">match_day</text>
+<text x="2624" y="468" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="2850" y="468" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="2613" y="476" width="248" height="24" fill="#f3f4f6"/>
+<text x="2624" y="492" font-size="12.5" font-weight="400" fill="#111827">round_id ↗</text>
+<text x="2850" y="492" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="2624" y="516" font-size="12.5" font-weight="400" fill="#111827">location_id ↗</text>
+<text x="2850" y="516" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="2613" y="524" width="248" height="24" fill="#f3f4f6"/>
+<text x="2624" y="540" font-size="12.5" font-weight="400" fill="#111827">team_home_id ↗</text>
+<text x="2850" y="540" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="2624" y="564" font-size="12.5" font-weight="400" fill="#111827">team_away_id ↗</text>
+<text x="2850" y="564" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="2613" y="572" width="248" height="24" fill="#f3f4f6"/>
+<text x="2624" y="588" font-size="12.5" font-weight="400" fill="#111827">name</text>
+<text x="2850" y="588" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="2624" y="612" font-size="12.5" font-weight="400" fill="#111827">start_date</text>
+<text x="2850" y="612" font-size="11.5" text-anchor="end" fill="#6b7280">datetime !</text>
+<rect x="2613" y="620" width="248" height="24" fill="#f3f4f6"/>
+<text x="2624" y="636" font-size="12.5" font-weight="400" fill="#111827">end_date</text>
+<text x="2850" y="636" font-size="11.5" text-anchor="end" fill="#6b7280">datetime</text>
+<text x="2624" y="660" font-size="12.5" font-weight="400" fill="#111827">result_state</text>
+<text x="2850" y="660" font-size="11.5" text-anchor="end" fill="#6b7280">ResultState !</text>
+<rect x="2613" y="668" width="248" height="24" fill="#f3f4f6"/>
+<text x="2624" y="684" font-size="12.5" font-weight="400" fill="#111827">submitted_by_dtfb_id</text>
+<text x="2850" y="684" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="2624" y="708" font-size="12.5" font-weight="400" fill="#111827">home_confirmed_at</text>
+<text x="2850" y="708" font-size="11.5" text-anchor="end" fill="#6b7280">datetime</text>
+<rect x="2613" y="716" width="248" height="24" fill="#f3f4f6"/>
+<text x="2624" y="732" font-size="12.5" font-weight="400" fill="#111827">away_confirmed_at</text>
+<text x="2850" y="732" font-size="11.5" text-anchor="end" fill="#6b7280">datetime</text>
+<text x="2624" y="756" font-size="12.5" font-weight="400" fill="#111827">scheduling_state</text>
+<text x="2850" y="756" font-size="11.5" text-anchor="end" fill="#6b7280">SchedulingState !</text>
+<rect x="2613" y="764" width="248" height="24" fill="#f3f4f6"/>
+<text x="2624" y="780" font-size="12.5" font-weight="400" fill="#111827">schedule_proposed_by_dtfb_id</text>
+<text x="2850" y="780" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="2624" y="804" font-size="12.5" font-weight="400" fill="#111827">schedule_confirmed_at</text>
+<text x="2850" y="804" font-size="11.5" text-anchor="end" fill="#6b7280">datetime</text>
+</g>
+<g><rect x="2972" y="538" width="250" height="280" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M2972,546 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#b91c1c"/>
+<text x="2984" y="560" font-size="14" font-weight="700" fill="#ffffff">match_game</text>
+<text x="2984" y="588" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="3210" y="588" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="2973" y="596" width="248" height="24" fill="#f3f4f6"/>
+<text x="2984" y="612" font-size="12.5" font-weight="400" fill="#111827">match_day_id ↗</text>
+<text x="3210" y="612" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="2984" y="636" font-size="12.5" font-weight="400" fill="#111827">position</text>
+<text x="3210" y="636" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<rect x="2973" y="644" width="248" height="24" fill="#f3f4f6"/>
+<text x="2984" y="660" font-size="12.5" font-weight="400" fill="#111827">start_time</text>
+<text x="3210" y="660" font-size="11.5" text-anchor="end" fill="#6b7280">datetime !</text>
+<text x="2984" y="684" font-size="12.5" font-weight="400" fill="#111827">end_time</text>
+<text x="3210" y="684" font-size="11.5" text-anchor="end" fill="#6b7280">datetime</text>
+<rect x="2973" y="692" width="248" height="24" fill="#f3f4f6"/>
+<text x="2984" y="708" font-size="12.5" font-weight="400" fill="#111827">home_score</text>
+<text x="3210" y="708" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<text x="2984" y="732" font-size="12.5" font-weight="400" fill="#111827">away_score</text>
+<text x="3210" y="732" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<rect x="2973" y="740" width="248" height="24" fill="#f3f4f6"/>
+<text x="2984" y="756" font-size="12.5" font-weight="400" fill="#111827">state</text>
+<text x="3210" y="756" font-size="11.5" text-anchor="end" fill="#6b7280">MatchState</text>
+<text x="2984" y="780" font-size="12.5" font-weight="400" fill="#111827">type</text>
+<text x="3210" y="780" font-size="11.5" text-anchor="end" fill="#6b7280">MatchType</text>
+<rect x="2973" y="788" width="248" height="24" fill="#f3f4f6"/>
+<text x="2984" y="804" font-size="12.5" font-weight="400" fill="#111827">winner</text>
+<text x="3210" y="804" font-size="11.5" text-anchor="end" fill="#6b7280">Winner</text>
+</g>
+<g><rect x="3332" y="514" width="250" height="160" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M3332,522 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#b91c1c"/>
+<text x="3344" y="536" font-size="14" font-weight="700" fill="#ffffff">match_set</text>
+<text x="3344" y="564" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="3570" y="564" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="3333" y="572" width="248" height="24" fill="#f3f4f6"/>
+<text x="3344" y="588" font-size="12.5" font-weight="400" fill="#111827">match_id ↗</text>
+<text x="3570" y="588" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="3344" y="612" font-size="12.5" font-weight="400" fill="#111827">set_number</text>
+<text x="3570" y="612" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<rect x="3333" y="620" width="248" height="24" fill="#f3f4f6"/>
+<text x="3344" y="636" font-size="12.5" font-weight="400" fill="#111827">home_score</text>
+<text x="3570" y="636" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<text x="3344" y="660" font-size="12.5" font-weight="400" fill="#111827">away_score</text>
+<text x="3570" y="660" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+</g>
+<g><rect x="3332" y="748" width="250" height="256" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M3332,756 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#b91c1c"/>
+<text x="3344" y="770" font-size="14" font-weight="700" fill="#ffffff">match_event</text>
+<text x="3344" y="798" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="3570" y="798" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="3333" y="806" width="248" height="24" fill="#f3f4f6"/>
+<text x="3344" y="822" font-size="12.5" font-weight="400" fill="#111827">match_id ↗</text>
+<text x="3570" y="822" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="3344" y="846" font-size="12.5" font-weight="400" fill="#111827">team_id ↗</text>
+<text x="3570" y="846" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="3333" y="854" width="248" height="24" fill="#f3f4f6"/>
+<text x="3344" y="870" font-size="12.5" font-weight="400" fill="#111827">player_id</text>
+<text x="3570" y="870" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="3344" y="894" font-size="12.5" font-weight="400" fill="#111827">timestamp</text>
+<text x="3570" y="894" font-size="11.5" text-anchor="end" fill="#6b7280">datetime</text>
+<rect x="3333" y="902" width="248" height="24" fill="#f3f4f6"/>
+<text x="3344" y="918" font-size="12.5" font-weight="400" fill="#111827">type</text>
+<text x="3570" y="918" font-size="11.5" text-anchor="end" fill="#6b7280">MatchEventType</text>
+<text x="3344" y="942" font-size="12.5" font-weight="400" fill="#111827">home_score</text>
+<text x="3570" y="942" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<rect x="3333" y="950" width="248" height="24" fill="#f3f4f6"/>
+<text x="3344" y="966" font-size="12.5" font-weight="400" fill="#111827">away_score</text>
+<text x="3570" y="966" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<text x="3344" y="990" font-size="12.5" font-weight="400" fill="#111827">json</text>
+<text x="3570" y="990" font-size="11.5" text-anchor="end" fill="#6b7280">text</text>
+</g>
+<g><rect x="2252" y="1149" width="250" height="280" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M2252,1157 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#b45309"/>
+<text x="2264" y="1171" font-size="14" font-weight="700" fill="#ffffff">standing</text>
+<text x="2264" y="1199" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="2490" y="1199" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="2253" y="1207" width="248" height="24" fill="#f3f4f6"/>
+<text x="2264" y="1223" font-size="12.5" font-weight="400" fill="#111827">group_id ↗</text>
+<text x="2490" y="1223" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<text x="2264" y="1247" font-size="12.5" font-weight="400" fill="#111827">team_id ↗</text>
+<text x="2490" y="1247" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<rect x="2253" y="1255" width="248" height="24" fill="#f3f4f6"/>
+<text x="2264" y="1271" font-size="12.5" font-weight="400" fill="#111827">played</text>
+<text x="2490" y="1271" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<text x="2264" y="1295" font-size="12.5" font-weight="400" fill="#111827">wins</text>
+<text x="2490" y="1295" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<rect x="2253" y="1303" width="248" height="24" fill="#f3f4f6"/>
+<text x="2264" y="1319" font-size="12.5" font-weight="400" fill="#111827">draws</text>
+<text x="2490" y="1319" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<text x="2264" y="1343" font-size="12.5" font-weight="400" fill="#111827">losses</text>
+<text x="2490" y="1343" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<rect x="2253" y="1351" width="248" height="24" fill="#f3f4f6"/>
+<text x="2264" y="1367" font-size="12.5" font-weight="400" fill="#111827">points</text>
+<text x="2490" y="1367" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<text x="2264" y="1391" font-size="12.5" font-weight="400" fill="#111827">sets_won</text>
+<text x="2490" y="1391" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<rect x="2253" y="1399" width="248" height="24" fill="#f3f4f6"/>
+<text x="2264" y="1415" font-size="12.5" font-weight="400" fill="#111827">sets_lost</text>
+<text x="2490" y="1415" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+</g>
+<g><rect x="2252" y="867" width="250" height="232" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M2252,875 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#b45309"/>
+<text x="2264" y="889" font-size="14" font-weight="700" fill="#ffffff">team_participation</text>
+<text x="2264" y="917" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="2490" y="917" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="2253" y="925" width="248" height="24" fill="#f3f4f6"/>
+<text x="2264" y="941" font-size="12.5" font-weight="400" fill="#111827">team_id ↗</text>
+<text x="2490" y="941" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="2264" y="965" font-size="12.5" font-weight="400" fill="#111827">league_id ↗</text>
+<text x="2490" y="965" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="2253" y="973" width="248" height="24" fill="#f3f4f6"/>
+<text x="2264" y="989" font-size="12.5" font-weight="400" fill="#111827">group_id ↗</text>
+<text x="2490" y="989" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="2264" y="1013" font-size="12.5" font-weight="400" fill="#111827">copied_from_participation_id</text>
+<text x="2490" y="1013" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="2253" y="1021" width="248" height="24" fill="#f3f4f6"/>
+<text x="2264" y="1037" font-size="12.5" font-weight="400" fill="#111827">roster_status</text>
+<text x="2490" y="1037" font-size="11.5" text-anchor="end" fill="#6b7280">RosterStatus !</text>
+<text x="2264" y="1061" font-size="12.5" font-weight="400" fill="#111827">status</text>
+<text x="2490" y="1061" font-size="11.5" text-anchor="end" fill="#6b7280">ParticipationStatus !</text>
+<rect x="2253" y="1069" width="248" height="24" fill="#f3f4f6"/>
+<text x="2264" y="1085" font-size="12.5" font-weight="400" fill="#111827">withdrawn_at</text>
+<text x="2490" y="1085" font-size="11.5" text-anchor="end" fill="#6b7280">datetime</text>
+</g>
+<g><rect x="2612" y="1593" width="250" height="160" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M2612,1601 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#b45309"/>
+<text x="2624" y="1615" font-size="14" font-weight="700" fill="#ffffff">roster_entry</text>
+<text x="2624" y="1643" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="2850" y="1643" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="2613" y="1651" width="248" height="24" fill="#f3f4f6"/>
+<text x="2624" y="1667" font-size="12.5" font-weight="400" fill="#111827">participation_id ↗</text>
+<text x="2850" y="1667" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="2624" y="1691" font-size="12.5" font-weight="400" fill="#111827">player_id ↗</text>
+<text x="2850" y="1691" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="2613" y="1699" width="248" height="24" fill="#f3f4f6"/>
+<text x="2624" y="1715" font-size="12.5" font-weight="400" fill="#111827">added_at</text>
+<text x="2850" y="1715" font-size="11.5" text-anchor="end" fill="#6b7280">datetime !</text>
+<text x="2624" y="1739" font-size="12.5" font-weight="400" fill="#111827">removed_at</text>
+<text x="2850" y="1739" font-size="11.5" text-anchor="end" fill="#6b7280">datetime</text>
+</g>
+<g><rect x="62" y="1216" width="250" height="496" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M62,1224 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#6d28d9"/>
+<text x="74" y="1238" font-size="14" font-weight="700" fill="#ffffff">league_rule_set</text>
+<text x="74" y="1266" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="300" y="1266" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="63" y="1274" width="248" height="24" fill="#f3f4f6"/>
+<text x="74" y="1290" font-size="12.5" font-weight="400" fill="#111827">federation_id</text>
+<text x="300" y="1290" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="74" y="1314" font-size="12.5" font-weight="400" fill="#111827">snapshot</text>
+<text x="300" y="1314" font-size="11.5" text-anchor="end" fill="#6b7280">boolean !</text>
+<rect x="63" y="1322" width="248" height="24" fill="#f3f4f6"/>
+<text x="74" y="1338" font-size="12.5" font-weight="400" fill="#111827">archived</text>
+<text x="300" y="1338" font-size="11.5" text-anchor="end" fill="#6b7280">boolean !</text>
+<text x="74" y="1362" font-size="12.5" font-weight="400" fill="#111827">source_blueprint_id ↗</text>
+<text x="300" y="1362" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="63" y="1370" width="248" height="24" fill="#f3f4f6"/>
+<text x="74" y="1386" font-size="12.5" font-weight="400" fill="#111827">name</text>
+<text x="300" y="1386" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="74" y="1410" font-size="12.5" font-weight="400" fill="#111827">play_system</text>
+<text x="300" y="1410" font-size="11.5" text-anchor="end" fill="#6b7280">PlaySystem</text>
+<rect x="63" y="1418" width="248" height="24" fill="#f3f4f6"/>
+<text x="74" y="1434" font-size="12.5" font-weight="400" fill="#111827">points_win</text>
+<text x="300" y="1434" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<text x="74" y="1458" font-size="12.5" font-weight="400" fill="#111827">points_draw</text>
+<text x="300" y="1458" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<rect x="63" y="1466" width="248" height="24" fill="#f3f4f6"/>
+<text x="74" y="1482" font-size="12.5" font-weight="400" fill="#111827">points_loss</text>
+<text x="300" y="1482" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<text x="74" y="1506" font-size="12.5" font-weight="400" fill="#111827">sets_per_game</text>
+<text x="300" y="1506" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<rect x="63" y="1514" width="248" height="24" fill="#f3f4f6"/>
+<text x="74" y="1530" font-size="12.5" font-weight="400" fill="#111827">points_to_win_set</text>
+<text x="300" y="1530" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<text x="74" y="1554" font-size="12.5" font-weight="400" fill="#111827">matchday_decision</text>
+<text x="300" y="1554" font-size="11.5" text-anchor="end" fill="#6b7280">MatchdayDecision</text>
+<rect x="63" y="1562" width="248" height="24" fill="#f3f4f6"/>
+<text x="74" y="1578" font-size="12.5" font-weight="400" fill="#111827">matchday_target</text>
+<text x="300" y="1578" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<text x="74" y="1602" font-size="12.5" font-weight="400" fill="#111827">side_switch_allowed</text>
+<text x="300" y="1602" font-size="11.5" text-anchor="end" fill="#6b7280">boolean</text>
+<rect x="63" y="1610" width="248" height="24" fill="#f3f4f6"/>
+<text x="74" y="1626" font-size="12.5" font-weight="400" fill="#111827">min_roster_size</text>
+<text x="300" y="1626" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<text x="74" y="1650" font-size="12.5" font-weight="400" fill="#111827">max_roster_size</text>
+<text x="300" y="1650" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<rect x="63" y="1658" width="248" height="24" fill="#f3f4f6"/>
+<text x="74" y="1674" font-size="12.5" font-weight="400" fill="#111827">scheduling_mode</text>
+<text x="300" y="1674" font-size="11.5" text-anchor="end" fill="#6b7280">SchedulingMode</text>
+<text x="74" y="1698" font-size="12.5" font-weight="400" fill="#111827">scheduling_window_days</text>
+<text x="300" y="1698" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+</g>
+<g><rect x="442" y="1287" width="250" height="136" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M442,1295 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#6d28d9"/>
+<text x="454" y="1309" font-size="14" font-weight="700" fill="#ffffff">game_plan_entry</text>
+<text x="454" y="1337" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="680" y="1337" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="443" y="1345" width="248" height="24" fill="#f3f4f6"/>
+<text x="454" y="1361" font-size="12.5" font-weight="400" fill="#111827">rule_set_id ↗</text>
+<text x="680" y="1361" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="454" y="1385" font-size="12.5" font-weight="400" fill="#111827">position</text>
+<text x="680" y="1385" font-size="11.5" text-anchor="end" fill="#6b7280">int</text>
+<rect x="443" y="1393" width="248" height="24" fill="#f3f4f6"/>
+<text x="454" y="1409" font-size="12.5" font-weight="400" fill="#111827">game_type</text>
+<text x="680" y="1409" font-size="11.5" text-anchor="end" fill="#6b7280">MatchType</text>
+</g>
+<g><rect x="52" y="72" width="250" height="184" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M52,80 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#4b5563"/>
+<text x="64" y="94" font-size="14" font-weight="700" fill="#ffffff">release_note</text>
+<text x="64" y="122" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="290" y="122" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="53" y="130" width="248" height="24" fill="#f3f4f6"/>
+<text x="64" y="146" font-size="12.5" font-weight="400" fill="#111827">title_de</text>
+<text x="290" y="146" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<text x="64" y="170" font-size="12.5" font-weight="400" fill="#111827">title_en</text>
+<text x="290" y="170" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<rect x="53" y="178" width="248" height="24" fill="#f3f4f6"/>
+<text x="64" y="194" font-size="12.5" font-weight="400" fill="#111827">body_de</text>
+<text x="290" y="194" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<text x="64" y="218" font-size="12.5" font-weight="400" fill="#111827">body_en</text>
+<text x="290" y="218" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<rect x="53" y="226" width="248" height="24" fill="#f3f4f6"/>
+<text x="64" y="242" font-size="12.5" font-weight="400" fill="#111827">published_at</text>
+<text x="290" y="242" font-size="11.5" text-anchor="end" fill="#6b7280">datetime !</text>
+</g>
+<g><rect x="1072" y="96" width="250" height="232" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M1072,104 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#4b5563"/>
+<text x="1084" y="118" font-size="14" font-weight="700" fill="#ffffff">tracker_issue</text>
+<text x="1084" y="146" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="1310" y="146" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="1073" y="154" width="248" height="24" fill="#f3f4f6"/>
+<text x="1084" y="170" font-size="12.5" font-weight="400" fill="#111827">title</text>
+<text x="1310" y="170" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(200) !</text>
+<text x="1084" y="194" font-size="12.5" font-weight="400" fill="#111827">description</text>
+<text x="1310" y="194" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(4000)</text>
+<rect x="1073" y="202" width="248" height="24" fill="#f3f4f6"/>
+<text x="1084" y="218" font-size="12.5" font-weight="400" fill="#111827">status</text>
+<text x="1310" y="218" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<text x="1084" y="242" font-size="12.5" font-weight="400" fill="#111827">reported_by</text>
+<text x="1310" y="242" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="1073" y="250" width="248" height="24" fill="#f3f4f6"/>
+<text x="1084" y="266" font-size="12.5" font-weight="400" fill="#111827">github_repo</text>
+<text x="1310" y="266" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<text x="1084" y="290" font-size="12.5" font-weight="400" fill="#111827">github_issue_url</text>
+<text x="1310" y="290" font-size="11.5" text-anchor="end" fill="#6b7280">varchar</text>
+<rect x="1073" y="298" width="248" height="24" fill="#f3f4f6"/>
+<text x="1084" y="314" font-size="12.5" font-weight="400" fill="#111827">created_at</text>
+<text x="1310" y="314" font-size="11.5" text-anchor="end" fill="#6b7280">timestamp !</text>
+</g>
+<g><rect x="1432" y="72" width="250" height="112" rx="8" fill="#ffffff" stroke="#d1d5db"/>
+<path d="M1432,80 a8,8 0 0 1 8,-8 h234 a8,8 0 0 1 8,8 v26 h-250 z" fill="#4b5563"/>
+<text x="1444" y="94" font-size="14" font-weight="700" fill="#ffffff">tracker_issue_vote</text>
+<text x="1444" y="122" font-size="12.5" font-weight="700" fill="#111827">id 🔑</text>
+<text x="1670" y="122" font-size="11.5" text-anchor="end" fill="#6b7280">varchar(14)</text>
+<rect x="1433" y="130" width="248" height="24" fill="#f3f4f6"/>
+<text x="1444" y="146" font-size="12.5" font-weight="400" fill="#111827">issue_id ↗</text>
+<text x="1670" y="146" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+<text x="1444" y="170" font-size="12.5" font-weight="400" fill="#111827">voter_name</text>
+<text x="1670" y="170" font-size="11.5" text-anchor="end" fill="#6b7280">varchar !</text>
+</g>
+<rect x="3316" y="1979" width="310" height="248" rx="10" fill="#ffffff" stroke="#d1d5db"/>
+<text x="3332" y="2001" font-size="14" font-weight="700" fill="#111827">Sportshub data model</text>
+<rect x="3332" y="2017" width="16" height="16" rx="3" fill="#6d28d9"/>
+<text x="3358" y="2030" font-size="12.5" fill="#111827">Rules</text>
+<rect x="3332" y="2043" width="16" height="16" rx="3" fill="#0f766e"/>
+<text x="3358" y="2056" font-size="12.5" fill="#111827">Federation &amp; league structure</text>
+<rect x="3332" y="2069" width="16" height="16" rx="3" fill="#b91c1c"/>
+<text x="3358" y="2082" font-size="12.5" fill="#111827">Schedule &amp; results</text>
+<rect x="3332" y="2095" width="16" height="16" rx="3" fill="#b45309"/>
+<text x="3358" y="2108" font-size="12.5" fill="#111827">Teams &amp; rosters</text>
+<rect x="3332" y="2121" width="16" height="16" rx="3" fill="#1d4ed8"/>
+<text x="3358" y="2134" font-size="12.5" fill="#111827">People &amp; access</text>
+<rect x="3332" y="2147" width="16" height="16" rx="3" fill="#4b5563"/>
+<text x="3358" y="2160" font-size="12.5" fill="#111827">Standalone (no relationships)</text>
+<text x="3332" y="2195" font-size="11.5" fill="#6b7280">🔑 primary key · ↗ foreign key · ! not null</text>
+<text x="3332" y="2213" font-size="11.5" fill="#6b7280">* many · 1 exactly one · 0..1 optional</text>
+</svg>
