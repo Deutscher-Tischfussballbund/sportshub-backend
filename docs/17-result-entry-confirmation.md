@@ -7,6 +7,11 @@
 > enter, edit, or confirm at any point in the cycle. The model is lifted from how tournaments
 > already run today, and applies to league fixtures as well as `Race to 42`.
 >
+> **Refined 2026-09-28 (proposal by Marvin, awaiting team confirmation — agenda, SPO-15/57):**
+> entering stays open to every member of either team, but **confirming is the captains' job**
+> (the `team_admin` role). A result is final once each team's captain has agreed to the current
+> version. See §Decision and §Changes against 2026-09-21.
+>
 > See also: [`02-role-concept.md`](./02-role-concept.md) (roles and scopes),
 > [`03-authorization-model.md`](./03-authorization-model.md) (how a decision is computed),
 > [`12-matchday-scheduling.md`](./12-matchday-scheduling.md) (where fixtures come from),
@@ -49,13 +54,41 @@ wholesale rather than designed afresh.
 
 ## Decision
 
-- **Who may enter:** any member of either team in the fixture. Not only the captain.
-- **Lifecycle:** `entered → awaiting confirmation (by the opposing team) → confirmed`. An edit by
-  the opposing side returns the result to `awaiting confirmation`, with the notification now
-  pointing at the other team. The cycle repeats until both sides have confirmed.
-- **Freeze:** once confirmed by both sides, the result is immutable for team members. Only a
-  league admin or federation admin may change it thereafter.
-- **Admin authority:** a league/federation admin may enter, edit, or confirm a result at any point,
+*(Refined 2026-09-28 — proposal, see the note at the top.)*
+
+**Who counts as what, for one fixture:**
+
+- **Team member** of a side: anyone on that team's current roster in the fixture's league (added
+  and not removed — `RosterEntry` → `Player` → `Player.user`), or a **captain** of it.
+- **Captain** of a side: a holder of the `team_admin` role for that team (what the club page calls
+  "appoint captain"; a team may have several). Compared by team identity, so it holds across seasons.
+- **Neutral admin:** a league admin of the fixture's league, an admin of its federation, or a global
+  admin. A **club admin** is not neutral — for a fixture of their own club's team they act as that
+  team's side, like a team member.
+- A person who belongs to **both** sides (e.g. on both rosters) may not act on that fixture as a team
+  member — their side is ambiguous. Only people with a login can act at all; a rostered player
+  without an account simply doesn't take part.
+
+**Rules:**
+
+- **Who may enter or edit:** any team member of either side, and any neutral admin.
+- **Who may confirm:** only a **captain of the other side** than the one whose version it is — or a
+  neutral admin. A team member who isn't a captain can't confirm, and nobody can confirm their own
+  side's version.
+- **When it is final:** once **each side's captain has agreed to the current version**. A captain
+  agrees by confirming it, or by entering/editing it themselves. So:
+
+  | Who enters | Then needed |
+  |---|---|
+  | a captain of A | a captain of B confirms |
+  | a team member of A who isn't a captain | a captain of A **and** a captain of B confirm |
+  | a neutral admin | nothing — final at once (override) |
+
+- **Edits restart the cycle:** any edit by a team member cancels the agreement of the other side
+  (a captain's own edit counts as their agreement); the side that now has to act is notified.
+- **Freeze:** once final, the result is immutable for team members. Only a neutral admin may change
+  it thereafter; an admin change is final at once.
+- **Admin authority:** a neutral admin may enter, edit, or confirm a result at any point,
   including confirming on behalf of a stalled cycle. This is unconditional, not a fallback.
 - **Notification:** each transition notifies the side that now has to act (push/message channel
   not yet chosen).
@@ -64,6 +97,20 @@ wholesale rather than designed afresh.
   Those stay on paper for now; only the final result of a fixture is captured digitally. The
   `entity_history` groundwork in [`14-team-player-versioning.md`](./14-team-player-versioning.md)
   means the data model does not block adding them later.
+
+### Changes against 2026-09-21
+
+- Confirming moves from "the opposing team" to **the captains**; entering stays open to every team
+  member. This mirrors the paper sheet, where both captains sign.
+- "Final" is defined per side (each captain agreed to the current version), so an entry by a
+  non-captain no longer counts as its team's word.
+- Club admins count as their team's side, not as neutral admins — otherwise a club admin could enter
+  a result for their own team and confirm it as "admin".
+- A neutral admin's entry or edit is final at once (2026-09-21 only said an admin may enter, edit or
+  confirm at any point).
+
+**Consequence for M1:** every team needs at least one captain with a login before the weekend
+(SPO-111). If a captain doesn't respond, the result waits for a neutral admin (see "Stalled cycles").
 
 ## What did NOT need to change
 
@@ -87,4 +134,5 @@ wholesale rather than designed afresh.
 
 Source: DTFB Sports Hub team meeting 2026-09-21, decision `B-2026-09-21-10` (line-ups on paper:
 `B-2026-09-21-11`; no tournament-admin role: `B-2026-09-21-12`). Minutes in the
-`dtfb-projektmanager` repo under `meetings/2026-09-21/protocol.md`.
+`dtfb-projektmanager` repo under `meetings/2026-09-21/protocol.md`. Refinement 2026-09-28: Marvin,
+on the agenda for team confirmation (`meetings/backlog.md`).
