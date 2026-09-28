@@ -1,0 +1,12 @@
+{
+  "name": "sportshub-erd-diagram",
+  "private": true,
+  "type": "module",
+  "description": "Renders docs/dbdiagram.io/current_model.txt as an auto-laid-out ER diagram (SVG)",
+  "scripts": {
+    "render": "node render-erd.mjs"
+  },
+  "dependencies": {
+    "elkjs": "^0.10.0"
+  }
+}

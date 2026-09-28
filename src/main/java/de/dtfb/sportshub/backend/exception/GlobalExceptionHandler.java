@@ -10,6 +10,7 @@ import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedError;
 import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedException;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetDeletionBlockedError;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetDeletionBlockedException;
+import de.dtfb.sportshub.backend.leaguerules.GamePlanLockedException;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetEditBlockedError;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetEditBlockedException;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetNameTakenError;
@@ -169,6 +170,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<RuleSetEditBlockedError> handleRuleSetEditBlocked(RuleSetEditBlockedException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new RuleSetEditBlockedError("RULE_SET_FROZEN", ex.getMessage()));
+    }
+
+    // Game plan change refused because a result has been entered -- its games are fixed (SPO-71).
+    @ExceptionHandler(GamePlanLockedException.class)
+    public ResponseEntity<RuleSetEditBlockedError> handleGamePlanLocked(GamePlanLockedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new RuleSetEditBlockedError("GAME_PLAN_LOCKED", ex.getMessage()));
     }
 
     // Failsafe

@@ -284,6 +284,8 @@ Compile-coupled, so it lands as one coordinated change. Work order:
   `LeagueRuleResolver` as `group.tier.ruleSet ?? tier.league.ruleSet`, falling back to the
   historical 2/1/0 when none is configured. `StandingService.onMatchDayConfirmed` awards
   `pointsWin`/`pointsDraw`/`pointsLoss` from it.
+- **Done 2026-09-28 (SPO-71):** a matchday's `Match` rows are created from the effective game plan
+  and follow plan changes until the first result, then the plan is fixed (doc 12 §5).
 - **Deferred:** matchday validation against the game plan (count/type/order of `Match` rows),
   `setsPerGame`, `pointsToWinSet`, `matchdayDecision`. These need a modeled link between a
   `MatchDay` and its rule set's game plan (auto-generating a matchday's `Match` rows from the

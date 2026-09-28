@@ -8,6 +8,7 @@ import de.dtfb.sportshub.backend.location.LocationNotFoundException;
 import de.dtfb.sportshub.backend.location.LocationRepository;
 import de.dtfb.sportshub.backend.match.Match;
 import de.dtfb.sportshub.backend.match.MatchNotFoundException;
+import de.dtfb.sportshub.backend.match.MatchPlanService;
 import de.dtfb.sportshub.backend.match.MatchRepository;
 import de.dtfb.sportshub.backend.match.MatchState;
 import de.dtfb.sportshub.backend.round.Round;
@@ -35,11 +36,12 @@ public class MatchDayService {
     private final MatchRepository matchRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final LeagueRuleResolver ruleResolver;
+    private final MatchPlanService matchPlan;
 
     public MatchDayService(MatchDayRepository repository, MatchDayMapper mapper, RoundRepository roundRepository,
                            LocationRepository locationRepository, TeamRepository teamRepository,
                            MatchRepository matchRepository, ApplicationEventPublisher eventPublisher,
-                           LeagueRuleResolver ruleResolver) {
+                           LeagueRuleResolver ruleResolver, MatchPlanService matchPlan) {
         this.repository = repository;
         this.mapper = mapper;
         this.roundRepository = roundRepository;
@@ -48,6 +50,7 @@ public class MatchDayService {
         this.matchRepository = matchRepository;
         this.eventPublisher = eventPublisher;
         this.ruleResolver = ruleResolver;
+        this.matchPlan = matchPlan;
     }
 
     @Transactional(readOnly = true)
@@ -69,6 +72,7 @@ public class MatchDayService {
         setDependants(matchDayDto, matchDay);
 
         MatchDay savedMatchDay = repository.save(matchDay);
+        matchPlan.createGames(savedMatchDay);
         return mapper.toDto(savedMatchDay);
     }
 
@@ -96,6 +100,7 @@ public class MatchDayService {
     public void delete(String id) {
         MatchDay matchDay = repository.findById(id).orElseThrow(
             () -> new MatchDayNotFoundException(id));
+        matchPlan.deleteGames(matchDay);
         repository.delete(matchDay);
     }
 
