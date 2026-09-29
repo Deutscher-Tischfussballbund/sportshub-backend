@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.round;
 
+import de.dtfb.sportshub.backend.lineup.LineupStatus;
 import de.dtfb.sportshub.backend.matchday.ResultState;
 import de.dtfb.sportshub.backend.matchday.SchedulingState;
 import lombok.Getter;
@@ -29,4 +30,8 @@ public class ScheduleFixtureDto {
     /** Read-only: games (segments) entered / total, for "(3/7)". */
     private int gamesEntered;
     private int gamesTotal;
+    /** Read-only (docs/23): the rule set requires line-ups before result entry, and each side's line-up status. */
+    private boolean lineupRequired;
+    private LineupStatus lineupHome;
+    private LineupStatus lineupAway;
 }

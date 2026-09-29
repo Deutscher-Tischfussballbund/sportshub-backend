@@ -23,6 +23,9 @@ public interface MatchDayMapper {
     @Mapping(target = "scoreAway", ignore = true)
     @Mapping(target = "gamesEntered", ignore = true)
     @Mapping(target = "gamesTotal", ignore = true)
+    @Mapping(target = "lineupRequired", ignore = true)
+    @Mapping(target = "lineupHome", ignore = true)
+    @Mapping(target = "lineupAway", ignore = true)
     MatchDayDto toDto(MatchDay matchDay);
 
     @Mapping(target = "id", ignore = true)

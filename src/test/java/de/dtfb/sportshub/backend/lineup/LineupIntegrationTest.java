@@ -211,6 +211,25 @@ class LineupIntegrationTest extends AuthorizedControllerTest {
         substitute(homeCaptain, "HOME", games.get(6), homePlayers.get(8), extra.get(3)).andExpect(status().isConflict());
     }
 
+    @Test
+    void listsCarryTheLineupStatus_missingDraftSubmitted() throws Exception {
+        mockMvc.perform(get("/v1/matchdays/" + fixture.getId()))
+            .andExpect(jsonPath("$.lineupRequired").value(true))
+            .andExpect(jsonPath("$.lineupHome").value("MISSING"))
+            .andExpect(jsonPath("$.lineupAway").value("MISSING"));
+
+        save("HOME", homeCaptain, homePlayers, new int[][] {{0, 1}}, false).andExpect(status().isOk());
+        save("AWAY", awayCaptain, awayPlayers, valid(), true).andExpect(status().isOk());
+
+        mockMvc.perform(get("/v1/matchdays/" + fixture.getId()))
+            .andExpect(jsonPath("$.lineupHome").value("DRAFT"))
+            .andExpect(jsonPath("$.lineupAway").value("SUBMITTED"));
+        String schedule = mockMvc.perform(get("/v1/groups/" + groupId + "/schedule"))
+            .andReturn().getResponse().getContentAsString();
+        assertThat((List<String>) JsonPath.read(schedule, "$.rounds[*].fixtures[?(@.id == '" + fixture.getId() + "')].lineupAway"))
+            .containsExactly("SUBMITTED");
+    }
+
     // --- helpers ---
 
     private ResultActions save(String side, RequestPostProcessor who, List<String> roster, int[][] slots, boolean submit) throws Exception {

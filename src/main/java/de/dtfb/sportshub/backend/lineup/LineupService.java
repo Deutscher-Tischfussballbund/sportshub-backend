@@ -25,6 +25,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -82,6 +83,24 @@ public class LineupService {
     public boolean bothSubmitted(MatchDay matchDay) {
         List<Lineup> lineups = lineupRepository.findByMatchDay(matchDay);
         return lineups.size() == 2 && lineups.stream().allMatch(l -> l.getSubmittedAt() != null);
+    }
+
+    /** Line-up status per fixture for lists: [home, away], with one query for all line-ups. */
+    @Transactional(readOnly = true)
+    public Map<String, LineupStatus[]> statuses(Collection<MatchDay> matchDays) {
+        Map<String, LineupStatus[]> statuses = new HashMap<>();
+        for (MatchDay matchDay : matchDays) {
+            statuses.put(matchDay.getId(), new LineupStatus[] {LineupStatus.MISSING, LineupStatus.MISSING});
+        }
+        if (matchDays.isEmpty()) return statuses;
+        for (Lineup lineup : lineupRepository.findByMatchDayIn(matchDays)) {
+            MatchDay matchDay = lineup.getMatchDay();
+            LineupStatus[] pair = statuses.get(matchDay.getId());
+            if (pair == null) continue;
+            int index = matchDay.getTeamHome() != null && matchDay.getTeamHome().getId().equals(lineup.getTeam().getId()) ? 0 : 1;
+            pair[index] = lineup.getSubmittedAt() != null ? LineupStatus.SUBMITTED : LineupStatus.DRAFT;
+        }
+        return statuses;
     }
 
     /** Whether the fixture's rule set requires line-ups before a team enters a result (null = yes). */

@@ -3,6 +3,8 @@ package de.dtfb.sportshub.backend.matchday;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleResolver;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
 import de.dtfb.sportshub.backend.leaguerules.SchedulingMode;
+import de.dtfb.sportshub.backend.lineup.LineupService;
+import de.dtfb.sportshub.backend.lineup.LineupStatus;
 import de.dtfb.sportshub.backend.location.Location;
 import de.dtfb.sportshub.backend.location.LocationNotFoundException;
 import de.dtfb.sportshub.backend.location.LocationRepository;
@@ -32,11 +34,12 @@ public class MatchDayService {
     private final LeagueRuleResolver ruleResolver;
     private final MatchPlanService matchPlan;
     private final FixtureScoreService fixtureScores;
+    private final LineupService lineups;
 
     public MatchDayService(MatchDayRepository repository, MatchDayMapper mapper, RoundRepository roundRepository,
                            LocationRepository locationRepository, TeamRepository teamRepository,
                            LeagueRuleResolver ruleResolver, MatchPlanService matchPlan,
-                           FixtureScoreService fixtureScores) {
+                           FixtureScoreService fixtureScores, LineupService lineups) {
         this.repository = repository;
         this.mapper = mapper;
         this.roundRepository = roundRepository;
@@ -45,13 +48,27 @@ public class MatchDayService {
         this.ruleResolver = ruleResolver;
         this.matchPlan = matchPlan;
         this.fixtureScores = fixtureScores;
+        this.lineups = lineups;
     }
 
     @Transactional(readOnly = true)
     public List<MatchDayDto> getAll() {
         List<MatchDay> matchDays = repository.findAllVisible();
         Map<String, FixtureScoreService.FixtureScore> scores = fixtureScores.scores(matchDays);
-        return matchDays.stream().map(matchDay -> withScore(mapper.toDto(matchDay), scores.get(matchDay.getId()))).toList();
+        Map<String, LineupStatus[]> lineupStatuses = lineups.statuses(matchDays);
+        return matchDays.stream()
+            .map(matchDay -> withLineups(withScore(mapper.toDto(matchDay), scores.get(matchDay.getId())),
+                matchDay, lineupStatuses.get(matchDay.getId())))
+            .toList();
+    }
+
+    private MatchDayDto withLineups(MatchDayDto dto, MatchDay matchDay, LineupStatus[] statuses) {
+        dto.setLineupRequired(lineups.lineupRequired(matchDay));
+        if (statuses != null) {
+            dto.setLineupHome(statuses[0]);
+            dto.setLineupAway(statuses[1]);
+        }
+        return dto;
     }
 
     private static MatchDayDto withScore(MatchDayDto dto, FixtureScoreService.FixtureScore score) {
@@ -68,7 +85,8 @@ public class MatchDayService {
     public MatchDayDto get(String id) {
         MatchDay matchDay = repository.findVisibleById(id).orElseThrow(
             () -> new MatchDayNotFoundException(id));
-        return withScore(mapper.toDto(matchDay), fixtureScores.scores(List.of(matchDay)).get(matchDay.getId()));
+        return withLineups(withScore(mapper.toDto(matchDay), fixtureScores.scores(List.of(matchDay)).get(matchDay.getId())),
+            matchDay, lineups.statuses(List.of(matchDay)).get(matchDay.getId()));
     }
 
     @Transactional
