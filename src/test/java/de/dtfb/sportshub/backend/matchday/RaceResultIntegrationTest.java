@@ -79,6 +79,7 @@ class RaceResultIntegrationTest extends AuthorizedControllerTest {
                 .content(String.format("{\"name\":\"Regionalliga\",\"seasonId\":\"%s\",\"categoryId\":\"%s\",\"blueprintId\":\"rs-race42\"}",
                     seasonId, categoryId)))
             .andExpect(status().isCreated()).andReturn());
+        de.dtfb.sportshub.backend.support.LineupTestSupport.disableLineups(mockMvc, null, leagueId); // line-ups: LineupIntegrationTest
         String tierId = id(mockMvc.perform(post("/v1/tiers")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("{\"name\":\"Vorrunde\",\"leagueId\":\"%s\"}", leagueId)))

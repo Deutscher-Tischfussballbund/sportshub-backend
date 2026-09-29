@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.roster;
 
+import de.dtfb.sportshub.backend.player.Player;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,4 +25,11 @@ public interface RosterEntryRepository extends JpaRepository<RosterEntry, String
         + "and r.player.user.id = :userId")
     boolean isOnActiveRoster(@Param("userId") String userId, @Param("teamId") String teamId,
                              @Param("leagueId") String leagueId);
+
+    /** The team's current roster in the league -- the players a line-up can use (docs/23). */
+    @Query("select r.player from RosterEntry r where r.removedAt is null "
+        + "and r.participation.team.id = :teamId and r.participation.league.id = :leagueId "
+        + "order by r.player.lastName, r.player.firstName")
+    List<Player> activeRosterPlayers(
+        @Param("teamId") String teamId, @Param("leagueId") String leagueId);
 }

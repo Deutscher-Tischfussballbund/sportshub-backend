@@ -76,6 +76,15 @@ public class LeagueRuleSet extends BaseEntity {
     // Minutes the captains have to confirm once a result is decided; null = no deadline (docs/22).
     private Integer confirmationMinutes;
 
+    // Line-ups (docs/23). lineupRequired null = required. The limits are checked on submit; null =
+    // unlimited. lineupBlockRule: the Race profile's rule for the first block of doubles and the rest.
+    private Boolean lineupRequired;
+    private Integer lineupMaxGamesPerPlayer;
+    private Integer lineupMaxSinglesPerPlayer;
+    private Integer lineupMaxPlayers;
+    private Boolean lineupBlockRule;
+    private Integer maxSubstitutions;
+
     // Standings points. pointsDraw null ⇒ draws are not possible in this rule set.
     private Integer pointsWin;
     private Integer pointsDraw;

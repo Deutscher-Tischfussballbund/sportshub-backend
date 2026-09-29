@@ -484,7 +484,11 @@ public class AuthorizationService {
         return actor != null && (actor.neutralAdmin() || actor.homeMember() || actor.awayMember());
     }
 
-    /** May confirm the result of the fixture (docs/17): a captain of either side or a neutral admin. */
+    /**
+     * May confirm the result of the fixture (docs/17): a captain of either side or a neutral admin. The
+     * same people enter line-ups and substitutions (docs/23); which side they may touch is checked in
+     * {@code LineupService}.
+     */
     public boolean canConfirmResult(String matchDayId) {
         ResultActor actor = resultActorFor(matchDayId);
         return actor != null && (actor.neutralAdmin() || actor.homeCaptain() || actor.awayCaptain());

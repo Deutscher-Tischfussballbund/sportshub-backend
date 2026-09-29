@@ -35,6 +35,14 @@ public class LeagueRuleSetDto {
     private Integer raceByeScoreLoser;
     private Integer confirmationMinutes;
 
+    /** Line-ups (docs/23): required before result entry (null = yes), and the limits checked on submit. */
+    private Boolean lineupRequired;
+    private Integer lineupMaxGamesPerPlayer;
+    private Integer lineupMaxSinglesPerPlayer;
+    private Integer lineupMaxPlayers;
+    private Boolean lineupBlockRule;
+    private Integer maxSubstitutions;
+
     private Integer pointsWin;
     private Integer pointsDraw;
     private Integer pointsLoss;

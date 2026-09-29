@@ -14,8 +14,9 @@ import java.util.List;
 /**
  * Creates the two DTFB-wide Race to 42 blueprints on startup if they're missing (docs/22): the
  * Vorrunde profile (draw at 41 : 41 allowed) and the knock-out profile (two-point lead). Seven segments
- * D1, D2, D3, S1, D4, S2, D5, step 6, bye 42 : 30, 15 minutes to confirm -- the Regionalliga Damen 2026
- * mode. Well-known ids, so a renamed blueprint is still recognized; one that was deleted comes back
+ * D1, D2, D3, S1, D4, S2, D5, step 6, bye 42 : 30, 15 minutes to confirm, line-ups with at most 2
+ * games / 1 single per player, 10 players, the block rule and 4 substitutions (docs/23) -- the
+ * Regionalliga Damen 2026 mode. Well-known ids, so a renamed blueprint is still recognized; one that was deleted comes back
  * on the next start (archive it to hide it). Skipped when another DTFB-wide template already has the
  * name. Runs before the snapshot backfill.
  */
@@ -62,6 +63,12 @@ public class RaceBlueprintSeeder implements ApplicationRunner {
         ruleSet.setRaceByeScoreWinner(42);
         ruleSet.setRaceByeScoreLoser(30);
         ruleSet.setConfirmationMinutes(15);
+        ruleSet.setLineupRequired(true);
+        ruleSet.setLineupMaxGamesPerPlayer(2);
+        ruleSet.setLineupMaxSinglesPerPlayer(1);
+        ruleSet.setLineupMaxPlayers(10);
+        ruleSet.setLineupBlockRule(true);
+        ruleSet.setMaxSubstitutions(4);
         ruleSet.setPointsWin(2);
         ruleSet.setPointsDraw(endRule == RaceEndRule.DRAW_ALLOWED ? 1 : null);
         ruleSet.setPointsLoss(0);

@@ -8,6 +8,7 @@ import de.dtfb.sportshub.backend.leaguerules.GamePlanEntryRepository;
 import de.dtfb.sportshub.backend.leaguerules.GamePlanLockedException;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleResolver;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
+import de.dtfb.sportshub.backend.lineup.LineupService;
 import de.dtfb.sportshub.backend.matchday.MatchDay;
 import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
 import de.dtfb.sportshub.backend.matchday.ResultState;
@@ -38,6 +39,7 @@ public class MatchPlanService {
     private final GroupRepository groupRepository;
     private final LeagueRepository leagueRepository;
     private final TierRepository tierRepository;
+    private final LineupService lineups;
 
     public MatchPlanService(MatchRepository matchRepository,
                             MatchDayRepository matchDayRepository,
@@ -45,7 +47,8 @@ public class MatchPlanService {
                             LeagueRuleResolver ruleResolver,
                             GroupRepository groupRepository,
                             LeagueRepository leagueRepository,
-                            TierRepository tierRepository) {
+                            TierRepository tierRepository,
+                            LineupService lineups) {
         this.matchRepository = matchRepository;
         this.matchDayRepository = matchDayRepository;
         this.gamePlanRepository = gamePlanRepository;
@@ -53,6 +56,7 @@ public class MatchPlanService {
         this.groupRepository = groupRepository;
         this.leagueRepository = leagueRepository;
         this.tierRepository = tierRepository;
+        this.lineups = lineups;
     }
 
     /**
@@ -78,9 +82,13 @@ public class MatchPlanService {
         return plan.size();
     }
 
-    /** Deletes a fixture's games, e.g. before the fixture itself is deleted. */
+    /**
+     * Deletes a fixture's games, e.g. before the fixture itself is deleted or its games are rebuilt --
+     * with the line-ups and match events on them first (docs/23): a rebuilt plan needs new line-ups.
+     */
     @Transactional
     public void deleteGames(MatchDay matchDay) {
+        lineups.deleteForFixture(matchDay);
         matchRepository.deleteAll(matchRepository.findByMatchDay(matchDay));
     }
 
