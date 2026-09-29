@@ -1,7 +1,7 @@
 # Line-ups and substitutions — who plays whom, before and during a fixture
 
 > **Decision (proposed) 2026-09-29 by Marvin, to confirm with the team and the competition management
-> (Daniel). Backend built 2026-09-29 (§Implementation); frontend pending. Reverses meeting decision
+> (Daniel). Built 2026-09-29, backend and frontend (§Implementation). Reverses meeting decision
 > B-2026-09-21-11** ("line-ups and substitutions stay
 > on paper for M1") — the result page is to show which players play against whom, which needs the
 > line-up. Each team's captain enters the **line-up** before kick-off: the players per game of the game
@@ -123,6 +123,11 @@ the tournament management or a **referee** (a future role scoped to a fixture, d
 - `MatchEventService` keeps a player unchanged on update when none is sent (it used to be a string).
 - Tests: `LineupIntegrationTest` (6); result tests switch line-ups off in their league rules
   (`LineupTestSupport`).
+- **Frontend** (`dtfb-frontend-ng`): a line-up page per fixture (team area and admin schedule) with a
+  player select per slot, draft/submit, the rules explained before submitting (`lineup-check.ts`
+  mirrors `LineupService.violation`), the opponent hidden until both are in, then the substitution form
+  and list; the result page shows who plays each game and a note while line-ups are missing; the
+  rule-set dialog has a line-up section.
 
 ## Open questions
 
