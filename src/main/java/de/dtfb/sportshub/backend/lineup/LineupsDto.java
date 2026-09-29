@@ -22,6 +22,14 @@ public class LineupsDto {
     private boolean bothSubmitted;
     private boolean kickOffPassed;
 
+    /** The line-up rules (null = no limit), so the line-up page can explain them before submitting. */
+    private Integer maxGamesPerPlayer;
+    private Integer maxSinglesPerPlayer;
+    private Integer maxPlayers;
+    /** The Race block rule applies (first block of doubles / the rest). */
+    private boolean blockRule;
+    private Integer maxSubstitutions;
+
     private List<GameDto> games;
     private SideDto home;
     private SideDto away;

@@ -359,6 +359,13 @@ public class LineupService {
         dto.setLineupRequired(lineupRequired(matchDay));
         dto.setBothSubmitted(both);
         dto.setKickOffPassed(kickOffPassed);
+        if (rules != null) {
+            dto.setMaxGamesPerPlayer(rules.getLineupMaxGamesPerPlayer());
+            dto.setMaxSinglesPerPlayer(rules.getLineupMaxSinglesPerPlayer());
+            dto.setMaxPlayers(rules.getLineupMaxPlayers());
+            dto.setBlockRule(Boolean.TRUE.equals(rules.getLineupBlockRule()) && rules.getFixtureMode() == FixtureMode.RACE);
+            dto.setMaxSubstitutions(rules.getMaxSubstitutions());
+        }
         dto.setSide(actor.memberSide());
         dto.setNeutralAdmin(actor.neutralAdmin());
 
