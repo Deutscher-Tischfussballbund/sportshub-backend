@@ -1,5 +1,7 @@
 package de.dtfb.sportshub.backend.round;
 
+import de.dtfb.sportshub.backend.lineup.LineupService;
+import de.dtfb.sportshub.backend.lineup.LineupStatus;
 import de.dtfb.sportshub.backend.matchday.FixtureScoreService;
 import de.dtfb.sportshub.backend.group.Group;
 import de.dtfb.sportshub.backend.group.GroupNotFoundException;
@@ -27,14 +29,17 @@ public class ScheduleService {
     private final RoundRepository roundRepository;
     private final MatchDayRepository matchDayRepository;
     private final FixtureScoreService fixtureScores;
+    private final LineupService lineups;
 
     public ScheduleService(GroupRepository groupRepository, RoundRepository roundRepository,
                            MatchDayRepository matchDayRepository,
-                           FixtureScoreService fixtureScores) {
+                           FixtureScoreService fixtureScores,
+                           LineupService lineups) {
         this.groupRepository = groupRepository;
         this.roundRepository = roundRepository;
         this.matchDayRepository = matchDayRepository;
         this.fixtureScores = fixtureScores;
+        this.lineups = lineups;
     }
 
     @Transactional(readOnly = true)
@@ -43,6 +48,7 @@ public class ScheduleService {
             .orElseThrow(() -> new GroupNotFoundException(groupId));
         List<MatchDay> fixtures = matchDayRepository.findByRoundGroupId(groupId);
         Map<String, FixtureScoreService.FixtureScore> scores = fixtureScores.scores(fixtures);
+        Map<String, LineupStatus[]> lineupStatuses = lineups.statuses(fixtures);
         Map<String, List<MatchDay>> fixturesByRound = fixtures.stream()
             .collect(Collectors.groupingBy(matchDay -> matchDay.getRound().getId()));
 
@@ -57,13 +63,14 @@ public class ScheduleService {
             }
         }
         schedule.setRounds(roundRepository.findByGroupIdOrderByIndex(groupId).stream()
-            .map(round -> toRound(round, fixturesByRound.getOrDefault(round.getId(), List.of()), scores))
+            .map(round -> toRound(round, fixturesByRound.getOrDefault(round.getId(), List.of()), scores, lineupStatuses))
             .toList());
         return schedule;
     }
 
     private ScheduleRoundDto toRound(Round round, List<MatchDay> matchDays,
-                                     Map<String, FixtureScoreService.FixtureScore> scores) {
+                                     Map<String, FixtureScoreService.FixtureScore> scores,
+                                     Map<String, LineupStatus[]> lineupStatuses) {
         ScheduleRoundDto dto = new ScheduleRoundDto();
         dto.setId(round.getId());
         dto.setName(round.getName());
@@ -71,12 +78,12 @@ public class ScheduleService {
         dto.setWindowStart(round.getWindowStart());
         dto.setWindowEnd(round.getWindowEnd());
         dto.setFixtures(matchDays.stream().sorted(KICK_OFF_ORDER)
-            .map(matchDay -> toFixture(matchDay, scores.get(matchDay.getId()))).toList());
+            .map(matchDay -> toFixture(matchDay, scores.get(matchDay.getId()), lineupStatuses.get(matchDay.getId()))).toList());
         return dto;
     }
 
     private ScheduleFixtureDto toFixture(MatchDay matchDay,
-                                         FixtureScoreService.FixtureScore score) {
+                                         FixtureScoreService.FixtureScore score, LineupStatus[] lineupStatus) {
         ScheduleFixtureDto dto = new ScheduleFixtureDto();
         dto.setId(matchDay.getId());
         if (matchDay.getTeamHome() != null) {
@@ -95,6 +102,11 @@ public class ScheduleService {
         dto.setSchedulingState(matchDay.getSchedulingState());
         dto.setResultState(matchDay.getResultState());
         dto.setBye(matchDay.isBye());
+        dto.setLineupRequired(lineups.lineupRequired(matchDay));
+        if (lineupStatus != null) {
+            dto.setLineupHome(lineupStatus[0]);
+            dto.setLineupAway(lineupStatus[1]);
+        }
         if (score != null) {
             dto.setScoreHome(score.home());
             dto.setScoreAway(score.away());
