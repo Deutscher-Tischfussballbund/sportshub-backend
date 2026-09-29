@@ -98,6 +98,7 @@ class MatchDayResultAuthorizationIntegrationTest {
         String categoryId = create("/v1/categories", "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
         leagueId = create("/v1/leagues",
             "{\"name\":\"Liga\",\"seasonId\":\"" + seasonId + "\",\"categoryId\":\"" + categoryId + "\"}");
+        de.dtfb.sportshub.backend.support.LineupTestSupport.disableLineups(mockMvc, ADMIN, leagueId); // this class tests result rules, docs/23 has its own
         String tierId = create("/v1/tiers", "{\"name\":\"1. Liga\",\"leagueId\":\"" + leagueId + "\"}");
         groupId = create("/v1/groups",
             "{\"name\":\"Gruppe A\",\"tierId\":\"" + tierId + "\",\"groupState\":\"READY\"}");
@@ -405,7 +406,7 @@ class MatchDayResultAuthorizationIntegrationTest {
         String ruleSetId = JsonPath.read(leagueJson, "$.ruleSetId");
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/v1/league-rule-sets/" + ruleSetId)
                 .with(ADMIN).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"Liga-Regeln\",\"matchdayDecision\":\"" + decision + "\",\"matchdayTarget\":" + target + "}"))
+                .content("{\"name\":\"Liga-Regeln\",\"lineupRequired\":false,\"matchdayDecision\":\"" + decision + "\",\"matchdayTarget\":" + target + "}"))
             .andExpect(status().isOk());
     }
 

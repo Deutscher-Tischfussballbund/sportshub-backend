@@ -1,5 +1,8 @@
 package de.dtfb.sportshub.backend.matchday;
 
+import de.dtfb.sportshub.backend.leaguerules.FixtureMode;
+import de.dtfb.sportshub.backend.leaguerules.RaceEndRule;
+import de.dtfb.sportshub.backend.lineup.LineupsDto;
 import de.dtfb.sportshub.backend.match.MatchType;
 import lombok.Getter;
 import lombok.Setter;
@@ -50,11 +53,11 @@ public class MatchDayResultDto {
     private boolean bye;
 
     /** The rule profile the fixture is played under (docs/22); GAMES when none is set. */
-    private de.dtfb.sportshub.backend.leaguerules.FixtureMode fixtureMode;
+    private FixtureMode fixtureMode;
     /** RACE only: the target (42), the step per segment (6) and how the last segment ends. */
     private Integer raceTarget;
     private Integer raceStep;
-    private de.dtfb.sportshub.backend.leaguerules.RaceEndRule raceEndRule;
+    private RaceEndRule raceEndRule;
 
     /** When the result became decided -- start of the time to confirm. */
     private Instant decidedAt;
@@ -62,6 +65,10 @@ public class MatchDayResultDto {
     private Instant confirmDeadline;
     /** The deadline has passed: only the tournament management can confirm or change it now. */
     private boolean overdue;
+
+    /** Line-ups (docs/23): the rule set requires them, and both are submitted. */
+    private boolean lineupRequired;
+    private boolean lineupsComplete;
 
     /** For the current user: may enter or edit the result now. */
     private boolean canEdit;
@@ -80,5 +87,8 @@ public class MatchDayResultDto {
         private MatchType type;
         private Integer homeScore;
         private Integer awayScore;
+        /** Who plays this game (line-up + substitutions); null while that side isn't visible. */
+        private List<LineupsDto.PlayerRefDto> homePlayers;
+        private List<LineupsDto.PlayerRefDto> awayPlayers;
     }
 }

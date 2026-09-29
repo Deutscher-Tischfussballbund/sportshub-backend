@@ -1,7 +1,8 @@
 # Line-ups and substitutions — who plays whom, before and during a fixture
 
 > **Decision (proposed) 2026-09-29 by Marvin, to confirm with the team and the competition management
-> (Daniel). Not yet built. Reverses meeting decision B-2026-09-21-11** ("line-ups and substitutions stay
+> (Daniel). Backend built 2026-09-29 (§Implementation); frontend pending. Reverses meeting decision
+> B-2026-09-21-11** ("line-ups and substitutions stay
 > on paper for M1") — the result page is to show which players play against whom, which needs the
 > line-up. Each team's captain enters the **line-up** before kick-off: the players per game of the game
 > plan (2 for a double, 1 for a single), from the team's current roster. It stays **hidden from the
@@ -97,6 +98,31 @@ Rule-set setting `lineupRequired` — on by default (also for existing rule sets
 **Permissions per event type:** substitutions — the team's captain; goals, timeouts, cards — later
 the tournament management or a **referee** (a future role scoped to a fixture, doc 03's "referee
 (future)"; not the tournament-admin role rejected in B-2026-09-21-12, which was about overrides).
+
+## Implementation (backend, 2026-09-29)
+
+- **Model** (`V17`): `Lineup` (fixture, team, `submittedAt`), `LineupEntry` (line-up, game, slot,
+  player); `MatchEvent` gets `player` / `playerIn` / `playerOut` as real references and the type
+  `SUBSTITUTION` (column now a plain varchar); rule-set fields `lineupRequired`,
+  `lineupMaxGamesPerPlayer`, `lineupMaxSinglesPerPlayer`, `lineupMaxPlayers`, `lineupBlockRule`,
+  `maxSubstitutions` (the Race to 42 blueprints: required, 2, 1, 10, on, 4).
+- **Endpoints** (`LineupController`, logic in `LineupService`): `GET /v1/matchdays/{id}/lineups`
+  (both sides as far as the viewer may see them — own side, neutral admin, or everyone once both are
+  in or kick-off has passed — plus who plays each game and the substitutions);
+  `PUT …/lineups/{HOME|AWAY}` (`{ games: [{ matchId, playerIds }], submit }` — a draft only checks
+  roster and slots, `submit` checks the rules); `POST …/substitutions`
+  (`{ side, matchId, playerOutId, playerInId }`), `DELETE …/substitutions/{eventId}`. Writes are
+  captains of that side or neutral admins; captains are locked out once both line-ups are in.
+- **Substitution checks:** both line-ups in; the game has no score yet (captains); the outgoing player
+  plays that game; the incoming one is on the roster, not in any game and not substituted out before;
+  at most `maxSubstitutions`.
+- **Result entry:** a team's entry is `409` while the rule set requires line-ups and not both are in;
+  the result view has `lineupRequired`, `lineupsComplete` and per game `homePlayers` / `awayPlayers`
+  (after substitutions, as far as visible). Rebuilding or deleting a fixture's games (doc 12 §5)
+  removes its line-ups and events first.
+- `MatchEventService` keeps a player unchanged on update when none is sent (it used to be a string).
+- Tests: `LineupIntegrationTest` (6); result tests switch line-ups off in their league rules
+  (`LineupTestSupport`).
 
 ## Open questions
 

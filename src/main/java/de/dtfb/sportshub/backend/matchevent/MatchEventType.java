@@ -6,6 +6,7 @@ public enum MatchEventType {
     GOAL,
     OTHER,
     OWN_GOAL,
+    SUBSTITUTION,
     START,
     TIMEOUT
 }

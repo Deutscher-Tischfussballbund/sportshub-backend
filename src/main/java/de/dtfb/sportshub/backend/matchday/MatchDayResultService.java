@@ -2,6 +2,8 @@ package de.dtfb.sportshub.backend.matchday;
 
 import de.dtfb.sportshub.backend.access.auth.AuthorizationService;
 import de.dtfb.sportshub.backend.leaguerules.FixtureMode;
+import de.dtfb.sportshub.backend.lineup.LineupService;
+import de.dtfb.sportshub.backend.lineup.LineupsDto;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleResolver;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
 import de.dtfb.sportshub.backend.leaguerules.MatchdayDecision;
@@ -21,6 +23,7 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -51,15 +54,17 @@ public class MatchDayResultService {
     private final AuthorizationService authz;
     private final ApplicationEventPublisher eventPublisher;
     private final LeagueRuleResolver ruleResolver;
+    private final LineupService lineups;
 
     public MatchDayResultService(MatchDayRepository repository, MatchRepository matchRepository,
                                  AuthorizationService authz, ApplicationEventPublisher eventPublisher,
-                                 LeagueRuleResolver ruleResolver) {
+                                 LeagueRuleResolver ruleResolver, LineupService lineups) {
         this.repository = repository;
         this.matchRepository = matchRepository;
         this.authz = authz;
         this.eventPublisher = eventPublisher;
         this.ruleResolver = ruleResolver;
+        this.lineups = lineups;
     }
 
     @Transactional(readOnly = true)
@@ -123,6 +128,10 @@ public class MatchDayResultService {
                 "The result is final; only a league or federation admin can change it");
         }
         requireNotOverdue(matchDay);
+        if (lineups.lineupRequired(matchDay) && !lineups.bothSubmitted(matchDay)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "Both line-ups must be submitted before a result can be entered (docs/23)");
+        }
         applyScores(matchDay, request);
         trackDecided(matchDay);
         Instant ownAgreement = actor.captainSide() == side ? Instant.now() : null;
@@ -352,10 +361,21 @@ public class MatchDayResultService {
         dto.setAwayTeamIdentityId(away == null ? null : away.getTeamIdentityId());
         dto.setHomeAgreedAt(matchDay.getHomeConfirmedAt());
         dto.setAwayAgreedAt(matchDay.getAwayConfirmedAt());
+        Map<String, List<List<LineupsDto.PlayerRefDto>>> players = lineups.playersForResult(matchDay, actor);
         dto.setGames(matchRepository.findByMatchDay(matchDay).stream()
             .sorted(Comparator.comparing(Match::getPosition, Comparator.nullsLast(Comparator.naturalOrder())))
-            .map(MatchDayResultService::toGameDto)
+            .map(game -> {
+                MatchDayResultDto.GameResultDto gameDto = toGameDto(game);
+                List<List<LineupsDto.PlayerRefDto>> sides = players.get(game.getId());
+                if (sides != null) {
+                    gameDto.setHomePlayers(sides.get(0));
+                    gameDto.setAwayPlayers(sides.get(1));
+                }
+                return gameDto;
+            })
             .toList());
+        dto.setLineupRequired(lineups.lineupRequired(matchDay));
+        dto.setLineupsComplete(lineups.bothSubmitted(matchDay));
 
         List<MatchDayResultDto.GameResultDto> games = dto.getGames();
         dto.setGamesTotal(games.size());
@@ -381,8 +401,9 @@ public class MatchDayResultService {
         ResultActor.Side captainSide = actor.captainSide();
         dto.setNeutralAdmin(actor.neutralAdmin());
         dto.setSide(memberSide);
+        boolean lineupsOk = !dto.isLineupRequired() || dto.isLineupsComplete();
         dto.setCanEdit(!matchDay.isBye()
-            && (actor.neutralAdmin() || (memberSide != null && state != ResultState.CONFIRMED && !overdue)));
+            && (actor.neutralAdmin() || (memberSide != null && state != ResultState.CONFIRMED && !overdue && lineupsOk)));
         boolean otherSideAgreed = captainSide != null && agreedAt(matchDay,
             captainSide == ResultActor.Side.HOME ? ResultActor.Side.AWAY : ResultActor.Side.HOME) != null;
         dto.setCanConfirm(state == ResultState.SUBMITTED && (actor.neutralAdmin()

@@ -10,6 +10,9 @@ import java.time.Instant;
 public class MatchEventDto {
     private String id;
     private String playerId;
+    /** SUBSTITUTION: the player coming in / going out (docs/23). */
+    private String playerInId;
+    private String playerOutId;
     private String matchId;
     private String teamId;
     private Instant timestamp;

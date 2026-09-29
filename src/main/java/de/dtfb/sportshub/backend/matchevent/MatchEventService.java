@@ -3,6 +3,9 @@ package de.dtfb.sportshub.backend.matchevent;
 import de.dtfb.sportshub.backend.match.Match;
 import de.dtfb.sportshub.backend.match.MatchNotFoundException;
 import de.dtfb.sportshub.backend.match.MatchRepository;
+import de.dtfb.sportshub.backend.player.Player;
+import de.dtfb.sportshub.backend.player.PlayerNotFoundException;
+import de.dtfb.sportshub.backend.player.PlayerRepository;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamNotFoundException;
 import de.dtfb.sportshub.backend.team.TeamRepository;
@@ -17,12 +20,15 @@ public class MatchEventService {
     private final MatchEventMapper mapper;
     private final MatchRepository matchRepository;
     private final TeamRepository teamRepository;
+    private final PlayerRepository playerRepository;
 
-    public MatchEventService(MatchEventRepository repository, MatchEventMapper mapper, MatchRepository matchRepository, TeamRepository teamRepository) {
+    public MatchEventService(MatchEventRepository repository, MatchEventMapper mapper, MatchRepository matchRepository, TeamRepository teamRepository,
+                             PlayerRepository playerRepository) {
         this.repository = repository;
         this.mapper = mapper;
         this.matchRepository = matchRepository;
         this.teamRepository = teamRepository;
+        this.playerRepository = playerRepository;
     }
 
     @Transactional(readOnly = true)
@@ -77,5 +83,14 @@ public class MatchEventService {
         Team team = teamRepository.findById(matchEventDto.getTeamId())
             .orElseThrow(() -> new TeamNotFoundException(matchEventDto.getTeamId()));
         matchEvent.setTeam(team);
+        // Like every other field on update (null = unchanged), a player is only set when given.
+        if (matchEventDto.getPlayerId() != null) matchEvent.setPlayer(playerOrNull(matchEventDto.getPlayerId()));
+        if (matchEventDto.getPlayerInId() != null) matchEvent.setPlayerIn(playerOrNull(matchEventDto.getPlayerInId()));
+        if (matchEventDto.getPlayerOutId() != null) matchEvent.setPlayerOut(playerOrNull(matchEventDto.getPlayerOutId()));
+    }
+
+    private Player playerOrNull(String playerId) {
+        return playerId == null ? null : playerRepository.findById(playerId)
+            .orElseThrow(() -> new PlayerNotFoundException(playerId));
     }
 }
