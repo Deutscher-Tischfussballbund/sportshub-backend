@@ -44,8 +44,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Result entry and confirmation end-to-end through the REAL authorization stack (docs/17, SPO-15):
  * every team member of either side (roster player with a login, captain, admin above the team) may
- * enter or edit; only captains confirm, each for their own side; the result is final once both
- * captains agreed to the current version; a neutral admin (league/federation/global) finalizes at
+ * enter or edit; only captains confirm, each for their own side, as a dedicated action (entering never
+ * confirms); the result is final once both captains confirmed the current, decided version; a neutral admin (league/federation/global) finalizes at
  * once and is the only one who may change a final result. Standings are recomputed on every
  * finalization, so a correction replaces the old result.
  */
@@ -119,14 +119,17 @@ class MatchDayResultAuthorizationIntegrationTest {
     // --- the normal cycle ---
 
     @Test
-    void captainEnters_otherCaptainConfirms_resultIsFinal() throws Exception {
+    void captainEnters_thenBothCaptainsConfirm_resultIsFinal() throws Exception {
         enter(captain("cap-h", teamHomeId), 5, 2)
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.resultState").value("SUBMITTED"))
-            .andExpect(jsonPath("$.homeAgreedAt").isNotEmpty())
+            .andExpect(jsonPath("$.homeAgreedAt").isEmpty()) // entering never confirms
             .andExpect(jsonPath("$.awayAgreedAt").isEmpty());
 
         confirm(captain("cap-a", teamAwayId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.resultState").value("SUBMITTED"));
+        confirm(captain("cap-h", teamHomeId))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.resultState").value("CONFIRMED"));
         assertThat(standingField(teamHomeId, "wins")).isEqualTo(1);
@@ -150,8 +153,9 @@ class MatchDayResultAuthorizationIntegrationTest {
     }
 
     @Test
-    void anEditCancelsTheOtherSidesAgreement() throws Exception {
+    void anEditCancelsAllConfirmations() throws Exception {
         enter(captain("cap-h", teamHomeId), 5, 2).andExpect(status().isOk());
+        confirm(captain("cap-h", teamHomeId)).andExpect(status().isOk());
 
         enter(rosterPlayer("pl-a", awayParticipationId), 2, 5)
             .andExpect(status().isOk())
@@ -174,6 +178,7 @@ class MatchDayResultAuthorizationIntegrationTest {
     void aCaptainWhoseSideAlreadyAgreed_cannotConfirmAgain() throws Exception {
         RequestPostProcessor home = captain("cap-h", teamHomeId);
         enter(home, 5, 2).andExpect(status().isOk());
+        confirm(home).andExpect(status().isOk());
 
         confirm(home).andExpect(status().isConflict());
     }
@@ -210,6 +215,7 @@ class MatchDayResultAuthorizationIntegrationTest {
     void aFinalResult_isFrozenForTeams_andAnAdminCorrectionReplacesItInTheStandings() throws Exception {
         enter(captain("cap-h", teamHomeId), 5, 2).andExpect(status().isOk());
         confirm(captain("cap-a", teamAwayId)).andExpect(status().isOk());
+        confirm(captain("cap-h", teamHomeId)).andExpect(status().isOk());
 
         enter(captain("cap-h", teamHomeId), 6, 2).andExpect(status().isConflict());
 
@@ -281,7 +287,8 @@ class MatchDayResultAuthorizationIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.decided").value(true));
 
-        confirm(captain("cap-a", teamAwayId))
+        confirm(captain("cap-a", teamAwayId)).andExpect(status().isOk());
+        confirm(captain("cap-h", teamHomeId))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.resultState").value("CONFIRMED"));
     }
@@ -299,7 +306,8 @@ class MatchDayResultAuthorizationIntegrationTest {
             .andExpect(jsonPath("$.gamesEntered").value(2))
             .andExpect(jsonPath("$.decided").value(true));
 
-        confirm(captain("cap-a", teamAwayId))
+        confirm(captain("cap-a", teamAwayId)).andExpect(status().isOk());
+        confirm(captain("cap-h", teamHomeId))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.resultState").value("CONFIRMED"));
     }
@@ -330,6 +338,7 @@ class MatchDayResultAuthorizationIntegrationTest {
         assertThat((List<Boolean>) JsonPath.read(live, "$[*].provisional")).containsOnly(true);
 
         confirm(captain("cap-a", teamAwayId)).andExpect(status().isOk());
+        confirm(captain("cap-h", teamHomeId)).andExpect(status().isOk());
 
         assertThat((List<Boolean>) JsonPath.read(standings(true), "$[*].provisional")).containsOnly(false);
         assertThat(standingField(teamHomeId, "wins")).isEqualTo(1);
@@ -365,7 +374,7 @@ class MatchDayResultAuthorizationIntegrationTest {
             .andExpect(jsonPath("$.canConfirm").value(true))
             .andExpect(jsonPath("$.neutralAdmin").value(false));
         mockMvc.perform(get("/v1/matchdays/" + matchDayId + "/result").with(captain("cap-h", teamHomeId)))
-            .andExpect(jsonPath("$.canConfirm").value(false)); // home already agreed
+            .andExpect(jsonPath("$.canConfirm").value(true)); // entering didn't confirm
         mockMvc.perform(get("/v1/matchdays/" + matchDayId + "/result").with(rosterPlayer("pl-a", awayParticipationId)))
             .andExpect(jsonPath("$.canEdit").value(true))
             .andExpect(jsonPath("$.canConfirm").value(false));

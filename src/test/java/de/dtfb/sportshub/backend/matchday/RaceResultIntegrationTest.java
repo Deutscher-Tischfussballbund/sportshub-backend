@@ -146,7 +146,8 @@ class RaceResultIntegrationTest extends AuthorizedControllerTest {
             .andExpect(jsonPath("$.decidedAt").isNotEmpty())
             .andExpect(jsonPath("$.confirmDeadline").isNotEmpty());
 
-        confirm(captain("race-a", fixture.getTeamAway()), fixture.getId())
+        confirm(captain("race-a", fixture.getTeamAway()), fixture.getId()).andExpect(status().isOk());
+        confirm(captain("race-h", fixture.getTeamHome()), fixture.getId())
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.resultState").value("CONFIRMED"));
 

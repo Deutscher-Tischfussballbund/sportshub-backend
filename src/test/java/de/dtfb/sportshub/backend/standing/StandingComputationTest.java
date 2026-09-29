@@ -125,6 +125,8 @@ class StandingComputationTest extends AuthorizedControllerTest {
             .andExpect(status().isOk());
         mockMvc.perform(post("/v1/matchdays/" + matchDayId + "/confirm").with(away))
             .andExpect(status().isOk());
+        mockMvc.perform(post("/v1/matchdays/" + matchDayId + "/confirm").with(home)) // confirming is explicit
+            .andExpect(status().isOk());
 
         return new Scenario(groupId, homeTeamId, awayTeamId);
     }

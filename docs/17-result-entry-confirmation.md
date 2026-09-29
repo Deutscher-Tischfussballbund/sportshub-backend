@@ -9,8 +9,9 @@
 >
 > **Refined 2026-09-28 (proposal by Marvin, awaiting team confirmation — agenda, SPO-15/57):**
 > entering stays open to every member of either team, but **confirming is the captains' job**
-> (the `team_admin` role). A result is final once each team's captain has agreed to the current
-> version. See §Decision and §Changes against 2026-09-21.
+> (the `team_admin` role). A result is final once each team's captain has explicitly confirmed the
+> current, decided version — entering never counts as confirming (2026-09-29). See §Decision and
+> §Changes against 2026-09-21.
 >
 > See also: [`02-role-concept.md`](./02-role-concept.md) (roles and scopes),
 > [`03-authorization-model.md`](./03-authorization-model.md) (how a decision is computed),
@@ -72,25 +73,18 @@ wholesale rather than designed afresh.
 **Rules:**
 
 - **Who may enter or edit:** any team member of either side, and any neutral admin.
-- **Who may confirm:** only a **captain**, for **their own side**, as long as that side hasn't agreed
-  to the current version yet — or a neutral admin. A team member who isn't a captain can't confirm.
-  Since a captain's own entry already counts as their side's agreement, nobody ends up confirming
-  their own entry.
+- **Who may confirm:** only a **captain**, for **their own side**, as long as that side hasn't
+  confirmed the current version yet — or a neutral admin. A team member who isn't a captain can't
+  confirm. **Confirming is a dedicated action** (Marvin, 2026-09-29): entering or saving a result —
+  even by a captain — never counts as confirming.
 - **Only a decided fixture can become final** (Marvin, 2026-09-28): the entered games must decide it
   under the rule set's **matchday decision** — `ALL_GAMES` (also when none is set): every game has a
-  score; `FIRST_TO` N: one side has won N games, the rest may stay unplayed. Before that, captains
-  can agree to what's entered, but no confirmation and no admin entry makes it final.
-- **When it is final:** once it is decided and **each side's captain has agreed to the current version**. A captain
-  agrees by confirming it, or by entering/editing it themselves. So:
-
-  | Who enters | Then needed |
-  |---|---|
-  | a captain of A | a captain of B confirms |
-  | a team member of A who isn't a captain | a captain of A **and** a captain of B confirm |
-  | a neutral admin | nothing — final at once (override) |
-
-- **Edits restart the cycle:** any edit by a team member cancels the agreement of the other side
-  (a captain's own edit counts as their agreement); the side that now has to act is notified.
+  score; `FIRST_TO` N: one side has won N games, the rest may stay unplayed. Before that nobody can
+  confirm, and an admin entry doesn't make it final.
+- **When it is final:** once it is decided and **both captains have confirmed the current version**,
+  whoever entered it. A neutral admin's entry of a decided result is final at once (override).
+- **Edits restart the cycle:** any edit by a team member cancels **all** confirmations so far — what
+  was confirmed has changed; both captains confirm again.
 - **Freeze:** once final, the result is immutable for team members. Only a neutral admin may change
   it thereafter; an admin change is final at once.
 - **Admin authority:** a neutral admin may enter, edit, or confirm a result at any point,
@@ -110,9 +104,10 @@ wholesale rather than designed afresh.
 ### Changes against 2026-09-21
 
 - Confirming moves from "the opposing team" to **the captains**; entering stays open to every team
-  member. This mirrors the paper sheet, where both captains sign.
-- "Final" is defined per side (each captain agreed to the current version), so an entry by a
-  non-captain no longer counts as its team's word.
+  member. This mirrors the paper sheet, where both captains sign. Since 2026-09-29 both captains
+  confirm explicitly — a captain's own entry no longer counts as their confirmation.
+- "Final" is defined per side (each captain confirmed the current version), so no entry — by a
+  captain or anyone else — counts as its team's word on its own.
 - Club admins count as their team's side, not as neutral admins — otherwise a club admin could enter
   a result for their own team and confirm it as "admin".
 - A neutral admin's entry or edit is final at once (2026-09-21 only said an admin may enter, edit or
