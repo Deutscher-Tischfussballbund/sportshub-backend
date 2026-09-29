@@ -28,17 +28,16 @@ import java.util.Set;
 
 /**
  * Result entry and confirmation of a fixture (docs/17, SPO-15). Any team member of either side
- * enters or edits; a result is final ({@code CONFIRMED}) once each side's captain has agreed to the
- * current version -- a captain agrees by confirming, or by entering/editing it themselves. An edit
- * cancels the other side's agreement. A neutral admin's entry, edit or confirmation is final at
+ * enters or edits; a result is final ({@code CONFIRMED}) once each side's captain has explicitly
+ * confirmed the current, decided version -- entering or editing never counts as confirming (Marvin,
+ * 2026-09-29), and any edit cancels all confirmations so far. A neutral admin's entry, edit or confirmation is final at
  * once, and only a neutral admin may change a final result. Every finalization publishes
  * {@link MatchDayConfirmedEvent}, from which the standings are recomputed.
  *
  * <p>A result only becomes final once it is <b>decided</b> under the rule set's matchday decision:
  * {@code ALL_GAMES} (also when none is set) -- every game has a score; {@code FIRST_TO} -- one side
- * has won {@code matchdayTarget} games (the rest may stay unplayed). Until then captains can agree to
- * the entered games, but nothing finalizes: a confirmation that would is refused (409), and a neutral
- * admin's entry stays pending like a team's.
+ * has won {@code matchdayTarget} games (the rest may stay unplayed). Only a decided result can be
+ * confirmed (409 otherwise), and a neutral admin's entry of an undecided one stays pending.
  *
  * <p>In a {@code RACE} rule set (docs/22) the games are the segments of one running score: every save
  * is checked with {@link RaceScoring} (400 on a violation), and "decided" means the last segment is
@@ -134,9 +133,9 @@ public class MatchDayResultService {
         }
         applyScores(matchDay, request);
         trackDecided(matchDay);
-        Instant ownAgreement = actor.captainSide() == side ? Instant.now() : null;
-        matchDay.setHomeConfirmedAt(side == ResultActor.Side.HOME ? ownAgreement : null);
-        matchDay.setAwayConfirmedAt(side == ResultActor.Side.AWAY ? ownAgreement : null);
+        // Saving never confirms, and what was confirmed has changed: both confirmations start over.
+        matchDay.setHomeConfirmedAt(null);
+        matchDay.setAwayConfirmedAt(null);
         matchDay.setSubmittedByDtfbId(dtfbId);
         matchDay.setResultState(ResultState.SUBMITTED);
         return toDto(repository.save(matchDay), actor);
@@ -175,11 +174,7 @@ public class MatchDayResultService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                 "Your team has already agreed; waiting for the other team's captain");
         }
-        boolean otherSideAgreed = side == ResultActor.Side.HOME
-            ? matchDay.getAwayConfirmedAt() != null : matchDay.getHomeConfirmedAt() != null;
-        if (otherSideAgreed) {
-            requireDecided(matchDay); // this confirmation would finalize
-        }
+        requireDecided(matchDay); // a captain confirms the final version, never a partial one
         if (side == ResultActor.Side.HOME) {
             matchDay.setHomeConfirmedAt(now);
         } else {
@@ -404,11 +399,8 @@ public class MatchDayResultService {
         boolean lineupsOk = !dto.isLineupRequired() || dto.isLineupsComplete();
         dto.setCanEdit(!matchDay.isBye()
             && (actor.neutralAdmin() || (memberSide != null && state != ResultState.CONFIRMED && !overdue && lineupsOk)));
-        boolean otherSideAgreed = captainSide != null && agreedAt(matchDay,
-            captainSide == ResultActor.Side.HOME ? ResultActor.Side.AWAY : ResultActor.Side.HOME) != null;
-        dto.setCanConfirm(state == ResultState.SUBMITTED && (actor.neutralAdmin()
-            ? decided
-            : !overdue && captainSide != null && agreedAt(matchDay, captainSide) == null && (decided || !otherSideAgreed)));
+        dto.setCanConfirm(state == ResultState.SUBMITTED && decided && (actor.neutralAdmin()
+            || (!overdue && captainSide != null && agreedAt(matchDay, captainSide) == null)));
         return dto;
     }
 
