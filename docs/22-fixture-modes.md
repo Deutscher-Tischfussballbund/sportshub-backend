@@ -153,9 +153,10 @@ beyond that (lot / penalty) is set by an admin. (SPO-21/22, SPO-74.)
   (`race-check.ts` mirrors `RaceScoring`), countdown and overdue note; a countdown banner at the top
   of the app for both captains, and per-region counts for neutral admins; the region page "Open
   results" (tournament management); the group table (Live/Official) on the schedule page; byes read
-  "Bye".
+  "Bye"; the team area's "Table" page shows the table of every group the team is placed in, with its
+  own row marked.
 - **Not yet:** "kick-off passed, nothing entered"; manual tie order (lot/penalty); the playoffs
-  (SPO-99); the table in the team area and on the public page (SPO-110).
+  (SPO-99); the table on the public page (SPO-110).
 
 ## Questions for the competition management (Daniel)
 
