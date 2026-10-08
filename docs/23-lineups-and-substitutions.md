@@ -61,7 +61,9 @@ untyped `json` payload — writable by admins only (`canOrganizeMatch`). Nothing
 
 - For every game of the fixture: 2 players for a double, 1 for a single (goalie games: 1), from the
   team's **current roster in the league** (doc 15). Staged and submitted as a whole.
-- Entered by the team's **captain** (`team_admin`) or a neutral admin, **before kick-off**.
+- Entered by the team's **captain** (`team_admin`) or a neutral admin, **before kick-off**. Drafts can
+  change freely; **once submitted, the captain can't change it any more** (409), even before the opponent
+  has submitted (Marvin, 2026-10-08) -- only a neutral admin can, and an admin's save keeps it submitted.
 - **Hidden** from the opponent until both teams have submitted; then both are shown and **locked** —
   from then on only substitutions change who plays.
 - Missing at kick-off: the result page and the pending overview say so; the tournament management

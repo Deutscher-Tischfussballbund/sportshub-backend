@@ -159,6 +159,19 @@ class LineupIntegrationTest extends AuthorizedControllerTest {
     }
 
     @Test
+    void onceSubmitted_theCaptainCantChangeTheirLineup_evenBeforeTheOpponentSubmits() throws Exception {
+        save("HOME", homeCaptain, homePlayers, valid(), false).andExpect(status().isOk()); // drafts may change
+        save("HOME", homeCaptain, homePlayers, valid(), true).andExpect(status().isOk());
+
+        mockMvc.perform(get("/v1/matchdays/" + fixture.getId() + "/lineups").with(homeCaptain))
+            .andExpect(jsonPath("$.home.submitted").value(true))
+            .andExpect(jsonPath("$.home.canEdit").value(false));
+        save("HOME", homeCaptain, homePlayers, valid(), false).andExpect(status().isConflict());
+        save("HOME", homeCaptain, homePlayers, valid(), true).andExpect(status().isConflict());
+        save("HOME", ADMIN, homePlayers, valid(), true).andExpect(status().isOk()); // the tournament management can
+    }
+
+    @Test
     void afterBothAreIn_captainsCantEditAnyMore() throws Exception {
         save("HOME", homeCaptain, homePlayers, valid(), true).andExpect(status().isOk());
         save("AWAY", awayCaptain, awayPlayers, valid(), true).andExpect(status().isOk());

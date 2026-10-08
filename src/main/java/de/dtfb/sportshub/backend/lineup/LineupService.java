@@ -39,8 +39,8 @@ import java.util.Set;
  * Line-ups and substitutions of a fixture (docs/23). Each team's captain (or a neutral admin) enters
  * the line-up -- the players per game, from the team's current roster -- as a draft and submits it;
  * submitting checks the rule set's line-up rules. A side is visible to its own team and to neutral
- * admins, and to everyone once both are submitted or kick-off has passed. Once both are in, captains
- * can't edit any more; substitutions ({@code MatchEvent} {@code SUBSTITUTION}) change who plays from a
+ * admins, and to everyone once both are submitted or kick-off has passed. A captain can't change their
+ * line-up once it's submitted (only a neutral admin can); once both are in, substitutions ({@code MatchEvent} {@code SUBSTITUTION}) change who plays from a
  * game on, positionally. Who actually plays = the line-up with the substitutions applied in game order.
  */
 @Service
@@ -144,6 +144,10 @@ public class LineupService {
             if (bothSubmitted(matchDay)) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Both line-ups are submitted; from now on only substitutions change who plays");
+            }
+            if (lineupRepository.findByMatchDayAndTeamId(matchDay, team.getId()).map(l -> l.getSubmittedAt() != null).orElse(false)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Your line-up is submitted; only the tournament management can change it now");
             }
             if (matchDay.getResultState() != ResultState.OPEN) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "A result has been entered; the line-up is fixed");
@@ -410,7 +414,7 @@ public class LineupService {
             sideDto.setVisible(visible);
             boolean captainHere = actor.captainSide() == side;
             sideDto.setCanEdit(!matchDay.isBye() && (actor.neutralAdmin()
-                || (captainHere && !both && matchDay.getResultState() == ResultState.OPEN)));
+                || (captainHere && !sideDto.isSubmitted() && matchDay.getResultState() == ResultState.OPEN)));
             sideDto.setCanSubstitute(!matchDay.isBye() && both
                 && (actor.neutralAdmin() ? matchDay.getResultState() != ResultState.CONFIRMED : captainHere && !matchDay.hasBeenFinal()));
             Integer max = rules == null ? null : rules.getMaxSubstitutions();
