@@ -450,6 +450,150 @@ INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status,
 VALUES ('tp-2027-1', 'tfcm1-2027', 'lg-2027-h', NULL, 'DRAFT', 'ACTIVE');
 
 -- ---------------------------------------------------------------------------
+-- A played-through current season for the tables and the result flow (SPO-22, SPO-15, SPO-100):
+-- three more Bayernliga teams join g-2026-1, each with a confirmed roster of four players, and a
+-- single round robin (3 rounds). Rounds 1 and 2 are played the way the app requires it: both
+-- line-ups submitted (docs/23), every game scored, both captains confirmed -- so the result is
+-- final (docs/17). Round 3 lies ahead and is untouched: no line-ups, no scores -- log in as `team`
+-- (captain of TFC München 1) to submit a line-up and enter a result. Standings aren't stored; the
+-- table is computed from these fixtures.
+-- ---------------------------------------------------------------------------
+INSERT INTO team (id, season_id, name, club_id, team_identity_id)
+VALUES ('kfa1-2026', 'season-2026', 'Kickerfreunde Augsburg 1', 'club-kfa', 'tid-kfa-1'),
+       ('kck1-2026', 'season-2026', '1. KC Köln 1', 'club-kck', 'team-kck-1'),
+       ('dtk1-2026', 'season-2026', 'Dortmunder Tischkicker 1', 'club-dtk', 'team-dtk-1');
+
+INSERT INTO player (id, first_name, last_name, nationality, national_id, birth_year, gender, national_license, active)
+VALUES ('player-p10', 'Moritz', 'Becker', 'DE', '1010', 1992, 'MALE', 'B', TRUE),
+       ('player-p11', 'David', 'Richter', 'DE', '1011', 1989, 'MALE', 'B', TRUE),
+       ('player-p12', 'Jan', 'Klein', 'DE', '1012', 1994, 'MALE', 'B', TRUE),
+       ('player-p13', 'Max', 'Wolf', 'DE', '1013', 1990, 'MALE', 'B', TRUE),
+       ('player-p14', 'Leon', 'Schröder', 'DE', '1014', 1998, 'MALE', 'B', TRUE),
+       ('player-p15', 'Ben', 'Neumann', 'DE', '1015', 1987, 'MALE', 'B', TRUE),
+       ('player-p16', 'Tobias', 'Schwarz', 'DE', '1016', 1993, 'MALE', 'B', TRUE),
+       ('player-p17', 'Simon', 'Zimmermann', 'DE', '1017', 1991, 'MALE', 'B', TRUE),
+       ('player-p18', 'Erik', 'Braun', 'DE', '1018', 1996, 'MALE', 'B', TRUE),
+       ('player-p19', 'Florian', 'Krüger', 'DE', '1019', 1985, 'MALE', 'B', TRUE);
+
+INSERT INTO club_membership (id, player_id, club_id, joined_at)
+VALUES ('cm-p10-kfa', 'player-p10', 'club-kfa', TIMESTAMP '2025-06-01 00:00:00'),
+       ('cm-p11-kfa', 'player-p11', 'club-kfa', TIMESTAMP '2025-06-01 00:00:00'),
+       ('cm-p12-kck', 'player-p12', 'club-kck', TIMESTAMP '2025-06-01 00:00:00'),
+       ('cm-p13-kck', 'player-p13', 'club-kck', TIMESTAMP '2025-06-01 00:00:00'),
+       ('cm-p14-kck', 'player-p14', 'club-kck', TIMESTAMP '2025-06-01 00:00:00'),
+       ('cm-p15-kck', 'player-p15', 'club-kck', TIMESTAMP '2025-06-01 00:00:00'),
+       ('cm-p16-dtk', 'player-p16', 'club-dtk', TIMESTAMP '2025-06-01 00:00:00'),
+       ('cm-p17-dtk', 'player-p17', 'club-dtk', TIMESTAMP '2025-06-01 00:00:00'),
+       ('cm-p18-dtk', 'player-p18', 'club-dtk', TIMESTAMP '2025-06-01 00:00:00'),
+       ('cm-p19-dtk', 'player-p19', 'club-dtk', TIMESTAMP '2025-06-01 00:00:00');
+
+INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status, status)
+VALUES ('tp-2026-2', 'kfa1-2026', 'lg-2026-h', 'g-2026-1', 'CONFIRMED', 'ACTIVE'),
+       ('tp-2026-3', 'kck1-2026', 'lg-2026-h', 'g-2026-1', 'CONFIRMED', 'ACTIVE'),
+       ('tp-2026-4', 'dtk1-2026', 'lg-2026-h', 'g-2026-1', 'CONFIRMED', 'ACTIVE');
+
+INSERT INTO roster_entry (id, participation_id, player_id, added_at, removed_at)
+VALUES ('re-2026-4', 'tp-2026-1', 'player-p6', TIMESTAMP '2026-01-15 10:00:00', NULL),
+       ('re-2026-5', 'tp-2026-2', 'player-p4', TIMESTAMP '2026-01-20 10:00:00', NULL),
+       ('re-2026-6', 'tp-2026-2', 'player-p5', TIMESTAMP '2026-01-20 10:00:00', NULL),
+       ('re-2026-7', 'tp-2026-2', 'player-p10', TIMESTAMP '2026-01-20 10:00:00', NULL),
+       ('re-2026-8', 'tp-2026-2', 'player-p11', TIMESTAMP '2026-01-20 10:00:00', NULL),
+       ('re-2026-9', 'tp-2026-3', 'player-p12', TIMESTAMP '2026-01-20 10:00:00', NULL),
+       ('re-2026-10', 'tp-2026-3', 'player-p13', TIMESTAMP '2026-01-20 10:00:00', NULL),
+       ('re-2026-11', 'tp-2026-3', 'player-p14', TIMESTAMP '2026-01-20 10:00:00', NULL),
+       ('re-2026-12', 'tp-2026-3', 'player-p15', TIMESTAMP '2026-01-20 10:00:00', NULL),
+       ('re-2026-13', 'tp-2026-4', 'player-p16', TIMESTAMP '2026-01-20 10:00:00', NULL),
+       ('re-2026-14', 'tp-2026-4', 'player-p17', TIMESTAMP '2026-01-20 10:00:00', NULL),
+       ('re-2026-15', 'tp-2026-4', 'player-p18', TIMESTAMP '2026-01-20 10:00:00', NULL),
+       ('re-2026-16', 'tp-2026-4', 'player-p19', TIMESTAMP '2026-01-20 10:00:00', NULL);
+
+INSERT INTO round (id, group_id, name, round_index)
+VALUES ('rd-2026-1', 'g-2026-1', 'Spieltag 1', 1),
+       ('rd-2026-2', 'g-2026-1', 'Spieltag 2', 2),
+       ('rd-2026-3', 'g-2026-1', 'Spieltag 3', 3);
+
+INSERT INTO match_day (id, round_id, team_home_id, team_away_id, start_date, result_state, scheduling_state,
+                       submitted_by_dtfb_id, home_confirmed_at, away_confirmed_at, decided_at, first_final_at)
+VALUES ('md-26-1a', 'rd-2026-1', 'tfcm1-2026', 'dtk1-2026', TIMESTAMP '2026-09-19 11:00:00', 'CONFIRMED', 'CONFIRMED', 'team', TIMESTAMP '2026-09-19 12:54:00', TIMESTAMP '2026-09-19 12:57:00', TIMESTAMP '2026-09-19 12:50:00', TIMESTAMP '2026-09-19 12:57:00'),
+       ('md-26-1b', 'rd-2026-1', 'kfa1-2026', 'kck1-2026', TIMESTAMP '2026-09-19 14:00:00', 'CONFIRMED', 'CONFIRMED', NULL, TIMESTAMP '2026-09-19 15:54:00', TIMESTAMP '2026-09-19 15:57:00', TIMESTAMP '2026-09-19 15:50:00', TIMESTAMP '2026-09-19 15:57:00'),
+       ('md-26-2a', 'rd-2026-2', 'kck1-2026', 'tfcm1-2026', TIMESTAMP '2026-10-03 11:00:00', 'CONFIRMED', 'CONFIRMED', 'team', TIMESTAMP '2026-10-03 12:54:00', TIMESTAMP '2026-10-03 12:57:00', TIMESTAMP '2026-10-03 12:50:00', TIMESTAMP '2026-10-03 12:57:00'),
+       ('md-26-2b', 'rd-2026-2', 'dtk1-2026', 'kfa1-2026', TIMESTAMP '2026-10-03 14:00:00', 'CONFIRMED', 'CONFIRMED', NULL, TIMESTAMP '2026-10-03 15:54:00', TIMESTAMP '2026-10-03 15:57:00', TIMESTAMP '2026-10-03 15:50:00', TIMESTAMP '2026-10-03 15:57:00'),
+       ('md-26-3a', 'rd-2026-3', 'tfcm1-2026', 'kfa1-2026', TIMESTAMP '2026-10-17 11:00:00', 'OPEN', 'CONFIRMED', NULL, NULL, NULL, NULL, NULL),
+       ('md-26-3b', 'rd-2026-3', 'dtk1-2026', 'kck1-2026', TIMESTAMP '2026-10-17 14:00:00', 'OPEN', 'CONFIRMED', NULL, NULL, NULL, NULL, NULL);
+
+INSERT INTO match_game (id, match_day_id, position, type, start_time, home_score, away_score, state, winner)
+VALUES ('mg-26-1a-1', 'md-26-1a', 1, 'DOUBLE', TIMESTAMP '2026-09-19 11:00:00', 7, 5, 'PLAYED', 'HOME'),
+       ('mg-26-1a-2', 'md-26-1a', 2, 'DOUBLE', TIMESTAMP '2026-09-19 11:00:00', 4, 7, 'PLAYED', 'AWAY'),
+       ('mg-26-1a-3', 'md-26-1a', 3, 'SINGLE', TIMESTAMP '2026-09-19 11:00:00', 7, 6, 'PLAYED', 'HOME'),
+       ('mg-26-1b-1', 'md-26-1b', 1, 'DOUBLE', TIMESTAMP '2026-09-19 14:00:00', 7, 3, 'PLAYED', 'HOME'),
+       ('mg-26-1b-2', 'md-26-1b', 2, 'DOUBLE', TIMESTAMP '2026-09-19 14:00:00', 5, 7, 'PLAYED', 'AWAY'),
+       ('mg-26-1b-3', 'md-26-1b', 3, 'SINGLE', TIMESTAMP '2026-09-19 14:00:00', 2, 7, 'PLAYED', 'AWAY'),
+       ('mg-26-2a-1', 'md-26-2a', 1, 'DOUBLE', TIMESTAMP '2026-10-03 11:00:00', 7, 4, 'PLAYED', 'HOME'),
+       ('mg-26-2a-2', 'md-26-2a', 2, 'DOUBLE', TIMESTAMP '2026-10-03 11:00:00', 7, 5, 'PLAYED', 'HOME'),
+       ('mg-26-2a-3', 'md-26-2a', 3, 'SINGLE', TIMESTAMP '2026-10-03 11:00:00', 6, 7, 'PLAYED', 'AWAY'),
+       ('mg-26-2b-1', 'md-26-2b', 1, 'DOUBLE', TIMESTAMP '2026-10-03 14:00:00', 7, 6, 'PLAYED', 'HOME'),
+       ('mg-26-2b-2', 'md-26-2b', 2, 'DOUBLE', TIMESTAMP '2026-10-03 14:00:00', 7, 2, 'PLAYED', 'HOME'),
+       ('mg-26-2b-3', 'md-26-2b', 3, 'SINGLE', TIMESTAMP '2026-10-03 14:00:00', 3, 7, 'PLAYED', 'AWAY'),
+       ('mg-26-3a-1', 'md-26-3a', 1, 'DOUBLE', TIMESTAMP '2026-10-17 11:00:00', NULL, NULL, 'PLANNED', NULL),
+       ('mg-26-3a-2', 'md-26-3a', 2, 'DOUBLE', TIMESTAMP '2026-10-17 11:00:00', NULL, NULL, 'PLANNED', NULL),
+       ('mg-26-3a-3', 'md-26-3a', 3, 'SINGLE', TIMESTAMP '2026-10-17 11:00:00', NULL, NULL, 'PLANNED', NULL),
+       ('mg-26-3b-1', 'md-26-3b', 1, 'DOUBLE', TIMESTAMP '2026-10-17 14:00:00', NULL, NULL, 'PLANNED', NULL),
+       ('mg-26-3b-2', 'md-26-3b', 2, 'DOUBLE', TIMESTAMP '2026-10-17 14:00:00', NULL, NULL, 'PLANNED', NULL),
+       ('mg-26-3b-3', 'md-26-3b', 3, 'SINGLE', TIMESTAMP '2026-10-17 14:00:00', NULL, NULL, 'PLANNED', NULL);
+
+INSERT INTO lineup (id, match_day_id, team_id, submitted_at, submitted_by_dtfb_id)
+VALUES ('lu-26-1a-h', 'md-26-1a', 'tfcm1-2026', TIMESTAMP '2026-09-19 10:30:00', 'team'),
+       ('lu-26-1a-a', 'md-26-1a', 'dtk1-2026', TIMESTAMP '2026-09-19 10:30:00', NULL),
+       ('lu-26-1b-h', 'md-26-1b', 'kfa1-2026', TIMESTAMP '2026-09-19 13:30:00', NULL),
+       ('lu-26-1b-a', 'md-26-1b', 'kck1-2026', TIMESTAMP '2026-09-19 13:30:00', NULL),
+       ('lu-26-2a-h', 'md-26-2a', 'kck1-2026', TIMESTAMP '2026-10-03 10:30:00', NULL),
+       ('lu-26-2a-a', 'md-26-2a', 'tfcm1-2026', TIMESTAMP '2026-10-03 10:30:00', 'team'),
+       ('lu-26-2b-h', 'md-26-2b', 'dtk1-2026', TIMESTAMP '2026-10-03 13:30:00', NULL),
+       ('lu-26-2b-a', 'md-26-2b', 'kfa1-2026', TIMESTAMP '2026-10-03 13:30:00', NULL);
+
+INSERT INTO lineup_entry (id, lineup_id, match_id, slot, player_id)
+VALUES ('le-26-1a-h11', 'lu-26-1a-h', 'mg-26-1a-1', 1, 'player-p1'),
+       ('le-26-1a-h12', 'lu-26-1a-h', 'mg-26-1a-1', 2, 'player-p2'),
+       ('le-26-1a-h21', 'lu-26-1a-h', 'mg-26-1a-2', 1, 'player-p3'),
+       ('le-26-1a-h22', 'lu-26-1a-h', 'mg-26-1a-2', 2, 'player-p6'),
+       ('le-26-1a-h31', 'lu-26-1a-h', 'mg-26-1a-3', 1, 'player-p1'),
+       ('le-26-1a-a11', 'lu-26-1a-a', 'mg-26-1a-1', 1, 'player-p16'),
+       ('le-26-1a-a12', 'lu-26-1a-a', 'mg-26-1a-1', 2, 'player-p17'),
+       ('le-26-1a-a21', 'lu-26-1a-a', 'mg-26-1a-2', 1, 'player-p18'),
+       ('le-26-1a-a22', 'lu-26-1a-a', 'mg-26-1a-2', 2, 'player-p19'),
+       ('le-26-1a-a31', 'lu-26-1a-a', 'mg-26-1a-3', 1, 'player-p16'),
+       ('le-26-1b-h11', 'lu-26-1b-h', 'mg-26-1b-1', 1, 'player-p4'),
+       ('le-26-1b-h12', 'lu-26-1b-h', 'mg-26-1b-1', 2, 'player-p5'),
+       ('le-26-1b-h21', 'lu-26-1b-h', 'mg-26-1b-2', 1, 'player-p10'),
+       ('le-26-1b-h22', 'lu-26-1b-h', 'mg-26-1b-2', 2, 'player-p11'),
+       ('le-26-1b-h31', 'lu-26-1b-h', 'mg-26-1b-3', 1, 'player-p4'),
+       ('le-26-1b-a11', 'lu-26-1b-a', 'mg-26-1b-1', 1, 'player-p12'),
+       ('le-26-1b-a12', 'lu-26-1b-a', 'mg-26-1b-1', 2, 'player-p13'),
+       ('le-26-1b-a21', 'lu-26-1b-a', 'mg-26-1b-2', 1, 'player-p14'),
+       ('le-26-1b-a22', 'lu-26-1b-a', 'mg-26-1b-2', 2, 'player-p15'),
+       ('le-26-1b-a31', 'lu-26-1b-a', 'mg-26-1b-3', 1, 'player-p12'),
+       ('le-26-2a-h11', 'lu-26-2a-h', 'mg-26-2a-1', 1, 'player-p12'),
+       ('le-26-2a-h12', 'lu-26-2a-h', 'mg-26-2a-1', 2, 'player-p13'),
+       ('le-26-2a-h21', 'lu-26-2a-h', 'mg-26-2a-2', 1, 'player-p14'),
+       ('le-26-2a-h22', 'lu-26-2a-h', 'mg-26-2a-2', 2, 'player-p15'),
+       ('le-26-2a-h31', 'lu-26-2a-h', 'mg-26-2a-3', 1, 'player-p14'),
+       ('le-26-2a-a11', 'lu-26-2a-a', 'mg-26-2a-1', 1, 'player-p1'),
+       ('le-26-2a-a12', 'lu-26-2a-a', 'mg-26-2a-1', 2, 'player-p2'),
+       ('le-26-2a-a21', 'lu-26-2a-a', 'mg-26-2a-2', 1, 'player-p3'),
+       ('le-26-2a-a22', 'lu-26-2a-a', 'mg-26-2a-2', 2, 'player-p6'),
+       ('le-26-2a-a31', 'lu-26-2a-a', 'mg-26-2a-3', 1, 'player-p3'),
+       ('le-26-2b-h11', 'lu-26-2b-h', 'mg-26-2b-1', 1, 'player-p16'),
+       ('le-26-2b-h12', 'lu-26-2b-h', 'mg-26-2b-1', 2, 'player-p17'),
+       ('le-26-2b-h21', 'lu-26-2b-h', 'mg-26-2b-2', 1, 'player-p18'),
+       ('le-26-2b-h22', 'lu-26-2b-h', 'mg-26-2b-2', 2, 'player-p19'),
+       ('le-26-2b-h31', 'lu-26-2b-h', 'mg-26-2b-3', 1, 'player-p18'),
+       ('le-26-2b-a11', 'lu-26-2b-a', 'mg-26-2b-1', 1, 'player-p4'),
+       ('le-26-2b-a12', 'lu-26-2b-a', 'mg-26-2b-1', 2, 'player-p5'),
+       ('le-26-2b-a21', 'lu-26-2b-a', 'mg-26-2b-2', 1, 'player-p10'),
+       ('le-26-2b-a22', 'lu-26-2b-a', 'mg-26-2b-2', 2, 'player-p11'),
+       ('le-26-2b-a31', 'lu-26-2b-a', 'mg-26-2b-3', 1, 'player-p10');
+
+-- ---------------------------------------------------------------------------
 -- Root-federation (DTFB) demo: a Bundesliga season/league under fed-dtfb, and a SECOND team
 -- for TFC München -- same club (club-tfcm) as its regional tid-tfcm-1 team above, but its own
 -- team_identity_id, own season/league. Demonstrates a club fielding independent teams across
