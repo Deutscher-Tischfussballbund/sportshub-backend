@@ -299,6 +299,7 @@ Table match_day {
   away_confirmed_at datetime
   bye boolean [not null, default: false, note: 'Fixture against the bye: team_away_id NULL, scored with the bye score (docs/22)']
   decided_at datetime [note: 'When the result became decided -- start of the confirmation deadline']
+  first_final_at datetime [note: 'When the result first became final; never cleared -- from then on only neutral admins act on it (docs/17)']
   // Scheduling lifecycle for start_date/location -- independent of result_state above; see
   // docs/12-matchday-scheduling.md.
   scheduling_state SchedulingState [not null, default: 'DEFAULT']

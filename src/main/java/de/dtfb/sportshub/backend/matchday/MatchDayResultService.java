@@ -31,7 +31,9 @@ import java.util.Set;
  * enters or edits; a result is final ({@code CONFIRMED}) once each side's captain has explicitly
  * confirmed the current, decided version -- entering or editing never counts as confirming (Marvin,
  * 2026-09-29), and any edit cancels all confirmations so far. A neutral admin's entry, edit or confirmation is final at
- * once, and only a neutral admin may change a final result. Every finalization publishes
+ * once, and only a neutral admin may change a final result. A result that has been final once stays
+ * with the neutral admins ({@code firstFinalAt}): even when an admin's correction makes it undecided
+ * again, the teams can neither enter nor confirm. Every finalization publishes
  * {@link MatchDayConfirmedEvent}, from which the standings are recomputed.
  *
  * <p>A result only becomes final once it is <b>decided</b> under the rule set's matchday decision:
@@ -83,7 +85,8 @@ public class MatchDayResultService {
         return repository.findVisibleByResultState(ResultState.SUBMITTED).stream()
             .map(matchDay -> {
                 ResultActor actor = authz.resultActor(matchDay);
-                return actor.neutralAdmin() || actor.homeCaptain() || actor.awayCaptain() ? toDto(matchDay, actor) : null;
+                boolean captain = (actor.homeCaptain() || actor.awayCaptain()) && !matchDay.hasBeenFinal();
+                return actor.neutralAdmin() || captain ? toDto(matchDay, actor) : null;
             })
             .filter(java.util.Objects::nonNull)
             .sorted(Comparator.comparing(MatchDayResultDto::isOverdue).reversed()
@@ -122,10 +125,7 @@ public class MatchDayResultService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                 "You belong to both teams of this fixture, so you can't enter its result");
         }
-        if (matchDay.getResultState() == ResultState.CONFIRMED) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                "The result is final; only a league or federation admin can change it");
-        }
+        requireNotAdminOnly(matchDay);
         requireNotOverdue(matchDay);
         if (lineups.lineupRequired(matchDay) && !lineups.bothSubmitted(matchDay)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
@@ -169,6 +169,7 @@ public class MatchDayResultService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                 "Only a captain of one of the two teams can confirm the result");
         }
+        requireNotAdminOnly(matchDay);
         requireNotOverdue(matchDay);
         if (agreedAt(matchDay, side) != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
@@ -274,8 +275,18 @@ public class MatchDayResultService {
         }
     }
 
+    private static void requireNotAdminOnly(MatchDay matchDay) {
+        if (matchDay.hasBeenFinal()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "The result has been final; only a league or federation admin can change or confirm it");
+        }
+    }
+
     private MatchDayResultDto finalize(MatchDay matchDay, ResultActor actor) {
         matchDay.setResultState(ResultState.CONFIRMED);
+        if (matchDay.getFirstFinalAt() == null) {
+            matchDay.setFirstFinalAt(Instant.now());
+        }
         MatchDay saved = repository.save(matchDay);
         eventPublisher.publishEvent(new MatchDayConfirmedEvent(this, saved));
         return toDto(saved, actor);
@@ -390,6 +401,8 @@ public class MatchDayResultService {
         dto.setConfirmDeadline(confirmDeadline(matchDay));
         boolean overdue = isOverdue(matchDay);
         dto.setOverdue(overdue);
+        boolean adminOnly = matchDay.hasBeenFinal();
+        dto.setAdminOnly(adminOnly);
 
         ResultState state = matchDay.getResultState();
         ResultActor.Side memberSide = actor.memberSide();
@@ -398,9 +411,9 @@ public class MatchDayResultService {
         dto.setSide(memberSide);
         boolean lineupsOk = !dto.isLineupRequired() || dto.isLineupsComplete();
         dto.setCanEdit(!matchDay.isBye()
-            && (actor.neutralAdmin() || (memberSide != null && state != ResultState.CONFIRMED && !overdue && lineupsOk)));
+            && (actor.neutralAdmin() || (memberSide != null && !adminOnly && !overdue && lineupsOk)));
         dto.setCanConfirm(state == ResultState.SUBMITTED && decided && (actor.neutralAdmin()
-            || (!overdue && captainSide != null && agreedAt(matchDay, captainSide) == null)));
+            || (!adminOnly && !overdue && captainSide != null && agreedAt(matchDay, captainSide) == null)));
         return dto;
     }
 

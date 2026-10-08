@@ -66,6 +66,9 @@ public class MatchDayResultDto {
     /** The deadline has passed: only the tournament management can confirm or change it now. */
     private boolean overdue;
 
+    /** Final now or final once (docs/17): only neutral admins may enter or confirm. */
+    private boolean adminOnly;
+
     /** Line-ups (docs/23): the rule set requires them, and both are submitted. */
     private boolean lineupRequired;
     private boolean lineupsComplete;

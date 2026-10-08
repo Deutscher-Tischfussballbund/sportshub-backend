@@ -86,7 +86,10 @@ wholesale rather than designed afresh.
 - **Edits restart the cycle:** any edit by a team member cancels **all** confirmations so far — what
   was confirmed has changed; both captains confirm again.
 - **Freeze:** once final, the result is immutable for team members. Only a neutral admin may change
-  it thereafter; an admin change is final at once.
+  it thereafter; an admin change is final at once. **Final once, admin-only for good** (Marvin,
+  2026-10-08): if an admin's correction makes the result undecided again (e.g. under `FIRST_TO`), it
+  is pending again but stays with the neutral admins — the teams can neither enter, confirm nor
+  record substitutions (`MatchDay.firstFinalAt`, V18; result view `adminOnly`).
 - **Admin authority:** a neutral admin may enter, edit, or confirm a result at any point,
   including confirming on behalf of a stalled cycle. This is unconditional, not a fallback.
 - **When captains confirm** (Marvin, 2026-09-28): any time within the match day, typically before
@@ -128,8 +131,8 @@ wholesale rather than designed afresh.
   - `POST /v1/matchdays/{id}/result` — enter or edit (`{ matches: [{ matchId, homeScore, awayScore }] }`),
     gated by `@authz.canEnterResult`;
   - `POST /v1/matchdays/{id}/confirm` — gated by `@authz.canConfirmResult`.
-  Both return the same result view. Refusals: `403` (not allowed / side ambiguous), `409` (final
-  result edited by a team, nothing to confirm, own side already agreed), `400` (malformed scores).
+  Both return the same result view. Refusals: `403` (not allowed / side ambiguous), `409` (a
+  result that has been final, edited or confirmed by a team, nothing to confirm, own side already agreed), `400` (malformed scores).
 - **Who is who** — `AuthorizationService.resultActor`: neutral admin = global admin, region admin of
   the league's federation, or league admin of the league (the same set that organizes the league);
   team member = captain, admin above the team, or `RosterEntryRepository.isOnActiveRoster` (a

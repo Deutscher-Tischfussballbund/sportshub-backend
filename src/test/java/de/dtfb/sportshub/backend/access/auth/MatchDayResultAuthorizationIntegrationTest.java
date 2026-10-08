@@ -227,6 +227,35 @@ class MatchDayResultAuthorizationIntegrationTest {
         assertThat(standingField(teamAwayId, "wins")).isEqualTo(1);
     }
 
+    @Test
+    void aResultThatWasFinal_staysWithTheAdmins_evenWhenACorrectionReopensIt() throws Exception {
+        String second = addGame("DOUBLE");
+        String third = addGame("SINGLE");
+        setLeagueDecision("FIRST_TO", 2);
+        enterGames(captain("cap-h", teamHomeId), matchId, 5, 2, second, 5, 4).andExpect(status().isOk());
+        confirm(captain("cap-a", teamAwayId)).andExpect(status().isOk());
+        confirm(captain("cap-h", teamHomeId)).andExpect(jsonPath("$.resultState").value("CONFIRMED"));
+
+        // The admin's correction leaves it 1 : 1 -- undecided, pending again, but not the teams' any more.
+        enterGames(ADMIN, second, 4, 5)
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.resultState").value("SUBMITTED"))
+            .andExpect(jsonPath("$.decided").value(false));
+        mockMvc.perform(get("/v1/matchdays/" + matchDayId + "/result").with(captain("cap-h", teamHomeId)))
+            .andExpect(jsonPath("$.adminOnly").value(true))
+            .andExpect(jsonPath("$.canEdit").value(false))
+            .andExpect(jsonPath("$.canConfirm").value(false));
+        enterGames(captain("cap-h", teamHomeId), third, 5, 3).andExpect(status().isConflict());
+        enterGames(rosterPlayer("pl-a", awayParticipationId), third, 3, 5).andExpect(status().isConflict());
+        mockMvc.perform(get("/v1/matchdays/pending-results").with(captain("cap-h", teamHomeId)))
+            .andExpect(jsonPath("$.length()").value(0));
+
+        enterGames(ADMIN, third, 5, 3)
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.resultState").value("CONFIRMED"));
+        confirm(captain("cap-a", teamAwayId)).andExpect(status().isConflict());
+    }
+
     // --- who may not act at all ---
 
     @Test
@@ -385,6 +414,18 @@ class MatchDayResultAuthorizationIntegrationTest {
     private ResultActions enter(RequestPostProcessor who, int home, int away) throws Exception {
         return mockMvc.perform(post("/v1/matchdays/" + matchDayId + "/result").with(who)
             .contentType(MediaType.APPLICATION_JSON).content(resultBody(home, away)));
+    }
+
+    /** Scores for several games: matchId, home, away, matchId, home, away, ... */
+    private ResultActions enterGames(RequestPostProcessor who, Object... idHomeAway) throws Exception {
+        StringBuilder body = new StringBuilder("{\"matches\":[");
+        for (int i = 0; i < idHomeAway.length; i += 3) {
+            body.append(i == 0 ? "" : ",").append("{\"matchId\":\"").append(idHomeAway[i])
+                .append("\",\"homeScore\":").append(idHomeAway[i + 1])
+                .append(",\"awayScore\":").append(idHomeAway[i + 2]).append('}');
+        }
+        return mockMvc.perform(post("/v1/matchdays/" + matchDayId + "/result").with(who)
+            .contentType(MediaType.APPLICATION_JSON).content(body.append("]}").toString()));
     }
 
     private ResultActions confirm(RequestPostProcessor who) throws Exception {

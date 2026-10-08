@@ -226,8 +226,8 @@ public class LineupService {
             if (!bothSubmitted(matchDay)) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Substitutions start once both line-ups are submitted");
             }
-            if (matchDay.getResultState() == ResultState.CONFIRMED) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "The result is final");
+            if (matchDay.hasBeenFinal()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "The result has been final");
             }
         }
         Team team = teamOf(matchDay, side);
@@ -411,8 +411,8 @@ public class LineupService {
             boolean captainHere = actor.captainSide() == side;
             sideDto.setCanEdit(!matchDay.isBye() && (actor.neutralAdmin()
                 || (captainHere && !both && matchDay.getResultState() == ResultState.OPEN)));
-            sideDto.setCanSubstitute(!matchDay.isBye() && both && matchDay.getResultState() != ResultState.CONFIRMED
-                && (actor.neutralAdmin() || captainHere));
+            sideDto.setCanSubstitute(!matchDay.isBye() && both
+                && (actor.neutralAdmin() ? matchDay.getResultState() != ResultState.CONFIRMED : captainHere && !matchDay.hasBeenFinal()));
             Integer max = rules == null ? null : rules.getMaxSubstitutions();
             sideDto.setSubstitutionsLeft(max == null ? null : Math.max(0, max - substitutions.size()));
             if (visible) {
@@ -496,7 +496,7 @@ public class LineupService {
         ResultActor.Side side = event.getTeam() != null && matchDay.getTeamHome() != null
             && event.getTeam().getId().equals(matchDay.getTeamHome().getId()) ? ResultActor.Side.HOME : ResultActor.Side.AWAY;
         return actor.captainSide() == side && event.getMatch().getHomeScore() == null
-            && matchDay.getResultState() != ResultState.CONFIRMED;
+            && !matchDay.hasBeenFinal();
     }
 
     private Map<String, List<Player>> planned(MatchDay matchDay, Team team) {

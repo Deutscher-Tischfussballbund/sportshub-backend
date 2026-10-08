@@ -59,6 +59,12 @@ public class MatchDay extends BaseEntity {
     /** When the result first became decided -- start of the confirmation deadline (docs/22). */
     private Instant decidedAt;
 
+    /**
+     * When the result first became final (docs/17); never cleared. From then on only a neutral admin
+     * may enter or confirm, even if a correction makes the result undecided again.
+     */
+    private Instant firstFinalAt;
+
     // Scheduling lifecycle for startDate/location above — separate from the result lifecycle.
     // See docs/12-matchday-scheduling.md.
     @Enumerated(EnumType.STRING)
@@ -68,4 +74,9 @@ public class MatchDay extends BaseEntity {
     private String scheduleProposedByDtfbId;
 
     private Instant scheduleConfirmedAt;
+
+    /** Final now, or final once before an admin's correction reopened it: only neutral admins act on it (docs/17). */
+    public boolean hasBeenFinal() {
+        return resultState == ResultState.CONFIRMED || firstFinalAt != null;
+    }
 }
