@@ -7,7 +7,8 @@ import lombok.Setter;
 @Setter
 public class StandingDto {
     /** 1-based place in the ranked table (docs/22 order). */
-    private int place;
+    /** Null for a withdrawn team (listed last, without a place). */
+    private Integer place;
     private String teamId;
     private String teamName;
     private int played;
@@ -24,4 +25,6 @@ public class StandingDto {
     private int goalDifference;
     /** Live table only: the row counts at least one entered but not yet confirmed fixture. */
     private boolean provisional;
+    /** The team has withdrawn from the league (docs/22): listed last, without a place. */
+    private boolean withdrawn;
 }

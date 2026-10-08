@@ -108,7 +108,9 @@ table as a win.
 goals for : against, goal difference, points. Order: points → goal difference → head-to-head; a tie
 beyond that (lot / penalty) is set by an admin. Every active team placed in the group has a row from
 the start, all zeros until its first counted fixture (2026-10-08); the stored standing rows keep only
-teams with a counted fixture, since delete guards read them as "has recorded results". (SPO-21/22, SPO-74.)
+teams with a counted fixture, since delete guards read them as "has recorded results". Withdrawn teams
+are listed last, without a place, marked `withdrawn`; what they already played still counts for their
+opponents (whether a withdrawal annuls results is a rules question, not decided). (SPO-21/22, SPO-74.)
 
 **Confirmation deadline.** Rule field "minutes to confirm" (e.g. 15).
 

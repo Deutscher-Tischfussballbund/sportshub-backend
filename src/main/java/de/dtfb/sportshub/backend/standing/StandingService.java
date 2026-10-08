@@ -45,7 +45,8 @@ import java.util.function.Predicate;
  * goal difference among the tied teams only), goals for, name -- a tie beyond that (lot/penalty) is
  * resolved by an admin. Every active team placed in the group gets a row, also before its first counted
  * fixture (all zeros) -- in the served tables only; the stored rows keep only teams with a counted
- * fixture, since guards read them as "has recorded results".
+ * fixture, since guards read them as "has recorded results". Withdrawn teams are listed last, without a
+ * place and marked {@code withdrawn}; results they already played still count for their opponents.
  */
 @Service
 public class StandingService {
@@ -125,7 +126,8 @@ public class StandingService {
     }
 
     /** The tallied rows (unsaved, ranked) plus the fixture outcomes they came from. */
-    private record Table(List<Standing> rows, List<Outcome> outcomes, int pointsWin, int pointsDraw, int pointsLoss) {
+    private record Table(List<Standing> rows, List<Outcome> outcomes, int pointsWin, int pointsDraw, int pointsLoss,
+                         Set<String> withdrawnTeamIds) {
     }
 
     /** {@code withPlaced}: also a zero row for every active placed team without a counted fixture yet. */
@@ -164,13 +166,20 @@ public class StandingService {
             outcomes.add(new Outcome(matchDay.getTeamHome().getId(), matchDay.getTeamAway().getId(),
                 score[2], score[3]));
         }
+        Set<String> withdrawn = new HashSet<>();
         if (withPlaced) {
             for (TeamParticipation placed : participationRepository.findByGroup_IdAndStatus(group.getId(), ParticipationStatus.ACTIVE)) {
                 row(byTeam, group, placed.getTeam());
             }
+            for (TeamParticipation gone : participationRepository.findByGroup_IdAndStatus(group.getId(), ParticipationStatus.WITHDRAWN)) {
+                row(byTeam, group, gone.getTeam());
+                withdrawn.add(gone.getTeam().getId());
+            }
         }
-        Table table = new Table(new ArrayList<>(byTeam.values()), outcomes, pointsWin, pointsDraw, pointsLoss);
-        table.rows().sort(ranking(table));
+        Table table = new Table(new ArrayList<>(byTeam.values()), outcomes, pointsWin, pointsDraw, pointsLoss, withdrawn);
+        // Withdrawn teams go to the bottom (only marked in the served tables), the rest by the ranking.
+        table.rows().sort(Comparator.<Standing, Boolean>comparing(s -> withdrawn.contains(s.getTeam().getId()))
+            .thenComparing(ranking(table)));
         return table;
     }
 
@@ -288,10 +297,12 @@ public class StandingService {
 
     private List<StandingDto> toDtos(Table table, Set<String> provisionalTeams) {
         List<StandingDto> dtos = new ArrayList<>();
-        for (int i = 0; i < table.rows().size(); i++) {
-            Standing s = table.rows().get(i);
+        int place = 0;
+        for (Standing s : table.rows()) {
             StandingDto dto = new StandingDto();
-            dto.setPlace(i + 1);
+            boolean withdrawn = table.withdrawnTeamIds().contains(s.getTeam().getId());
+            dto.setWithdrawn(withdrawn);
+            dto.setPlace(withdrawn ? null : ++place);
             dto.setProvisional(provisionalTeams.contains(s.getTeam().getId()));
             dto.setTeamId(s.getTeam().getId());
             dto.setTeamName(s.getTeam().getName());

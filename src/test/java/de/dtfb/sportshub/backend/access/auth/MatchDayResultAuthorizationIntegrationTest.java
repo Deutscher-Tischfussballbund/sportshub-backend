@@ -390,7 +390,7 @@ class MatchDayResultAuthorizationIntegrationTest {
     }
 
     @Test
-    void placedTeamsWithoutAPlayedFixture_appearInTheTables_butAreNotStored() throws Exception {
+    void placedTeamsWithoutAPlayedFixture_appearInTheTables_withdrawnOnesLast_butNoneAreStored() throws Exception {
         placeInGroup(homeParticipationId);
         placeInGroup(awayParticipationId);
         String newcomer = seedTeam("Neu");
@@ -406,7 +406,10 @@ class MatchDayResultAuthorizationIntegrationTest {
 
         for (boolean live : new boolean[] {false, true}) {
             String table = standings(live);
-            assertThat((List<String>) JsonPath.read(table, "$[*].teamId")).containsExactly(teamHomeId, newcomer, teamAwayId);
+            // The withdrawn team comes last, without a place, marked.
+            assertThat((List<String>) JsonPath.read(table, "$[*].teamId")).containsExactly(teamHomeId, newcomer, teamAwayId, withdrawn);
+            assertThat((List<Integer>) JsonPath.read(table, "$[*].place")).containsExactly(1, 2, 3, null);
+            assertThat((List<Boolean>) JsonPath.read(table, "$[*].withdrawn")).containsExactly(false, false, false, true);
             assertThat((List<Integer>) JsonPath.read(table, "$[?(@.teamId == '" + newcomer + "')].played")).containsExactly(0);
             assertThat((List<Integer>) JsonPath.read(table, "$[?(@.teamId == '" + newcomer + "')].points")).containsExactly(0);
         }
