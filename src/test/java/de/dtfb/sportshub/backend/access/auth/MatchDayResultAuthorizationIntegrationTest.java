@@ -80,6 +80,12 @@ class MatchDayResultAuthorizationIntegrationTest {
     @Autowired
     RosterEntryRepository rosterEntryRepository;
 
+    @Autowired
+    de.dtfb.sportshub.backend.group.GroupRepository groupRepository;
+
+    @Autowired
+    de.dtfb.sportshub.backend.standing.StandingRepository standingRepository;
+
     private static final RequestPostProcessor ADMIN = jwtFor("admin");
 
     private String leagueId;
@@ -383,6 +389,32 @@ class MatchDayResultAuthorizationIntegrationTest {
         assertThat((List<Integer>) JsonPath.read(live, "$[?(@.teamId == '" + teamHomeId + "')].played")).containsExactly(1);
     }
 
+    @Test
+    void placedTeamsWithoutAPlayedFixture_appearInTheTables_butAreNotStored() throws Exception {
+        placeInGroup(homeParticipationId);
+        placeInGroup(awayParticipationId);
+        String newcomer = seedTeam("Neu");
+        placeInGroup(participate(newcomer));
+        String withdrawn = seedTeam("Zurueckgezogen");
+        TeamParticipation gone = participationRepository.findById(placeInGroup(participate(withdrawn))).orElseThrow();
+        gone.setStatus(de.dtfb.sportshub.backend.teamparticipation.ParticipationStatus.WITHDRAWN);
+        participationRepository.save(gone);
+
+        enter(captain("cap-h", teamHomeId), 5, 2).andExpect(status().isOk());
+        confirm(captain("cap-a", teamAwayId)).andExpect(status().isOk());
+        confirm(captain("cap-h", teamHomeId)).andExpect(status().isOk());
+
+        for (boolean live : new boolean[] {false, true}) {
+            String table = standings(live);
+            assertThat((List<String>) JsonPath.read(table, "$[*].teamId")).containsExactly(teamHomeId, newcomer, teamAwayId);
+            assertThat((List<Integer>) JsonPath.read(table, "$[?(@.teamId == '" + newcomer + "')].played")).containsExactly(0);
+            assertThat((List<Integer>) JsonPath.read(table, "$[?(@.teamId == '" + newcomer + "')].points")).containsExactly(0);
+        }
+        // Stored rows mean "has recorded results" to the delete guards -- only teams that played.
+        assertThat(standingRepository.findByGroupOrderByPointsDescSetsWonDesc(groupRepository.findById(groupId).orElseThrow()))
+            .extracting(st -> st.getTeam().getId()).containsExactlyInAnyOrder(teamHomeId, teamAwayId);
+    }
+
     // --- request checks and the read side ---
 
     @Test
@@ -545,6 +577,12 @@ class MatchDayResultAuthorizationIntegrationTest {
         TeamParticipation participation = new TeamParticipation();
         participation.setTeam(teamRepository.findById(teamId).orElseThrow());
         participation.setLeague(leagueRepository.findById(leagueId).orElseThrow());
+        return participationRepository.save(participation).getId();
+    }
+
+    private String placeInGroup(String participationId) {
+        TeamParticipation participation = participationRepository.findById(participationId).orElseThrow();
+        participation.setGroup(groupRepository.findById(groupId).orElseThrow());
         return participationRepository.save(participation).getId();
     }
 

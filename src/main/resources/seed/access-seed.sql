@@ -257,9 +257,19 @@ VALUES ('round-res', 'group-res', 'Runde 1');
 -- One match-day with a confirmed result (-> matchDaysWithResults = 1), one still open. Both
 -- fixtures' dates are already settled (seeded pre-scheduling-feature), so scheduling_state is
 -- CONFIRMED, not the generated-fixture DEFAULT.
-INSERT INTO match_day (id, round_id, name, start_date, result_state, scheduling_state)
-VALUES ('md-res-1', 'round-res', 'Spieltag 1', TIMESTAMP '2023-10-01 10:00:00', 'CONFIRMED', 'CONFIRMED'),
-       ('md-res-2', 'round-res', 'Spieltag 2', TIMESTAMP '2023-10-08 10:00:00', 'OPEN', 'CONFIRMED');
+-- md-res-1 is a complete final result: both line-ups (further below, once the rosters exist), all three
+-- games of Bayern's default game plan scored, both captains confirmed.
+INSERT INTO match_day (id, round_id, name, team_home_id, team_away_id, start_date, result_state, scheduling_state,
+                       home_confirmed_at, away_confirmed_at, decided_at, first_final_at)
+VALUES ('md-res-1', 'round-res', 'Spieltag 1', 'tfcm1-res', 'tfcm2-res', TIMESTAMP '2023-10-01 10:00:00', 'CONFIRMED', 'CONFIRMED',
+        TIMESTAMP '2023-10-01 12:00:00', TIMESTAMP '2023-10-01 12:05:00', TIMESTAMP '2023-10-01 11:55:00', TIMESTAMP '2023-10-01 12:05:00'),
+       ('md-res-2', 'round-res', 'Spieltag 2', 'tfcm2-res', 'tfcm1-res', TIMESTAMP '2023-10-08 10:00:00', 'OPEN', 'CONFIRMED',
+        NULL, NULL, NULL, NULL);
+
+INSERT INTO match_game (id, match_day_id, position, type, start_time, home_score, away_score, state, winner)
+VALUES ('mg-res-1-1', 'md-res-1', 1, 'DOUBLE', TIMESTAMP '2023-10-01 10:00:00', 7, 4, 'PLAYED', 'HOME'),
+       ('mg-res-1-2', 'md-res-1', 2, 'DOUBLE', TIMESTAMP '2023-10-01 10:00:00', 5, 7, 'PLAYED', 'AWAY'),
+       ('mg-res-1-3', 'md-res-1', 3, 'SINGLE', TIMESTAMP '2023-10-01 10:00:00', 7, 3, 'PLAYED', 'HOME');
 
 -- Standings (-> standings = 2) — recorded results that block a hard delete.
 INSERT INTO standing (id, group_id, team_id, played, wins, draws, losses, points, sets_won, sets_lost)
@@ -272,6 +282,40 @@ VALUES ('st-res-1', 'group-res', 'tfcm1-res', 2, 2, 0, 0, 6, 6, 1),
 INSERT INTO team_participation (id, team_id, league_id, group_id, roster_status, status)
 VALUES ('tp-res-1', 'tfcm1-res', 'league-res', 'group-res', 'CONFIRMED', 'ACTIVE'),
        ('tp-res-2', 'tfcm2-res', 'league-res', 'group-res', 'CONFIRMED', 'ACTIVE');
+
+-- Rosters of the 2023 teams and md-res-1's line-ups (docs/23: no result without both line-ups).
+-- TFC München 2 fields two club players of its own (player-p20/p21, joined in 2022).
+INSERT INTO player (id, first_name, last_name, nationality, national_id, birth_year, gender, national_license, active)
+VALUES ('player-p20', 'Stefan', 'Lang', 'DE', '1020', 1984, 'MALE', 'C', TRUE),
+       ('player-p21', 'Markus', 'Huber', 'DE', '1021', 1986, 'MALE', 'C', TRUE);
+
+INSERT INTO club_membership (id, player_id, club_id, joined_at)
+VALUES ('cm-p20-tfcm', 'player-p20', 'club-tfcm', TIMESTAMP '2022-01-01 00:00:00'),
+       ('cm-p21-tfcm', 'player-p21', 'club-tfcm', TIMESTAMP '2022-01-01 00:00:00');
+
+INSERT INTO roster_entry (id, participation_id, player_id, added_at, removed_at)
+VALUES ('re-res-1', 'tp-res-1', 'player-p1', TIMESTAMP '2023-09-01 10:00:00', NULL),
+       ('re-res-2', 'tp-res-1', 'player-p2', TIMESTAMP '2023-09-01 10:00:00', NULL),
+       ('re-res-3', 'tp-res-1', 'player-p3', TIMESTAMP '2023-09-01 10:00:00', NULL),
+       ('re-res-4', 'tp-res-2', 'player-p6', TIMESTAMP '2023-09-01 10:00:00', NULL),
+       ('re-res-5', 'tp-res-2', 'player-p20', TIMESTAMP '2023-09-01 10:00:00', NULL),
+       ('re-res-6', 'tp-res-2', 'player-p21', TIMESTAMP '2023-09-01 10:00:00', NULL);
+
+INSERT INTO lineup (id, match_day_id, team_id, submitted_at, submitted_by_dtfb_id)
+VALUES ('lu-res-1-h', 'md-res-1', 'tfcm1-res', TIMESTAMP '2023-10-01 09:30:00', 'team'),
+       ('lu-res-1-a', 'md-res-1', 'tfcm2-res', TIMESTAMP '2023-10-01 09:35:00', NULL);
+
+INSERT INTO lineup_entry (id, lineup_id, match_id, slot, player_id)
+VALUES ('le-res-1-h11', 'lu-res-1-h', 'mg-res-1-1', 1, 'player-p1'),
+       ('le-res-1-h12', 'lu-res-1-h', 'mg-res-1-1', 2, 'player-p2'),
+       ('le-res-1-h21', 'lu-res-1-h', 'mg-res-1-2', 1, 'player-p3'),
+       ('le-res-1-h22', 'lu-res-1-h', 'mg-res-1-2', 2, 'player-p1'),
+       ('le-res-1-h31', 'lu-res-1-h', 'mg-res-1-3', 1, 'player-p2'),
+       ('le-res-1-a11', 'lu-res-1-a', 'mg-res-1-1', 1, 'player-p6'),
+       ('le-res-1-a12', 'lu-res-1-a', 'mg-res-1-1', 2, 'player-p20'),
+       ('le-res-1-a21', 'lu-res-1-a', 'mg-res-1-2', 1, 'player-p21'),
+       ('le-res-1-a22', 'lu-res-1-a', 'mg-res-1-2', 2, 'player-p6'),
+       ('le-res-1-a31', 'lu-res-1-a', 'mg-res-1-3', 1, 'player-p20');
 
 -- ---------------------------------------------------------------------------
 -- Empty target season under fed-by (Bayern) — the copy-forward destination:
@@ -320,12 +364,12 @@ VALUES ('tp-by25-1', 'tfcm1-by25', 'lg-by25-h', 'g-by25-1a', 'CONFIRMED', 'ACTIV
 -- active membership in the team's club): one row per distinct (player, club) pair the roster
 -- entries below actually need, joined well before any of those roster_entry.added_at timestamps.
 INSERT INTO club_membership (id, player_id, club_id, joined_at)
-VALUES ('cm-p1-tfcm', 'player-p1', 'club-tfcm', TIMESTAMP '2024-01-01 00:00:00'),
-       ('cm-p2-tfcm', 'player-p2', 'club-tfcm', TIMESTAMP '2024-01-01 00:00:00'),
-       ('cm-p3-tfcm', 'player-p3', 'club-tfcm', TIMESTAMP '2024-01-01 00:00:00'),
+VALUES ('cm-p1-tfcm', 'player-p1', 'club-tfcm', TIMESTAMP '2022-01-01 00:00:00'),
+       ('cm-p2-tfcm', 'player-p2', 'club-tfcm', TIMESTAMP '2022-01-01 00:00:00'),
+       ('cm-p3-tfcm', 'player-p3', 'club-tfcm', TIMESTAMP '2022-01-01 00:00:00'),
        ('cm-p4-kfa', 'player-p4', 'club-kfa', TIMESTAMP '2024-01-01 00:00:00'),
        ('cm-p5-kfa', 'player-p5', 'club-kfa', TIMESTAMP '2024-01-01 00:00:00'),
-       ('cm-p6-tfcm', 'player-p6', 'club-tfcm', TIMESTAMP '2024-01-01 00:00:00'),
+       ('cm-p6-tfcm', 'player-p6', 'club-tfcm', TIMESTAMP '2022-01-01 00:00:00'),
        ('cm-p7-tfcm', 'player-p7', 'club-tfcm', TIMESTAMP '2024-01-01 00:00:00'),
        ('cm-p8-tfcm', 'player-p8', 'club-tfcm', TIMESTAMP '2024-01-01 00:00:00');
 

@@ -14,6 +14,9 @@ import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
 import de.dtfb.sportshub.backend.matchday.ResultState;
 import de.dtfb.sportshub.backend.round.Round;
 import de.dtfb.sportshub.backend.team.Team;
+import de.dtfb.sportshub.backend.teamparticipation.ParticipationStatus;
+import de.dtfb.sportshub.backend.teamparticipation.TeamParticipation;
+import de.dtfb.sportshub.backend.teamparticipation.TeamParticipationRepository;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +43,9 @@ import java.util.function.Predicate;
  * against the bye is a win for the team sitting out with the rule set's bye score (42 : 30). Points
  * come from the rule set (fallback 2/1/0). Order: points, goal difference, head-to-head (points, then
  * goal difference among the tied teams only), goals for, name -- a tie beyond that (lot/penalty) is
- * resolved by an admin.
+ * resolved by an admin. Every active team placed in the group gets a row, also before its first counted
+ * fixture (all zeros) -- in the served tables only; the stored rows keep only teams with a counted
+ * fixture, since guards read them as "has recorded results".
  */
 @Service
 public class StandingService {
@@ -50,15 +55,17 @@ public class StandingService {
     private final MatchRepository matchRepository;
     private final LeagueRuleResolver ruleResolver;
     private final MatchDayRepository matchDayRepository;
+    private final TeamParticipationRepository participationRepository;
 
     public StandingService(StandingRepository standingRepository, GroupRepository groupRepository,
                            MatchRepository matchRepository, LeagueRuleResolver ruleResolver,
-                           MatchDayRepository matchDayRepository) {
+                           MatchDayRepository matchDayRepository, TeamParticipationRepository participationRepository) {
         this.standingRepository = standingRepository;
         this.groupRepository = groupRepository;
         this.matchRepository = matchRepository;
         this.ruleResolver = ruleResolver;
         this.matchDayRepository = matchDayRepository;
+        this.participationRepository = participationRepository;
     }
 
     /** The official table: only final fixtures count. */
@@ -66,7 +73,7 @@ public class StandingService {
     public List<StandingDto> getByGroup(String groupId) {
         Group group = groupRepository.findVisibleById(groupId)
             .orElseThrow(() -> new GroupNotFoundException(groupId));
-        return toDtos(compute(group, matchDay -> matchDay.getResultState() == ResultState.CONFIRMED), Set.of());
+        return toDtos(compute(group, matchDay -> matchDay.getResultState() == ResultState.CONFIRMED, true), Set.of());
     }
 
     /**
@@ -88,7 +95,7 @@ public class StandingService {
                 return true;
             }
             return matchDay.getResultState() == ResultState.CONFIRMED;
-        });
+        }, true);
         return toDtos(table, provisionalTeams);
     }
 
@@ -110,7 +117,7 @@ public class StandingService {
     public void recompute(Group group) {
         standingRepository.deleteAll(standingRepository.findByGroupOrderByPointsDescSetsWonDesc(group));
         standingRepository.flush();
-        standingRepository.saveAll(compute(group, matchDay -> matchDay.getResultState() == ResultState.CONFIRMED).rows());
+        standingRepository.saveAll(compute(group, matchDay -> matchDay.getResultState() == ResultState.CONFIRMED, false).rows());
     }
 
     /** One counted fixture between two teams, as the head-to-head comparison needs it. */
@@ -121,7 +128,8 @@ public class StandingService {
     private record Table(List<Standing> rows, List<Outcome> outcomes, int pointsWin, int pointsDraw, int pointsLoss) {
     }
 
-    private Table compute(Group group, Predicate<MatchDay> counts) {
+    /** {@code withPlaced}: also a zero row for every active placed team without a counted fixture yet. */
+    private Table compute(Group group, Predicate<MatchDay> counts, boolean withPlaced) {
         LeagueRuleSet rules = ruleResolver.effectiveFor(group);
         int pointsWin = ruleResolver.pointsWin(rules);
         int pointsDraw = ruleResolver.pointsDraw(rules);
@@ -132,6 +140,8 @@ public class StandingService {
         List<Outcome> outcomes = new ArrayList<>();
         for (MatchDay matchDay : matchDayRepository.findByRoundGroupId(group.getId())) {
             if (!counts.test(matchDay)) continue;
+            // A fixture without its teams (incomplete data) can't be tallied.
+            if (matchDay.getTeamHome() == null || (!matchDay.isBye() && matchDay.getTeamAway() == null)) continue;
 
             if (matchDay.isBye()) {
                 int winner = rules != null && rules.getRaceByeScoreWinner() != null ? rules.getRaceByeScoreWinner() : 42;
@@ -153,6 +163,11 @@ public class StandingService {
                 pointsWin, pointsDraw, pointsLoss);
             outcomes.add(new Outcome(matchDay.getTeamHome().getId(), matchDay.getTeamAway().getId(),
                 score[2], score[3]));
+        }
+        if (withPlaced) {
+            for (TeamParticipation placed : participationRepository.findByGroup_IdAndStatus(group.getId(), ParticipationStatus.ACTIVE)) {
+                row(byTeam, group, placed.getTeam());
+            }
         }
         Table table = new Table(new ArrayList<>(byTeam.values()), outcomes, pointsWin, pointsDraw, pointsLoss);
         table.rows().sort(ranking(table));
