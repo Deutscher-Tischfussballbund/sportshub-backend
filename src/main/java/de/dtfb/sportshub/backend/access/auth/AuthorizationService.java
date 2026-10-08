@@ -539,6 +539,20 @@ public class AuthorizationService {
      * not row id, so a role granted in one season keeps matching that team's copy in every other
      * season.
      */
+    /**
+     * May open the team area of {@code teamIdentityId}: its {@code team_admin}, or an admin above the
+     * team (global, its region, its club -- {@link #canRepresent}). The area list itself stays limited
+     * to explicit team grants (there are far too many teams); this admits a single team on demand.
+     */
+    public boolean canOpenTeamArea(String teamIdentityId) {
+        List<RoleAssignment> roles = currentRoles();
+        if (AccessRoles.isGlobalAdmin(roles)) {
+            return true;
+        }
+        Team team = teamIdentityId == null ? null : teamService.latestForIdentity(teamIdentityId).orElse(null);
+        return canRepresent(roles, team);
+    }
+
     private boolean canRepresent(List<RoleAssignment> roles, Team team) {
         if (team == null) {
             return false;

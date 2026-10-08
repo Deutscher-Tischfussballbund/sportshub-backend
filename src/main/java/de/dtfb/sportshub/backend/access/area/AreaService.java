@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Derives the navigable areas (admin / region / club / team) a player may enter, expanding
@@ -27,7 +28,8 @@ import java.util.Map;
  *
  * <p>Team areas come only from explicit {@code TEAM_ADMIN} grants — they are the team admin's
  * dedicated entry to their roster(s). Higher admins are NOT expanded into every team area (there
- * are far too many); they reach a team's roster via the region placement path instead.
+ * are far too many); they open one team's area on demand ({@link #teamArea(String)},
+ * {@code GET /v1/auth/me/areas/teams/{id}}, gated by {@code canOpenTeamArea}).
  */
 @Service
 public class AreaService {
@@ -111,6 +113,11 @@ public class AreaService {
     private AreaDto clubArea(Club club) {
         String regionName = federationRepository.findById(club.getFederationId()).map(Federation::getName).orElse(null);
         return new AreaDto("club", club.getId(), club.getName(), club.getFederationId(), regionName);
+    }
+
+    /** One team's area by its identity (latest season row), for an admin above it opening it on demand. */
+    public Optional<AreaDto> teamArea(String teamIdentityId) {
+        return teamService.latestForIdentity(teamIdentityId).map(this::teamArea);
     }
 
     private AreaDto teamArea(Team team) {
