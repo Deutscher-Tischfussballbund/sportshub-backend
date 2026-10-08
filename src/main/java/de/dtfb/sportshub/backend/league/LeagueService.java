@@ -3,9 +3,11 @@ package de.dtfb.sportshub.backend.league;
 import de.dtfb.sportshub.backend.category.Category;
 import de.dtfb.sportshub.backend.category.CategoryNotFoundException;
 import de.dtfb.sportshub.backend.category.CategoryRepository;
+import de.dtfb.sportshub.backend.group.Group;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSetRepository;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetSnapshotService;
+import de.dtfb.sportshub.backend.match.MatchPlanService;
 import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.season.SeasonNotFoundException;
 import de.dtfb.sportshub.backend.season.SeasonRepository;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -27,11 +30,12 @@ public class LeagueService {
     private final TierRepository tierRepository;
     private final TeamParticipationRepository teamParticipationRepository;
     private final RuleSetSnapshotService snapshots;
+    private final MatchPlanService matchPlan;
 
     public LeagueService(LeagueRepository repository, LeagueMapper mapper, SeasonRepository seasonRepository,
                          CategoryRepository categoryRepository, LeagueRuleSetRepository ruleSetRepository,
                          TierRepository tierRepository, TeamParticipationRepository teamParticipationRepository,
-                         RuleSetSnapshotService snapshots) {
+                         RuleSetSnapshotService snapshots, MatchPlanService matchPlan) {
         this.repository = repository;
         this.mapper = mapper;
         this.seasonRepository = seasonRepository;
@@ -40,6 +44,7 @@ public class LeagueService {
         this.tierRepository = tierRepository;
         this.teamParticipationRepository = teamParticipationRepository;
         this.snapshots = snapshots;
+        this.matchPlan = matchPlan;
     }
 
     @Transactional(readOnly = true)
@@ -75,7 +80,8 @@ public class LeagueService {
     /**
      * Updates the league's meta. Naming a different blueprint than the one the league's rules came
      * from resets the league's rules from it -- refused ({@code 409 RULE_SET_FROZEN}) once the season
-     * has ended. The rule set itself is edited via the rule-set endpoint.
+     * has ended, and ({@code 409 GAME_PLAN_LOCKED}) if that changes the game plan after a result has
+     * been entered (SPO-71). The rule set itself is edited via the rule-set endpoint.
      */
     @Transactional
     public LeagueDto update(String id, LeagueDto leagueDto) {
@@ -88,11 +94,14 @@ public class LeagueService {
         LeagueRuleSet current = league.getRuleSet();
         if (blueprint != null && (current == null || !isFrom(current, blueprint))) {
             snapshots.requireSeasonRunning(league.getSeason());
+            List<Group> groups = matchPlan.groupsOfLeague(league.getId());
+            Map<String, List<String>> plansBefore = matchPlan.planSignatures(groups);
             if (current == null) {
                 league.setRuleSet(snapshots.snapshotOf(blueprint, league.getSeason().getFederation()));
             } else {
                 snapshots.overwrite(current, blueprint);
             }
+            matchPlan.afterRuleChange(groups, plansBefore);
         }
         return mapper.toDto(repository.save(league));
     }

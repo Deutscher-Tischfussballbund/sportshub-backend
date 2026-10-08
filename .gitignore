@@ -44,3 +44,9 @@ out/
 # Commit .env.example instead.
 .env
 !.env.example
+
+# Local MCP server config (IDE-specific port)
+.mcp.json
+
+# ER diagram renderer dependencies (scripts/erd-diagram)
+node_modules/

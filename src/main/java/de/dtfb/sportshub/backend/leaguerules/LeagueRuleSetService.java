@@ -9,6 +9,7 @@ import de.dtfb.sportshub.backend.group.GroupRepository;
 import de.dtfb.sportshub.backend.league.League;
 import de.dtfb.sportshub.backend.league.LeagueNotFoundException;
 import de.dtfb.sportshub.backend.league.LeagueRepository;
+import de.dtfb.sportshub.backend.match.MatchPlanService;
 import de.dtfb.sportshub.backend.teamparticipation.TeamParticipation;
 import de.dtfb.sportshub.backend.teamparticipation.TeamParticipationNotFoundException;
 import de.dtfb.sportshub.backend.teamparticipation.TeamParticipationRepository;
@@ -18,7 +19,9 @@ import de.dtfb.sportshub.backend.tier.TierRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -38,6 +41,7 @@ public class LeagueRuleSetService {
     private final TeamParticipationRepository participationRepository;
     private final LeagueRuleResolver resolver;
     private final GroupRepository groupRepository;
+    private final MatchPlanService matchPlan;
 
     public LeagueRuleSetService(LeagueRuleSetRepository repository,
                                 GamePlanEntryRepository gamePlanRepository,
@@ -48,7 +52,8 @@ public class LeagueRuleSetService {
                                 RuleSetSnapshotService snapshots,
                                 TeamParticipationRepository participationRepository,
                                 LeagueRuleResolver resolver,
-                                GroupRepository groupRepository) {
+                                GroupRepository groupRepository,
+                                MatchPlanService matchPlan) {
         this.repository = repository;
         this.gamePlanRepository = gamePlanRepository;
         this.mapper = mapper;
@@ -59,6 +64,7 @@ public class LeagueRuleSetService {
         this.participationRepository = participationRepository;
         this.resolver = resolver;
         this.groupRepository = groupRepository;
+        this.matchPlan = matchPlan;
     }
 
     /** The blueprint library (archived ones included, flagged). Snapshots are private to their owner. */
@@ -116,7 +122,9 @@ public class LeagueRuleSetService {
      * Full-replace update. A blueprint is always editable -- no league references it at runtime, so
      * nothing already played can change. A snapshot is editable while its season runs; once the season
      * has ended, rule-affecting changes are refused ({@code 409 RULE_SET_FROZEN}) and only renaming is
-     * allowed. A snapshot's owning federation never changes.
+     * allowed. Changing a snapshot's game plan rebuilds the games of its fixtures, and is refused
+     * ({@code 409 GAME_PLAN_LOCKED}) once a result has been entered (SPO-71). A snapshot's owning
+     * federation never changes.
      */
     @Transactional
     public LeagueRuleSetDto update(String id, LeagueRuleSetDto dto) {
@@ -126,6 +134,8 @@ public class LeagueRuleSetService {
         if (ruleSet.isSnapshot() && changesRules) {
             snapshots.requireNotFrozen(ruleSet);
         }
+        List<Group> groups = changesRules ? matchPlan.groupsGovernedBy(ruleSet) : List.of();
+        Map<String, List<String>> plansBefore = matchPlan.planSignatures(groups);
         mapper.updateEntityFromDto(dto, ruleSet);
         if (!ruleSet.isSnapshot()) {
             ruleSet.setFederation(resolveFederation(dto.getFederationId()));
@@ -137,6 +147,7 @@ public class LeagueRuleSetService {
         LeagueRuleSet saved = repository.save(ruleSet);
         if (changesRules) {
             replaceGamePlan(saved, dto.getGamePlan());
+            matchPlan.afterRuleChange(groups, plansBefore);
         }
         return assemble(saved);
     }
@@ -188,7 +199,8 @@ public class LeagueRuleSetService {
     /**
      * Overwrites the snapshots of the given leagues/tiers with a blueprint's rules, e.g. after the
      * federation changed its rules for everyone. A listed tier without an override gets one. Refused
-     * ({@code 409 RULE_SET_FROZEN}) if any owner's season has ended -- nothing is changed then.
+     * ({@code 409 RULE_SET_FROZEN}) if any owner's season has ended, or ({@code 409 GAME_PLAN_LOCKED})
+     * if it changes the game plan of a league/tier with an entered result -- nothing is changed then.
      */
     @Transactional
     public void apply(String blueprintId, ApplyBlueprintRequest request) {
@@ -204,6 +216,10 @@ public class LeagueRuleSetService {
             .toList();
         leagues.forEach(league -> snapshots.requireSeasonRunning(league.getSeason()));
         tiers.forEach(tier -> snapshots.requireSeasonRunning(tier.getLeague().getSeason()));
+        List<Group> groups = new ArrayList<>();
+        leagues.forEach(league -> groups.addAll(matchPlan.groupsOfLeague(league.getId())));
+        tiers.forEach(tier -> groups.addAll(matchPlan.groupsOfTier(tier.getId())));
+        Map<String, List<String>> plansBefore = matchPlan.planSignatures(groups);
 
         for (League league : leagues) {
             if (league.getRuleSet() == null) {
@@ -221,6 +237,7 @@ public class LeagueRuleSetService {
                 snapshots.overwrite(tier.getRuleSet(), blueprint);
             }
         }
+        matchPlan.afterRuleChange(groups, plansBefore);
     }
 
     private boolean changesRuleAffectingFields(LeagueRuleSet current, LeagueRuleSetDto dto) {
@@ -304,6 +321,7 @@ public class LeagueRuleSetService {
         dto.setGamePlan(mapper.toGamePlanDtoList(
             gamePlanRepository.findByRuleSetIdOrderByPositionAsc(ruleSet.getId())));
         dto.setFrozen(snapshots.isFrozen(ruleSet));
+        dto.setGamePlanLocked(matchPlan.isGamePlanLocked(ruleSet));
         return dto;
     }
 }
