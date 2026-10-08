@@ -67,7 +67,12 @@ untyped `json` payload — writable by admins only (`canOrganizeMatch`). Nothing
 - **Hidden** from the opponent until both teams have submitted; then both are shown and **locked** —
   from then on only substitutions change who plays.
 - Missing at kick-off: the result page and the pending overview say so; the tournament management
-  decides. Nothing is blocked automatically.
+  decides. Nothing is blocked automatically. Neutral admins may enter a result without line-ups
+  (2026-10-08: deliberately open — paper fallback, forgotten line-ups, forfeits) and add the line-ups
+  before or after; such results carry a "Without line-ups" badge in "Open results" and the group
+  schedule so they can be completed.
+- Submitting is final for the captain, so the frontend asks for confirmation first (like the roster
+  submit); admins submit without the extra step.
 
 **Line-up rules** — checked on submit (400 with the reason):
 

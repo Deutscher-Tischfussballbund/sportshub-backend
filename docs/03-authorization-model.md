@@ -21,6 +21,12 @@
    so frontends consume answers, not rules. The generated `@dtfb/api` client is the shared
    contract — every frontend imports the same `Role`/`ScopeType` enums; nobody hardcodes
    role strings.
+   Team areas in `/v1/auth/me/areas` come only from explicit `team_admin` grants (there are
+   far too many teams to expand them for higher admins). An admin above a team — global,
+   its region, its club; not a league admin — opens one team's area on demand via
+   `GET /v1/auth/me/areas/teams/{teamIdentityId}` (`@authz.canOpenTeamArea`, 2026-10-08,
+   SPO-22); the frontend keeps such an area for the session and marks the team "This team"
+   instead of "Your team" in its table.
 
 ## 2. The three axes of access (+ public)
 

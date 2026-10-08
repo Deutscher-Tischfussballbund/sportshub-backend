@@ -157,8 +157,10 @@ opponents (whether a withdrawal annuls results is a rules question, not decided)
   (`race-check.ts` mirrors `RaceScoring`), countdown and overdue note; a countdown banner at the top
   of the app for both captains, and per-region counts for neutral admins; the region page "Open
   results" (tournament management); the group table (Live/Official) on the schedule page; byes read
-  "Bye"; the team area's "Table" page shows the table of every group the team is placed in, with its
-  own row marked.
+  "Bye"; the team area's "Table" page shows the tables of one season at a time (season dropdown, the
+  current season by default), the team's own row marked. A finished season (end date passed) shows
+  only the official table — no Live/Official toggle, no refresh (2026-10-08). Placed teams appear from
+  the start, withdrawn ones last and greyed out with a note (see "Table" above).
 - **Not yet:** "kick-off passed, nothing entered"; manual tie order (lot/penalty); the playoffs
   (SPO-99); the table on the public page (SPO-110).
 
