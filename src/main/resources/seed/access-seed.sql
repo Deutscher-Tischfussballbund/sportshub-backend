@@ -498,8 +498,8 @@ VALUES ('tp-2027-1', 'tfcm1-2027', 'lg-2027-h', NULL, 'DRAFT', 'ACTIVE');
 -- three more Bayernliga teams join g-2026-1, each with a confirmed roster of four players, and a
 -- single round robin (3 rounds). Rounds 1 and 2 are played the way the app requires it: both
 -- line-ups submitted (docs/23), every game scored, both captains confirmed -- so the result is
--- final (docs/17). Round 3 lies ahead and is untouched: no line-ups, no scores -- log in as `team`
--- (captain of TFC München 1) to submit a line-up and enter a result. Standings aren't stored; the
+-- final (docs/17). Round 3 lies ahead: TFC vs. Augsburg has both line-ups in (ready to play), Dortmund
+-- vs. Köln is untouched; Spieltag 4 below adds a fresh TFC fixture for the line-up flow. Standings aren't stored; the
 -- table is computed from these fixtures.
 -- ---------------------------------------------------------------------------
 INSERT INTO team (id, season_id, name, club_id, team_identity_id)
@@ -538,6 +538,8 @@ VALUES ('tp-2026-2', 'kfa1-2026', 'lg-2026-h', 'g-2026-1', 'CONFIRMED', 'ACTIVE'
 
 INSERT INTO roster_entry (id, participation_id, player_id, added_at, removed_at)
 VALUES ('re-2026-4', 'tp-2026-1', 'player-p6', TIMESTAMP '2026-01-15 10:00:00', NULL),
+       -- A fifth TFC player, not in the ready-to-play line-up: the one to bring on as a substitute.
+       ('re-2026-21', 'tp-2026-1', 'player-p20', TIMESTAMP '2026-01-15 10:00:00', NULL),
        ('re-2026-5', 'tp-2026-2', 'player-p4', TIMESTAMP '2026-01-20 10:00:00', NULL),
        ('re-2026-6', 'tp-2026-2', 'player-p5', TIMESTAMP '2026-01-20 10:00:00', NULL),
        ('re-2026-7', 'tp-2026-2', 'player-p10', TIMESTAMP '2026-01-20 10:00:00', NULL),
@@ -636,6 +638,37 @@ VALUES ('le-26-1a-h11', 'lu-26-1a-h', 'mg-26-1a-1', 1, 'player-p1'),
        ('le-26-2b-a21', 'lu-26-2b-a', 'mg-26-2b-2', 1, 'player-p10'),
        ('le-26-2b-a22', 'lu-26-2b-a', 'mg-26-2b-2', 2, 'player-p11'),
        ('le-26-2b-a31', 'lu-26-2b-a', 'mg-26-2b-3', 1, 'player-p10');
+
+-- Ready to play: TFC München 1 vs. Kickerfreunde Augsburg 1 (Spieltag 3, ahead) has both line-ups
+-- submitted but no scores yet -- as `team`, record a substitution or enter the result and confirm.
+INSERT INTO lineup (id, match_day_id, team_id, submitted_at, submitted_by_dtfb_id)
+VALUES ('lu-26-3a-h', 'md-26-3a', 'tfcm1-2026', TIMESTAMP '2026-10-07 18:00:00', 'team'),
+       ('lu-26-3a-a', 'md-26-3a', 'kfa1-2026', TIMESTAMP '2026-10-07 19:30:00', NULL);
+
+INSERT INTO lineup_entry (id, lineup_id, match_id, slot, player_id)
+VALUES ('le-26-3a-h11', 'lu-26-3a-h', 'mg-26-3a-1', 1, 'player-p1'),
+       ('le-26-3a-h12', 'lu-26-3a-h', 'mg-26-3a-1', 2, 'player-p2'),
+       ('le-26-3a-h21', 'lu-26-3a-h', 'mg-26-3a-2', 1, 'player-p3'),
+       ('le-26-3a-h22', 'lu-26-3a-h', 'mg-26-3a-2', 2, 'player-p6'),
+       ('le-26-3a-h31', 'lu-26-3a-h', 'mg-26-3a-3', 1, 'player-p1'),
+       ('le-26-3a-a11', 'lu-26-3a-a', 'mg-26-3a-1', 1, 'player-p4'),
+       ('le-26-3a-a12', 'lu-26-3a-a', 'mg-26-3a-1', 2, 'player-p5'),
+       ('le-26-3a-a21', 'lu-26-3a-a', 'mg-26-3a-2', 1, 'player-p10'),
+       ('le-26-3a-a22', 'lu-26-3a-a', 'mg-26-3a-2', 2, 'player-p11'),
+       ('le-26-3a-a31', 'lu-26-3a-a', 'mg-26-3a-3', 1, 'player-p4');
+
+-- An extra, untouched TFC fixture (Spieltag 4, outside the single round robin -- demo data) so the
+-- line-up flow (draft, submit with confirmation) stays testable as `team` too.
+INSERT INTO round (id, group_id, name, round_index)
+VALUES ('rd-2026-4', 'g-2026-1', 'Spieltag 4', 4);
+
+INSERT INTO match_day (id, round_id, team_home_id, team_away_id, start_date, result_state, scheduling_state)
+VALUES ('md-26-4a', 'rd-2026-4', 'tfcm1-2026', 'dtk1-2026', TIMESTAMP '2026-10-31 11:00:00', 'OPEN', 'CONFIRMED');
+
+INSERT INTO match_game (id, match_day_id, position, type, start_time, home_score, away_score, state, winner)
+VALUES ('mg-26-4a-1', 'md-26-4a', 1, 'DOUBLE', TIMESTAMP '2026-10-31 11:00:00', NULL, NULL, 'PLANNED', NULL),
+       ('mg-26-4a-2', 'md-26-4a', 2, 'DOUBLE', TIMESTAMP '2026-10-31 11:00:00', NULL, NULL, 'PLANNED', NULL),
+       ('mg-26-4a-3', 'md-26-4a', 3, 'SINGLE', TIMESTAMP '2026-10-31 11:00:00', NULL, NULL, 'PLANNED', NULL);
 
 -- ---------------------------------------------------------------------------
 -- Root-federation (DTFB) demo: a Bundesliga season/league under fed-dtfb, and a SECOND team
