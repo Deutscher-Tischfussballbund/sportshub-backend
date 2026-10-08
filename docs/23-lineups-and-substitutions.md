@@ -123,11 +123,13 @@ the tournament management or a **referee** (a future role scoped to a fixture, d
 - `MatchEventService` keeps a player unchanged on update when none is sent (it used to be a string).
 - Tests: `LineupIntegrationTest` (6); result tests switch line-ups off in their league rules
   (`LineupTestSupport`).
-- **Frontend** (`dtfb-frontend-ng`): a line-up page per fixture (team area and admin schedule) with a
-  player select per slot, draft/submit, the rules explained before submitting (`lineup-check.ts`
-  mirrors `LineupService.violation`), the opponent hidden until both are in, then the substitution form
-  and list; the result page shows who plays each game and a note while line-ups are missing; the
-  rule-set dialog has a line-up section.
+- **Frontend** (`dtfb-frontend-ng`): the fixture page (team area and admin schedule) holds both: each
+  side's line-up state and who plays each game (the opponent hidden until both are in), and the score
+  entry, which opens for captains once both line-ups are in. The line-up is edited in a dialog
+  (2026-10-08, explicit save like every edit dialog): a player select per slot, Cancel / Save draft /
+  Submit, the rules explained before submitting (`lineup-check.ts` mirrors `LineupService.violation`).
+  Substitutions are recorded in their own dialog and listed on the page. Old `…/lineup` links redirect
+  to the fixture page. The rule-set dialog has a line-up section.
 
 ## Open questions
 
