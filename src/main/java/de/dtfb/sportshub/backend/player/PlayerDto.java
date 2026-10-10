@@ -36,5 +36,10 @@ public class PlayerDto {
     private String nationality;
     private Integer birthYear;
     private boolean active;
+    /**
+     * Birth year and gender known -- only complete players can be rostered (docs/28). Read-only; a
+     * wrapper so update bodies without it still deserialize.
+     */
+    private Boolean complete;
     private List<ClubDto> clubs;
 }

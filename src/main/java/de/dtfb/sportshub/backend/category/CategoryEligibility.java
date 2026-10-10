@@ -16,12 +16,18 @@ import java.util.Optional;
 @Component
 public class CategoryEligibility {
 
-    /** Empty when the player may be rostered in a league of this category (a null category passes). */
+    /**
+     * Empty when the player may be rostered in a league of this category. An incomplete player
+     * (birth year or gender unknown, docs/28) never may, whatever the category; otherwise a null
+     * category passes.
+     */
     public Optional<IneligibilityReason> check(Category category, Player player) {
+        if (!player.isComplete()) {
+            return Optional.of(IneligibilityReason.INCOMPLETE);
+        }
         if (category == null) {
             return Optional.empty();
         }
-        // Player.gender is mandatory (NOT NULL since V11), so a restricted side always has a value to check.
         if (category.getEligibleSide() != null && player.getGender().leagueSide() != category.getEligibleSide()) {
             return Optional.of(IneligibilityReason.WRONG_SIDE);
         }

@@ -5,6 +5,13 @@ import de.dtfb.sportshub.backend.location.LocationDeletionBlockedException;
 import de.dtfb.sportshub.backend.club.ClubDeletionBlockedError;
 import de.dtfb.sportshub.backend.club.ClubDeletionBlockedException;
 import de.dtfb.sportshub.backend.group.GroupDeletionBlockedError;
+import de.dtfb.sportshub.backend.importer.ImportAnonymizationException;
+import de.dtfb.sportshub.backend.importer.ImportFormatException;
+import de.dtfb.sportshub.backend.importer.ImportRunBusyException;
+import de.dtfb.sportshub.backend.importer.ImportRunClosedException;
+import de.dtfb.sportshub.backend.importer.ImportStaleException;
+import de.dtfb.sportshub.backend.importer.ImportUndoBlockedError;
+import de.dtfb.sportshub.backend.importer.ImportUndoBlockedException;
 import de.dtfb.sportshub.backend.group.GroupDeletionBlockedException;
 import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedError;
 import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedException;
@@ -30,6 +37,9 @@ import de.dtfb.sportshub.backend.teamparticipation.SeasonEndedError;
 import de.dtfb.sportshub.backend.teamparticipation.SeasonEndedException;
 import de.dtfb.sportshub.backend.tier.TierDeletionBlockedError;
 import de.dtfb.sportshub.backend.tier.TierDeletionBlockedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -45,6 +55,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(NotFoundExceptionMarker.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -179,6 +191,49 @@ public class GlobalExceptionHandler {
             .body(new RuleSetEditBlockedError("GAME_PLAN_LOCKED", ex.getMessage()));
     }
 
+    // Import file not in the chosen source's format (docs/28) → 400 with the parser's message.
+    @ExceptionHandler(ImportFormatException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleImportFormat(ImportFormatException ex) {
+        return new ApiError("IMPORT_FORMAT", ex.getMessage());
+    }
+
+    // Export refused by this instance's anonymization policy (docs/28): a real export on a test
+    // system, or a pseudonymized one in production → 400 with a code naming which.
+    @ExceptionHandler(ImportAnonymizationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleImportAnonymization(ImportAnonymizationException ex) {
+        return new ApiError(ex.getCode(), ex.getMessage());
+    }
+
+    // Applying an import whose preview no longer matches the data → 409, upload again (docs/28).
+    @ExceptionHandler(ImportStaleException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleImportStale(ImportStaleException ex) {
+        return new ApiError("IMPORT_STALE", ex.getMessage());
+    }
+
+    // Undoing an import run something else depends on (docs/28) → 409 listing what blocks it.
+    @ExceptionHandler(ImportUndoBlockedException.class)
+    public ResponseEntity<ImportUndoBlockedError> handleImportUndoBlocked(ImportUndoBlockedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ImportUndoBlockedError("IMPORT_UNDO_BLOCKED", ex.getMessage(), ex.getBlockers()));
+    }
+
+    // The import run is being applied or undone right now (docs/28) → 409, wait for it.
+    @ExceptionHandler(ImportRunBusyException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleImportRunBusy(ImportRunBusyException ex) {
+        return new ApiError("IMPORT_RUN_BUSY", ex.getMessage());
+    }
+
+    // Applying/discarding/assigning in an import run that's already applied or discarded → 409.
+    @ExceptionHandler(ImportRunClosedException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleImportRunClosed(ImportRunClosedException ex) {
+        return new ApiError("IMPORT_RUN_CLOSED", ex.getMessage());
+    }
+
     // Failsafe
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -232,10 +287,19 @@ public class GlobalExceptionHandler {
             "You are not allowed to perform this action");
     }
 
-    // Failsafe
+    // Another request holds the rows this one needs (e.g. an import apply still running) and the database
+    // gave up waiting → 409, try again later -- not a server error.
+    @ExceptionHandler(PessimisticLockingFailureException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleLockTimeout() {
+        return new ApiError("BUSY", "Another change to the same data is still running -- try again in a moment");
+    }
+
+    // Failsafe -- logged, since the response says nothing about the cause.
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ApiError handleUnexpected() {
+    public ApiError handleUnexpected(Exception ex) {
+        log.error("Unexpected error", ex);
         return new ApiError(
             "INTERNAL_ERROR",
             "An unexpected error occurred");

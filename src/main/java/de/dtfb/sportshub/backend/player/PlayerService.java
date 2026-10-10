@@ -46,7 +46,7 @@ public class PlayerService {
     @Transactional
     public PlayerDto update(String id, PlayerDto dto, String changedByDtfbId) {
         Player player = playerRepository.findById(id).orElseThrow(() -> new PlayerNotFoundException(id));
-        requireMandatoryFields(dto);
+        requireMandatoryFields(player, dto);
 
         ChangeSet changes = ChangeSet.forEntity(HistoryEntityType.PLAYER, id)
             .track("firstName", player.getFirstName(), dto.getFirstName())
@@ -69,15 +69,18 @@ public class PlayerService {
     }
 
     /**
-     * First/last name, birth year and gender are mandatory (NOT NULL since V11) -- validated here
-     * rather than via bean-validation annotations on {@link PlayerDto}, since {@code genderDetail}
-     * is deliberately null on reads for non-admins and must not be marked required in the schema.
+     * First and last name are mandatory -- validated here rather than via bean-validation annotations
+     * on {@link PlayerDto}. Birth year and gender may stay unknown since V19 (old imported records
+     * can't be completed, docs/28; such a player can't be rostered, {@link Player#isComplete()}), but
+     * an edit can't remove a known one.
      */
-    private static void requireMandatoryFields(PlayerDto dto) {
-        if (isBlank(dto.getFirstName()) || isBlank(dto.getLastName())
-            || dto.getBirthYear() == null || dto.getGenderDetail() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                "firstName, lastName, birthYear and genderDetail are required");
+    private static void requireMandatoryFields(Player player, PlayerDto dto) {
+        if (isBlank(dto.getFirstName()) || isBlank(dto.getLastName())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "firstName and lastName are required");
+        }
+        if ((dto.getBirthYear() == null && player.getBirthYear() != null)
+            || (dto.getGenderDetail() == null && player.getGender() != null)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "a known birthYear or genderDetail can't be removed");
         }
     }
 

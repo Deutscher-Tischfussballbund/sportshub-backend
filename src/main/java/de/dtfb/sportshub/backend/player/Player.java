@@ -32,15 +32,18 @@ public class Player extends BaseEntity {
     private String firstName;
     @Column(nullable = false)
     private String lastName;
+    /** The current player number ({@code SS-NNNN}, or a Sports-Hub-issued one); older ones live in {@link PlayerNumber}. */
     private String nationalId;
     private String internationalId;
     private String nationality;
-    @Column(nullable = false)
+    /** Nullable since V19: old imported records may lack it -- see {@link #isComplete()}. */
     private Integer birthYear;
 
-    /** Stored with the divers league side; see {@link PlayerGender} for who sees what. */
+    /**
+     * Stored with the divers league side; see {@link PlayerGender} for who sees what. Nullable since
+     * V19 -- see {@link #isComplete()}.
+     */
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private PlayerGender gender;
 
     /** National license grade: "A" | "B" | "C" | "D". */
@@ -48,4 +51,13 @@ public class Player extends BaseEntity {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    /**
+     * Whether the player may be rostered: birth year and gender are known. "Complete to play, not
+     * complete to exist" (docs/28) -- old imported records stay without them, but
+     * {@link de.dtfb.sportshub.backend.category.CategoryEligibility} refuses them on roster add/submit.
+     */
+    public boolean isComplete() {
+        return birthYear != null && gender != null;
+    }
 }

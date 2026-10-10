@@ -60,6 +60,11 @@ server:
     # to set X-Forwarded-Proto/Host on the proxied vhost.
     forward-headers-strategy: framework
 sportshub:
+    importer:
+        # Pseudonymized SM exports (docs/28): required | forbidden | allowed. Defaults to `required`
+        # so a test system can never take real player data by accident; the production deployment
+        # sets IMPORTER_ANONYMIZED=forbidden.
+        anonymized: ${IMPORTER_ANONYMIZED:required}
     bootstrap:
         # dtfb_id granted GLOBAL ADMIN on startup so a fresh prod DB has a first
         # admin (the dev seed is dev-only). Idempotent; unset = no-op. Set it for

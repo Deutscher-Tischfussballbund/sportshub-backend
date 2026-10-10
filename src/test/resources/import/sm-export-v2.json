@@ -1,0 +1,292 @@
+{
+  "format": "sportshub-sm-export",
+  "version": 2,
+  "instance": "{{instance}}",
+  "exportedAt": "2026-10-10T12:00:00Z",
+  "anonymized": true,
+  "veranstalter": [
+    {
+      "veranstalter_id": 1,
+      "veranstalterbezeichnung": "Hamburg",
+      "veranstalterkuerzel": "TFVHH",
+      "kategorie": 1
+    }
+  ],
+  "vereine": [
+    {
+      "verein_id": 10,
+      "veranstalter_id": 1,
+      "vereinsname": "Kickerfreunde Alster",
+      "vereinssitz": "Hamburg",
+      "ausgetreten": 0
+    },
+    {
+      "verein_id": 11,
+      "veranstalter_id": 1,
+      "vereinsname": "TFC Elbe",
+      "vereinssitz": "Hamburg",
+      "ausgetreten": 0
+    }
+  ],
+  "spieler": [
+    {
+      "spieler_id": 100,
+      "spielernr": "{{n1}}",
+      "vorname": "Anna",
+      "nachname": "A",
+      "geschlecht": "W",
+      "geburtsjahr": 1990,
+      "lizenz": "B",
+      "lizenznr": null,
+      "zuletzt_gespielt": "2019-05-01"
+    },
+    {
+      "spieler_id": 101,
+      "spielernr": "{{n2}}",
+      "vorname": "Bert",
+      "nachname": "B",
+      "geschlecht": "M",
+      "geburtsjahr": 1985,
+      "lizenz": "C",
+      "lizenznr": null,
+      "zuletzt_gespielt": null
+    },
+    {
+      "spieler_id": 102,
+      "spielernr": "{{n3}}",
+      "vorname": "Carl",
+      "nachname": "C",
+      "geschlecht": "M",
+      "geburtsjahr": null,
+      "lizenz": null,
+      "lizenznr": null,
+      "zuletzt_gespielt": null
+    },
+    {
+      "spieler_id": 103,
+      "spielernr": "{{n4}}",
+      "vorname": "Dora",
+      "nachname": "D",
+      "geschlecht": "W",
+      "geburtsjahr": 1992,
+      "lizenz": null,
+      "lizenznr": null,
+      "zuletzt_gespielt": null
+    }
+  ],
+  "mitgliedschaften": [
+    {
+      "spieler_id": 100,
+      "verein_id": 10,
+      "mitgliedsstatus": 1,
+      "ausgetreten": 0
+    },
+    {
+      "spieler_id": 101,
+      "verein_id": 10,
+      "mitgliedsstatus": 0,
+      "ausgetreten": 1
+    },
+    {
+      "spieler_id": 102,
+      "verein_id": 11,
+      "mitgliedsstatus": 1,
+      "ausgetreten": 0
+    },
+    {
+      "spieler_id": 103,
+      "verein_id": 11,
+      "mitgliedsstatus": 1,
+      "ausgetreten": 0
+    }
+  ],
+  "saisons": [
+    {
+      "saison_id": 5,
+      "saisonbezeichnung": "2019"
+    }
+  ],
+  "veranstaltungen": [
+    {
+      "veranstaltung_id": 50,
+      "saison_id": 5,
+      "veranstalter_id": 1,
+      "bezeichnung": "Landesliga {{league}} 2019",
+      "modus_id": 7,
+      "tabellenwertung": 1,
+      "erster_tag": "2019-03-01",
+      "letzter_tag": "2019-09-30"
+    },
+    {
+      "veranstaltung_id": 51,
+      "saison_id": 5,
+      "veranstalter_id": 1,
+      "bezeichnung": "Pokal 2019",
+      "modus_id": 7,
+      "tabellenwertung": -3,
+      "erster_tag": "2019-04-01",
+      "letzter_tag": "2019-06-30"
+    }
+  ],
+  "modi": [
+    {
+      "teamspiel_modus_id": 7,
+      "bezeichnung": "2 Doppel 2 Einzel",
+      "modus": "D1D1H,D2D2G,E1E1,E2E2|1-1",
+      "punktetyp": 0,
+      "punkte_sieg_einzel": 6,
+      "punkte_sieg_doppel": 6,
+      "spielpunkte_wertung_einzel": 3,
+      "spielpunkte_wertung_doppel": 3,
+      "spielpunkte_bedingung": 0
+    }
+  ],
+  "teams": [
+    {
+      "team_id": 500,
+      "teamgruppe_id": 500,
+      "verein_id": 10,
+      "veranstaltung_id": 50,
+      "teamname": "KFA 1",
+      "platz": 1,
+      "gesamtpunkte": 2,
+      "siege": 1,
+      "unentschieden": 0,
+      "niederlagen": 0,
+      "spielpunkte_gewonnen": 3,
+      "spielpunkte_verloren": 1,
+      "punkte_gewonnen": 22,
+      "punkte_verloren": 15,
+      "zusatzpunkte": 0
+    },
+    {
+      "team_id": 501,
+      "teamgruppe_id": null,
+      "verein_id": 11,
+      "veranstaltung_id": 50,
+      "teamname": "TFC Elbe",
+      "platz": 2,
+      "gesamtpunkte": -1,
+      "siege": 0,
+      "unentschieden": 0,
+      "niederlagen": 1,
+      "spielpunkte_gewonnen": 1,
+      "spielpunkte_verloren": 3,
+      "punkte_gewonnen": 15,
+      "punkte_verloren": 22,
+      "zusatzpunkte": -1
+    }
+  ],
+  "kader": [
+    {
+      "spieler_id": 100,
+      "team_id": 500,
+      "erster_spieltag": null,
+      "letzter_spieltag": null,
+      "ausgetreten": 0
+    },
+    {
+      "spieler_id": 101,
+      "team_id": 500,
+      "erster_spieltag": null,
+      "letzter_spieltag": 3,
+      "ausgetreten": 1
+    },
+    {
+      "spieler_id": 102,
+      "team_id": 501,
+      "erster_spieltag": null,
+      "letzter_spieltag": null,
+      "ausgetreten": 0
+    },
+    {
+      "spieler_id": 103,
+      "team_id": 501,
+      "erster_spieltag": null,
+      "letzter_spieltag": null,
+      "ausgetreten": 0
+    }
+  ],
+  "begegnungen": [
+    {
+      "begegnung_id": 900,
+      "heim_team_id": 500,
+      "gast_team_id": 501,
+      "spieltag": 1,
+      "spieltag_titel": null,
+      "zeitpunkt": "2019-03-10 14:00:00",
+      "heim_punkte": 22,
+      "gast_punkte": 15,
+      "heim_spielpunkte": 3,
+      "gast_spielpunkte": 1,
+      "unbestaetigt": 0
+    },
+    {
+      "begegnung_id": 901,
+      "heim_team_id": 501,
+      "gast_team_id": 500,
+      "spieltag": 2,
+      "spieltag_titel": "Rückrunde",
+      "zeitpunkt": "2019-04-10 14:00:00",
+      "heim_punkte": null,
+      "gast_punkte": null,
+      "heim_spielpunkte": null,
+      "gast_spielpunkte": null,
+      "unbestaetigt": 0
+    }
+  ],
+  "teamspiele": [
+    {
+      "begegnung_id": 900,
+      "teamspiel_nummer": 1,
+      "heim_spieler_1_id": 100,
+      "heim_spieler_2_id": 101,
+      "gast_spieler_1_id": 102,
+      "gast_spieler_2_id": 103,
+      "teamspiel_heim_punkte": 6,
+      "teamspiel_gast_punkte": 4,
+      "teamspiel_heim_spielpunkte": 1,
+      "teamspiel_gast_spielpunkte": 0,
+      "ergebnis_detailliert": "6:4"
+    },
+    {
+      "begegnung_id": 900,
+      "teamspiel_nummer": 2,
+      "heim_spieler_1_id": 100,
+      "heim_spieler_2_id": 101,
+      "gast_spieler_1_id": 102,
+      "gast_spieler_2_id": 103,
+      "teamspiel_heim_punkte": 4,
+      "teamspiel_gast_punkte": 6,
+      "teamspiel_heim_spielpunkte": 0,
+      "teamspiel_gast_spielpunkte": 1,
+      "ergebnis_detailliert": null
+    },
+    {
+      "begegnung_id": 900,
+      "teamspiel_nummer": 3,
+      "heim_spieler_1_id": 100,
+      "heim_spieler_2_id": null,
+      "gast_spieler_1_id": 102,
+      "gast_spieler_2_id": null,
+      "teamspiel_heim_punkte": 6,
+      "teamspiel_gast_punkte": 2,
+      "teamspiel_heim_spielpunkte": 1,
+      "teamspiel_gast_spielpunkte": 0,
+      "ergebnis_detailliert": "6:2"
+    },
+    {
+      "begegnung_id": 900,
+      "teamspiel_nummer": 4,
+      "heim_spieler_1_id": 101,
+      "heim_spieler_2_id": null,
+      "gast_spieler_1_id": null,
+      "gast_spieler_2_id": null,
+      "teamspiel_heim_punkte": 6,
+      "teamspiel_gast_punkte": 3,
+      "teamspiel_heim_spielpunkte": 1,
+      "teamspiel_gast_spielpunkte": 0,
+      "ergebnis_detailliert": "6:3"
+    }
+  ]
+}

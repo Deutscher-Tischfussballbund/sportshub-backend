@@ -181,7 +181,8 @@ public class TeamParticipationService {
      */
     private void requireSingleRootLeagueTeamPerClub(League league, Team team) {
         Federation federation = league.getSeason() == null ? null : league.getSeason().getFederation();
-        if (federation == null || !federation.isRoot()) {
+        // A team without a club (imported hobby team, docs/29) has no club to count against.
+        if (federation == null || !federation.isRoot() || team.getClub() == null) {
             return;
         }
         boolean alreadyRegistered = repository.existsByLeague_IdAndTeam_Club_IdAndTeam_IdNotAndStatusNot(
