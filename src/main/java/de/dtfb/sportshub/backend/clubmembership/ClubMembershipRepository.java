@@ -20,6 +20,9 @@ public interface ClubMembershipRepository extends JpaRepository<ClubMembership, 
     /** Every active membership for the given players, in one query (no N+1) -- see PlayerDto.clubs. */
     List<ClubMembership> findByPlayerIdInAndLeftAtIsNull(Collection<String> playerIds);
 
+    /** Every membership, active or ended, of the given players -- the importer compares against all of them. */
+    List<ClubMembership> findByPlayerIdIn(Collection<String> playerIds);
+
     @Query("SELECT DISTINCT m.player.id FROM ClubMembership m WHERE m.club.id = :clubId AND m.leftAt IS NULL")
     List<String> activePlayerIdsForClub(@Param("clubId") String clubId);
 

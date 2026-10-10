@@ -169,11 +169,11 @@ Table player {
   user_id varchar [note: 'Nullable: a captain-entered athlete may never log in themselves']
   first_name varchar [not null]
   last_name varchar [not null]
-  national_id varchar
+  national_id varchar [note: 'The current player number; old ones in player_number (docs/28)']
   international_id varchar
   nationality varchar
-  birth_year int [not null]
-  gender varchar [not null, note: 'PlayerGender: MALE | FEMALE | DIVERSE_MEN | DIVERSE_WOMEN; divers league side is admin-only']
+  birth_year int [note: 'Nullable since V19: old imported records; incomplete players cannot be rostered (docs/28)']
+  gender varchar [note: 'PlayerGender: MALE | FEMALE | DIVERSE_MEN | DIVERSE_WOMEN; divers league side is admin-only. Nullable since V19']
   national_license varchar
   active boolean [not null, default: true]
 }
@@ -530,3 +530,64 @@ Ref: roster_entry.player_id >? player.id
 Ref: game_plan_entry.rule_set_id >? league_rule_set.id
 Ref: league_rule_set.source_blueprint_id >? league_rule_set.id
 Ref: tracker_issue_vote.issue_id > tracker_issue.id
+
+Table player_number {
+  id varchar(14) [pk, note: 'A number a player holds or held -- linked, never overwritten (docs/24, docs/28)']
+  player_id varchar [not null]
+  number varchar(32) [not null, unique, note: 'SS-NNNN (real), NG-NNNN (missing in the SM), XX-NNNN (hobby)']
+  kind varchar(16) [not null, note: 'REAL | NOT_GIVEN | HOBBY']
+  valid_from datetime [not null]
+  valid_to datetime [note: 'Null = the current number']
+}
+
+Table player_number_sequence {
+  prefix varchar(8) [pk, note: 'Next number the Sports Hub issues per prefix']
+  next_value bigint [not null]
+}
+
+Table external_reference {
+  id varchar(14) [pk, note: 'Which Sports Hub entity a source record became -- what makes imports re-runnable (docs/28)']
+  source varchar(32) [not null, note: 'e.g. sportsmanager']
+  instance varchar(32) [not null, note: 'The source installation, e.g. tfvhh']
+  entity_type varchar(32) [not null, note: 'FEDERATION | CLUB | PLAYER | CLUB_MEMBERSHIP']
+  external_id varchar(64) [not null]
+  entity_id varchar(14) [not null, note: 'Not a FK -- spans several entity types']
+  last_imported_at datetime [not null, note: 'Local edits after this are conflicts']
+  indexes {
+    (source, instance, entity_type, external_id) [unique]
+  }
+}
+
+Table import_run {
+  id varchar(14) [pk, note: 'One uploaded file: PREVIEWED, then APPLIED or DISCARDED']
+  source varchar(32) [not null]
+  instance varchar(32) [not null]
+  filename varchar
+  target_federation_id varchar(14) [not null, note: 'Clubs whose organiser cannot be mapped land here']
+  exported_at datetime
+  format_version int [not null]
+  anonymized boolean [not null]
+  status varchar(16) [not null]
+  created_at datetime [not null]
+  created_by_dtfb_id varchar
+  finished_at datetime
+  finished_by_dtfb_id varchar
+}
+
+Table import_item {
+  id varchar(14) [pk, note: 'One source record of a run and what applying it would do']
+  run_id varchar [not null]
+  position int [not null]
+  record_type varchar(32) [not null]
+  external_id varchar(140) [not null]
+  label varchar
+  action varchar(16) [not null, note: 'NEW | UPDATE | UNCHANGED | CONFLICT | REJECTED']
+  target_entity_id varchar(14)
+  manual_match_id varchar(14) [note: 'A player the admin assigned the record to']
+  diff text [note: 'JSON: field -> old/new']
+  issues text [note: 'JSON: ImportIssue list']
+  payload text [not null, note: 'JSON: the source record, so apply needs no file']
+}
+
+Ref: player_number.player_id > player.id
+Ref: import_item.run_id > import_run.id

@@ -1,0 +1,25 @@
+{
+  "format": "sportshub-sm-export",
+  "version": 1,
+  "instance": "TFVHH",
+  "exportedAt": "2026-10-10T12:00:00Z",
+  "anonymized": true,
+  "veranstalter": [
+    { "veranstalter_id": 1, "veranstalterbezeichnung": "Hamburg" }
+  ],
+  "vereine": [
+    { "verein_id": 10, "vereinsname": " Kickerfreunde Alster ", "kurzname": "KFA", "vereinssitz": "Hamburg", "veranstalter_id": 1, "ausgetreten": 0 },
+    { "verein_id": 11, "vereinsname": "TFC Elbe", "kurzname": "", "vereinssitz": "Hamburg", "veranstalter_id": 99, "ausgetreten": 1 }
+  ],
+  "spieler": [
+    { "spieler_id": 100, "spielernr": "05-1001", "vorname": "Maren", "nachname": "Fiktiv", "geschlecht": "W", "geburtsjahr": 1994, "lizenz": "B", "lizenznr": "ITSF-1" },
+    { "spieler_id": 101, "spielernr": null, "vorname": "Olaf", "nachname": "Erfunden", "geschlecht": "M", "geburtsjahr": 0 },
+    { "spieler_id": 102, "spielernr": "05-1002", "vorname": "", "nachname": "Ohnename", "geschlecht": "M", "geburtsjahr": 1990 },
+    { "spieler_id": 103, "spielernr": "05-1003", "vorname": "Kim", "nachname": "Rätsel", "geschlecht": "X", "geburtsjahr": 1999 }
+  ],
+  "mitgliedschaften": [
+    { "spieler_id": 100, "verein_id": 10, "mitgliedsstatus": 1, "ausgetreten": 0, "eintritt": "2015-03-01" },
+    { "spieler_id": 101, "verein_id": 11, "mitgliedsstatus": 0, "ausgetreten": 1, "austritt": "0000-00-00" },
+    { "spieler_id": 102, "verein_id": 10, "mitgliedsstatus": 1, "ausgetreten": 0 }
+  ]
+}

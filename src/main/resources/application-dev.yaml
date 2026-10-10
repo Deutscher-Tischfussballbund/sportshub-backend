@@ -64,6 +64,9 @@ sportshub:
     cors:
         # Origin of the local admin console (the Angular dev server).
         allowed-origins: http://localhost:4200
+    importer:
+        # Pseudonymized exports (docs/28): allowed | required | forbidden. Dev takes both.
+        anonymized: allowed
 tracker:
     # GitHub org whose members may convert/delete tracker issues (see GitHubOrgOAuth2UserService).
     github-org: ${TRACKER_GITHUB_ORG:Deutscher-Tischfussballbund}

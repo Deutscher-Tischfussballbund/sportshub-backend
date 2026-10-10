@@ -7,5 +7,7 @@ package de.dtfb.sportshub.backend.category;
  */
 public enum IneligibilityReason {
     /** The player competes on the other side of the men's/women's split. */
-    WRONG_SIDE
+    WRONG_SIDE,
+    /** Birth year or gender unknown (an old imported record) -- complete the player first (docs/28). */
+    INCOMPLETE
 }

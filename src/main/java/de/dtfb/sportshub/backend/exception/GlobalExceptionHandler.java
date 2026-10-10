@@ -5,6 +5,9 @@ import de.dtfb.sportshub.backend.location.LocationDeletionBlockedException;
 import de.dtfb.sportshub.backend.club.ClubDeletionBlockedError;
 import de.dtfb.sportshub.backend.club.ClubDeletionBlockedException;
 import de.dtfb.sportshub.backend.group.GroupDeletionBlockedError;
+import de.dtfb.sportshub.backend.importer.ImportFormatException;
+import de.dtfb.sportshub.backend.importer.ImportRunClosedException;
+import de.dtfb.sportshub.backend.importer.ImportStaleException;
 import de.dtfb.sportshub.backend.group.GroupDeletionBlockedException;
 import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedError;
 import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedException;
@@ -177,6 +180,28 @@ public class GlobalExceptionHandler {
     public ResponseEntity<RuleSetEditBlockedError> handleGamePlanLocked(GamePlanLockedException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new RuleSetEditBlockedError("GAME_PLAN_LOCKED", ex.getMessage()));
+    }
+
+    // Import file not in the chosen source's format, or refused by this instance's anonymization
+    // policy (docs/28) → 400 with the parser's message.
+    @ExceptionHandler(ImportFormatException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleImportFormat(ImportFormatException ex) {
+        return new ApiError("IMPORT_FORMAT", ex.getMessage());
+    }
+
+    // Applying an import whose preview no longer matches the data → 409, upload again (docs/28).
+    @ExceptionHandler(ImportStaleException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleImportStale(ImportStaleException ex) {
+        return new ApiError("IMPORT_STALE", ex.getMessage());
+    }
+
+    // Applying/discarding/assigning in an import run that's already applied or discarded → 409.
+    @ExceptionHandler(ImportRunClosedException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleImportRunClosed(ImportRunClosedException ex) {
+        return new ApiError("IMPORT_RUN_CLOSED", ex.getMessage());
     }
 
     // Failsafe
