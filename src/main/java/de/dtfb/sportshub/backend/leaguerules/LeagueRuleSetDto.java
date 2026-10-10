@@ -26,6 +26,23 @@ public class LeagueRuleSetDto {
 
     private PlaySystem playSystem;
 
+    /** The rule profile (docs/22); null behaves as GAMES. */
+    private FixtureMode fixtureMode;
+    private Integer raceTarget;
+    private Integer raceStep;
+    private RaceEndRule raceEndRule;
+    private Integer raceByeScoreWinner;
+    private Integer raceByeScoreLoser;
+    private Integer confirmationMinutes;
+
+    /** Line-ups (docs/23): required before result entry (null = yes), and the limits checked on submit. */
+    private Boolean lineupRequired;
+    private Integer lineupMaxGamesPerPlayer;
+    private Integer lineupMaxSinglesPerPlayer;
+    private Integer lineupMaxPlayers;
+    private Boolean lineupBlockRule;
+    private Integer maxSubstitutions;
+
     private Integer pointsWin;
     private Integer pointsDraw;
     private Integer pointsLoss;

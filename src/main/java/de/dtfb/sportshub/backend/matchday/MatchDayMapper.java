@@ -13,7 +13,19 @@ public interface MatchDayMapper {
     @Mapping(source = "round.id", target = "roundId")
     @Mapping(source = "teamAway.id", target = "teamAwayId")
     @Mapping(source = "teamHome.id", target = "teamHomeId")
+    @Mapping(source = "teamHome.teamIdentityId", target = "teamHomeIdentityId")
+    @Mapping(source = "teamAway.teamIdentityId", target = "teamAwayIdentityId")
+    @Mapping(source = "teamHome.name", target = "teamHomeName")
+    @Mapping(source = "teamAway.name", target = "teamAwayName")
     @Mapping(source = "location.id", target = "locationId")
+    // Filled by the service from the fixture's games (FixtureScoreService).
+    @Mapping(target = "scoreHome", ignore = true)
+    @Mapping(target = "scoreAway", ignore = true)
+    @Mapping(target = "gamesEntered", ignore = true)
+    @Mapping(target = "gamesTotal", ignore = true)
+    @Mapping(target = "lineupRequired", ignore = true)
+    @Mapping(target = "lineupHome", ignore = true)
+    @Mapping(target = "lineupAway", ignore = true)
     MatchDayDto toDto(MatchDay matchDay);
 
     @Mapping(target = "id", ignore = true)
@@ -26,6 +38,8 @@ public interface MatchDayMapper {
     @Mapping(target = "resultState", ignore = true)
     @Mapping(target = "homeConfirmedAt", ignore = true)
     @Mapping(target = "awayConfirmedAt", ignore = true)
+    @Mapping(target = "bye", ignore = true)
+    @Mapping(target = "decidedAt", ignore = true)
     // Scheduling flow is likewise server-managed (FixtureGenerationService / propose+accept).
     @Mapping(target = "schedulingState", ignore = true)
     @Mapping(target = "scheduleProposedByDtfbId", ignore = true)
@@ -40,6 +54,8 @@ public interface MatchDayMapper {
     @Mapping(target = "submittedByDtfbId", ignore = true)
     @Mapping(target = "homeConfirmedAt", ignore = true)
     @Mapping(target = "awayConfirmedAt", ignore = true)
+    @Mapping(target = "bye", ignore = true)
+    @Mapping(target = "decidedAt", ignore = true)
     @Mapping(target = "schedulingState", ignore = true)
     @Mapping(target = "scheduleProposedByDtfbId", ignore = true)
     @Mapping(target = "scheduleConfirmedAt", ignore = true)

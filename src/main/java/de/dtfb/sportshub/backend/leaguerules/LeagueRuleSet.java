@@ -59,6 +59,32 @@ public class LeagueRuleSet extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private PlaySystem playSystem;
 
+    // The rule profile (docs/22): which of the scoring fields below apply. Null behaves as GAMES.
+    @Enumerated(EnumType.STRING)
+    private FixtureMode fixtureMode;
+
+    // RACE: one running score over the game plan's segments; segment k ends when a side reaches
+    // k * raceStep, the last one under raceEndRule at raceTarget.
+    private Integer raceTarget;
+    private Integer raceStep;
+    @Enumerated(EnumType.STRING)
+    private RaceEndRule raceEndRule;
+    // Score of a fixture against the bye (a win for the team sitting out), e.g. 42 : 30.
+    private Integer raceByeScoreWinner;
+    private Integer raceByeScoreLoser;
+
+    // Minutes the captains have to confirm once a result is decided; null = no deadline (docs/22).
+    private Integer confirmationMinutes;
+
+    // Line-ups (docs/23). lineupRequired null = required. The limits are checked on submit; null =
+    // unlimited. lineupBlockRule: the Race profile's rule for the first block of doubles and the rest.
+    private Boolean lineupRequired;
+    private Integer lineupMaxGamesPerPlayer;
+    private Integer lineupMaxSinglesPerPlayer;
+    private Integer lineupMaxPlayers;
+    private Boolean lineupBlockRule;
+    private Integer maxSubstitutions;
+
     // Standings points. pointsDraw null ⇒ draws are not possible in this rule set.
     private Integer pointsWin;
     private Integer pointsDraw;

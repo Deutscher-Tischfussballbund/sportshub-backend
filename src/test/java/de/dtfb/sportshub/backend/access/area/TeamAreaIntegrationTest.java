@@ -26,12 +26,14 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * A {@code TEAM_ADMIN} grant surfaces a first-class "team" area from {@code /v1/auth/me/areas} — the
  * team admin's dedicated entry to their roster(s). Team areas come ONLY from explicit team grants;
  * they are never expanded from higher (region/club/global) scope, since there are far too many teams.
+ * An admin above a team opens its area on demand via {@code /v1/auth/me/areas/teams/{id}} instead.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -100,6 +102,39 @@ class TeamAreaIntegrationTest {
 
         List<Object> teamAreas = JsonPath.read(json, "$.areas[?(@.type=='team')]");
         assertThat(teamAreas).isEmpty();
+    }
+
+    @Test
+    void anAdminAboveTheTeam_opensItsAreaOnDemand_butTheListStaysUnexpanded() throws Exception {
+        Federation fed = federation("Bayern-Ondemand");
+        Club club = club("TFC Ondemand", fed.getId());
+        Team team = team("TFC Ondemand 1", club);
+        grant(userRepository.save(user("od-clubadmin")), Role.CLUB_ADMIN, ScopeType.CLUB, club.getId());
+        grant(userRepository.save(user("od-regionadmin")), Role.REGION_ADMIN, ScopeType.REGION, fed.getId());
+
+        for (String admin : List.of("od-clubadmin", "od-regionadmin")) {
+            mockMvc.perform(get("/v1/auth/me/areas/teams/" + team.getTeamIdentityId()).with(jwtFor(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.type").value("team"))
+                .andExpect(jsonPath("$.id").value(team.getTeamIdentityId()))
+                .andExpect(jsonPath("$.name").value("TFC Ondemand 1"))
+                .andExpect(jsonPath("$.regionId").value(fed.getId()));
+        }
+        String json = mockMvc.perform(get("/v1/auth/me/areas").with(jwtFor("od-clubadmin")))
+            .andReturn().getResponse().getContentAsString();
+        List<Object> teamAreas = JsonPath.read(json, "$.areas[?(@.type=='team')]");
+        assertThat(teamAreas).isEmpty();
+    }
+
+    @Test
+    void anAdminOfAnotherClub_cannotOpenTheTeamArea() throws Exception {
+        Federation fed = federation("Hessen-Ondemand");
+        Team team = team("Fremd 1", club("Fremder Club", fed.getId()));
+        Club other = club("Eigener Club", fed.getId());
+        grant(userRepository.save(user("od-otheradmin")), Role.CLUB_ADMIN, ScopeType.CLUB, other.getId());
+
+        mockMvc.perform(get("/v1/auth/me/areas/teams/" + team.getTeamIdentityId()).with(jwtFor("od-otheradmin")))
+            .andExpect(status().isForbidden());
     }
 
     // region helpers

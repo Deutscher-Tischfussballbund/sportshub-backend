@@ -147,7 +147,8 @@ venue before anyone has agreed on one.
 3. **Team: `WINDOW` propose/accept UI** — `propose-schedule-dialog.component.ts`, reached from a
    new `+team/team-fixtures.{component,service}.ts` (mirrors `team-rosters.*`) mounted as a
    `fixtures` sub-route under `/team/:teamId`. Since 2026-09-27 the buttons only appear for
-   fixtures whose round has a window; otherwise the row says the organizer sets the date.
+   fixtures whose round has a window. Since 2026-09-28 the date-agreement status and its actions show
+   only for such fixtures (columns hidden when the list has none), next to a result column (SPO-57).
 4. **Admin: schedule view** — `region-group-schedule.component.ts` at
    `/region/:regionId/leagues/:leagueId/groups/:groupId/schedule`, linked from the group rows: one
    card per round (shared kick-off + venue, or the round's window, in the header) with home, away,
@@ -181,6 +182,11 @@ creates one `Match` per plan entry (`position` and `type` from the entry, state 
   fixtures without games, as before.
 
 Deleting a fixture or a whole plan deletes its games.
+
+**Byes in a Race league (2026-09-29, docs/22).** With an odd team count, the team sitting a round out
+gets a fixture against the bye (`MatchDay.bye`, no away team, no games), final at once and scored in
+the table with the rule set's bye score (42 : 30). Deleting a plan and the game-plan lock ignore these
+fixtures; outside `RACE` rule sets the bye stays a plain gap, as before.
 
 **The game plan is fixed from the first entered result on** (decided by Marvin 2026-09-28). A
 change that alters the effective game plan of a group — editing the league's/tier's rules, applying

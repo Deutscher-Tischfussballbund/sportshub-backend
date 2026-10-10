@@ -64,7 +64,11 @@ class MatchDayControllerTest extends de.dtfb.sportshub.backend.support.Authorize
             .andExpect(jsonPath("$.locationId").value(locationId))
             .andExpect(jsonPath("$.roundId").value(roundId))
             .andExpect(jsonPath("$.teamAwayId").value(teamAwayId))
-            .andExpect(jsonPath("$.teamHomeId").value(teamHomeId));
+            .andExpect(jsonPath("$.teamHomeId").value(teamHomeId))
+            .andExpect(jsonPath("$.teamHomeIdentityId").isNotEmpty())
+            .andExpect(jsonPath("$.teamAwayIdentityId").isNotEmpty())
+            .andExpect(jsonPath("$.teamHomeName").isNotEmpty())
+            .andExpect(jsonPath("$.teamAwayName").isNotEmpty());
     }
 
     @Test

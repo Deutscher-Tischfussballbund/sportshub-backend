@@ -8,6 +8,7 @@ import de.dtfb.sportshub.backend.leaguerules.GamePlanEntryRepository;
 import de.dtfb.sportshub.backend.leaguerules.GamePlanLockedException;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleResolver;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
+import de.dtfb.sportshub.backend.lineup.LineupService;
 import de.dtfb.sportshub.backend.matchday.MatchDay;
 import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
 import de.dtfb.sportshub.backend.matchday.ResultState;
@@ -38,6 +39,7 @@ public class MatchPlanService {
     private final GroupRepository groupRepository;
     private final LeagueRepository leagueRepository;
     private final TierRepository tierRepository;
+    private final LineupService lineups;
 
     public MatchPlanService(MatchRepository matchRepository,
                             MatchDayRepository matchDayRepository,
@@ -45,7 +47,8 @@ public class MatchPlanService {
                             LeagueRuleResolver ruleResolver,
                             GroupRepository groupRepository,
                             LeagueRepository leagueRepository,
-                            TierRepository tierRepository) {
+                            TierRepository tierRepository,
+                            LineupService lineups) {
         this.matchRepository = matchRepository;
         this.matchDayRepository = matchDayRepository;
         this.gamePlanRepository = gamePlanRepository;
@@ -53,6 +56,7 @@ public class MatchPlanService {
         this.groupRepository = groupRepository;
         this.leagueRepository = leagueRepository;
         this.tierRepository = tierRepository;
+        this.lineups = lineups;
     }
 
     /**
@@ -61,6 +65,9 @@ public class MatchPlanService {
      */
     @Transactional
     public int createGames(MatchDay matchDay) {
+        if (matchDay.isBye()) {
+            return 0; // no games against the bye (docs/22)
+        }
         Group group = matchDay.getRound() == null ? null : matchDay.getRound().getGroup();
         List<GamePlanEntry> plan = gamePlanOf(group);
         for (GamePlanEntry entry : plan) {
@@ -75,9 +82,13 @@ public class MatchPlanService {
         return plan.size();
     }
 
-    /** Deletes a fixture's games, e.g. before the fixture itself is deleted. */
+    /**
+     * Deletes a fixture's games, e.g. before the fixture itself is deleted or its games are rebuilt --
+     * with the line-ups and match events on them first (docs/23): a rebuilt plan needs new line-ups.
+     */
     @Transactional
     public void deleteGames(MatchDay matchDay) {
+        lineups.deleteForFixture(matchDay);
         matchRepository.deleteAll(matchRepository.findByMatchDay(matchDay));
     }
 
@@ -167,7 +178,7 @@ public class MatchPlanService {
     }
 
     private boolean hasResult(Group group) {
-        return matchDayRepository.existsByRound_Group_IdAndResultStateNot(group.getId(), ResultState.OPEN)
+        return matchDayRepository.existsByRound_Group_IdAndResultStateNotAndByeFalse(group.getId(), ResultState.OPEN)
             || matchRepository.existsScoredInGroup(group.getId());
     }
 

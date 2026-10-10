@@ -97,6 +97,7 @@ class StandingComputationTest extends AuthorizedControllerTest {
         String categoryId = create("/v1/categories", "{\"name\":\"Herren\",\"shortName\":\"" + TestIds.unique("H") + "\"}");
         String leagueId = create("/v1/leagues", "{\"name\":\"Liga\",\"seasonId\":\"" + seasonId
             + "\",\"categoryId\":\"" + categoryId + "\"" + leagueRuleSetRef + "}");
+        de.dtfb.sportshub.backend.support.LineupTestSupport.disableLineups(mockMvc, null, leagueId);
         String tierId = create("/v1/tiers", "{\"name\":\"1. Liga\",\"leagueId\":\"" + leagueId + "\"}");
         String groupId = create("/v1/groups",
             "{\"name\":\"Gruppe A\",\"tierId\":\"" + tierId + "\",\"groupState\":\"RUNNING\"}");
@@ -123,6 +124,8 @@ class StandingComputationTest extends AuthorizedControllerTest {
                 .content("{\"matches\":[{\"matchId\":\"" + matchId + "\",\"homeScore\":5,\"awayScore\":2}]}"))
             .andExpect(status().isOk());
         mockMvc.perform(post("/v1/matchdays/" + matchDayId + "/confirm").with(away))
+            .andExpect(status().isOk());
+        mockMvc.perform(post("/v1/matchdays/" + matchDayId + "/confirm").with(home)) // confirming is explicit
             .andExpect(status().isOk());
 
         return new Scenario(groupId, homeTeamId, awayTeamId);

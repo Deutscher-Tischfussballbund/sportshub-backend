@@ -5,6 +5,7 @@ import de.dtfb.sportshub.backend.location.Location;
 import de.dtfb.sportshub.backend.round.Round;
 import de.dtfb.sportshub.backend.team.Team;
 import jakarta.persistence.*;
+import org.hibernate.annotations.ColumnDefault;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -47,6 +48,23 @@ public class MatchDay extends BaseEntity {
 
     private Instant awayConfirmedAt;
 
+    /**
+     * The fixture against the bye (docs/22): {@code teamHome} sits the round out, {@code teamAway} is
+     * null, and the rule set's bye score counts as its win. Created final by the generator; no games.
+     */
+    @Column(nullable = false)
+    @ColumnDefault("false") // rows inserted without it (dev seed, V16 on existing data) are regular fixtures
+    private boolean bye;
+
+    /** When the result first became decided -- start of the confirmation deadline (docs/22). */
+    private Instant decidedAt;
+
+    /**
+     * When the result first became final (docs/17); never cleared. From then on only a neutral admin
+     * may enter or confirm, even if a correction makes the result undecided again.
+     */
+    private Instant firstFinalAt;
+
     // Scheduling lifecycle for startDate/location above — separate from the result lifecycle.
     // See docs/12-matchday-scheduling.md.
     @Enumerated(EnumType.STRING)
@@ -56,4 +74,9 @@ public class MatchDay extends BaseEntity {
     private String scheduleProposedByDtfbId;
 
     private Instant scheduleConfirmedAt;
+
+    /** Final now, or final once before an admin's correction reopened it: only neutral admins act on it (docs/17). */
+    public boolean hasBeenFinal() {
+        return resultState == ResultState.CONFIRMED || firstFinalAt != null;
+    }
 }

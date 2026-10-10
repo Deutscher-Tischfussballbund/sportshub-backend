@@ -18,6 +18,8 @@ import de.dtfb.sportshub.backend.location.Location;
 import de.dtfb.sportshub.backend.location.LocationRepository;
 import de.dtfb.sportshub.backend.matchday.MatchDay;
 import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
+import de.dtfb.sportshub.backend.matchday.ResultActor;
+import de.dtfb.sportshub.backend.roster.RosterEntryRepository;
 import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.season.SeasonRepository;
 import de.dtfb.sportshub.backend.team.Team;
@@ -80,6 +82,7 @@ public class AuthorizationService {
     private final TierRepository tierRepository;
     private final LeagueRuleSetRepository leagueRuleSetRepository;
     private final CompetitionResolver competitionResolver;
+    private final RosterEntryRepository rosterEntryRepository;
 
     public AuthorizationService(UserRegistryService registry,
                                 RoleAssignmentRepository roleAssignmentRepository,
@@ -93,7 +96,8 @@ public class AuthorizationService {
                                 TeamParticipationRepository teamParticipationRepository,
                                 TierRepository tierRepository,
                                 LeagueRuleSetRepository leagueRuleSetRepository,
-                                CompetitionResolver competitionResolver) {
+                                CompetitionResolver competitionResolver,
+                                RosterEntryRepository rosterEntryRepository) {
         this.registry = registry;
         this.roleAssignmentRepository = roleAssignmentRepository;
         this.clubRepository = clubRepository;
@@ -107,6 +111,7 @@ public class AuthorizationService {
         this.tierRepository = tierRepository;
         this.leagueRuleSetRepository = leagueRuleSetRepository;
         this.competitionResolver = competitionResolver;
+        this.rosterEntryRepository = rosterEntryRepository;
     }
 
     /** Global DTFB administrator. */
@@ -452,11 +457,11 @@ public class AuthorizationService {
     }
 
     /**
-     * Tier D: may submit/confirm the league result of the given match day, gating the team-rep
-     * workflow. The caller must represent a participating team - a {@code team_admin}
-     * of {@code teamHome}/{@code teamAway}, or an admin above that team (club/region/global). The
-     * submitter-vs-opponent distinction on confirm is enforced in {@code MatchDayService} (a person
-     * may not confirm their own submission); this gate only establishes affiliation.
+     * Tier D: may propose/accept a date for the given match day on behalf of a participating team - a
+     * {@code team_admin} of {@code teamHome}/{@code teamAway}, or an admin above that team
+     * (club/region/global). The proposer-vs-accepter distinction is enforced in
+     * {@code MatchDayService}. Results have their own gates: {@link #canEnterResult},
+     * {@link #canConfirmResult} (docs/17).
      */
     public boolean canReportMatchDay(String matchDayId) {
         List<RoleAssignment> roles = currentRoles();
@@ -471,6 +476,62 @@ public class AuthorizationService {
     }
 
     /**
+     * May enter or edit the result of the fixture (docs/17): a team member of either side or a neutral
+     * admin. The finer rules (ambiguous side, frozen result) are {@code MatchDayService}'s.
+     */
+    public boolean canEnterResult(String matchDayId) {
+        ResultActor actor = resultActorFor(matchDayId);
+        return actor != null && (actor.neutralAdmin() || actor.homeMember() || actor.awayMember());
+    }
+
+    /**
+     * May confirm the result of the fixture (docs/17): a captain of either side or a neutral admin. The
+     * same people enter line-ups and substitutions (docs/23); which side they may touch is checked in
+     * {@code LineupService}.
+     */
+    public boolean canConfirmResult(String matchDayId) {
+        ResultActor actor = resultActorFor(matchDayId);
+        return actor != null && (actor.neutralAdmin() || actor.homeCaptain() || actor.awayCaptain());
+    }
+
+    private ResultActor resultActorFor(String matchDayId) {
+        MatchDay matchDay = matchDayId == null ? null : matchDayRepository.findById(matchDayId).orElse(null);
+        return matchDay == null ? null : resultActor(matchDay);
+    }
+
+    /**
+     * What the current user is for this fixture's result (docs/17). Neutral admin: global admin,
+     * admin of the league's federation, or league admin of the league -- not a club admin, who acts
+     * as their team's side. Team member of a side: on its current roster in the league, its captain
+     * ({@code team_admin}), or an admin above the team ({@link #canRepresent}). Captain: the
+     * {@code team_admin} role only.
+     */
+    public ResultActor resultActor(MatchDay matchDay) {
+        List<RoleAssignment> roles = currentRoles();
+        League league = competitionResolver.ofMatchDay(matchDay.getId());
+        boolean neutral = AccessRoles.isGlobalAdmin(roles) || (league != null && canOrganize(league));
+        User user = registry.currentUser(currentJwt());
+        Team home = matchDay.getTeamHome();
+        Team away = matchDay.getTeamAway();
+        boolean homeCaptain = isCaptain(roles, home);
+        boolean awayCaptain = isCaptain(roles, away);
+        return new ResultActor(neutral,
+            homeCaptain || canRepresent(roles, home) || onRoster(user, home, league),
+            awayCaptain || canRepresent(roles, away) || onRoster(user, away, league),
+            homeCaptain, awayCaptain);
+    }
+
+    private boolean isCaptain(List<RoleAssignment> roles, Team team) {
+        return team != null && roles.stream().anyMatch(ra ->
+            ra.getRole() == Role.TEAM_ADMIN && Objects.equals(ra.getScopeId(), team.getTeamIdentityId()));
+    }
+
+    private boolean onRoster(User user, Team team, League league) {
+        return user != null && team != null && league != null
+            && rosterEntryRepository.isOnActiveRoster(user.getId(), team.getId(), league.getId());
+    }
+
+    /**
      * Whether the current player may act for {@code team}: its {@code team_admin}, or an admin above
      * it (club admin of its club, region admin of its region). Unlike {@link #canManageTeam} (team
      * CRUD - admins above only), this also accepts the {@code team_admin} role itself, which exists
@@ -478,6 +539,20 @@ public class AuthorizationService {
      * not row id, so a role granted in one season keeps matching that team's copy in every other
      * season.
      */
+    /**
+     * May open the team area of {@code teamIdentityId}: its {@code team_admin}, or an admin above the
+     * team (global, its region, its club -- {@link #canRepresent}). The area list itself stays limited
+     * to explicit team grants (there are far too many teams); this admits a single team on demand.
+     */
+    public boolean canOpenTeamArea(String teamIdentityId) {
+        List<RoleAssignment> roles = currentRoles();
+        if (AccessRoles.isGlobalAdmin(roles)) {
+            return true;
+        }
+        Team team = teamIdentityId == null ? null : teamService.latestForIdentity(teamIdentityId).orElse(null);
+        return canRepresent(roles, team);
+    }
+
     private boolean canRepresent(List<RoleAssignment> roles, Team team) {
         if (team == null) {
             return false;

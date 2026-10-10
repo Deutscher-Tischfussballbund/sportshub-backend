@@ -40,9 +40,9 @@ Enum GroupState {
 }
 
 Enum ResultState {
-  OPEN           [note: 'No result submitted yet']
-  HOME_SUBMITTED [note: 'Home team submitted; awaiting opponent confirmation']
-  CONFIRMED      [note: 'Confirmed by the opponent -> standings recomputed']
+  OPEN      [note: 'No result entered yet']
+  SUBMITTED [note: 'Entered by a team member; waiting for both captains to agree (home/away_confirmed_at)']
+  CONFIRMED [note: 'Both captains agreed, or a neutral admin entered/confirmed -> standings recomputed']
 }
 
 Enum MatchState {
@@ -75,6 +75,7 @@ Enum MatchEventType {
   START
   END
   CARD
+  SUBSTITUTION [note: 'docs/23: player_in replaces player_out from this game on (positional)']
   OTHER
 }
 
@@ -296,6 +297,9 @@ Table match_day {
   submitted_by_dtfb_id varchar
   home_confirmed_at datetime
   away_confirmed_at datetime
+  bye boolean [not null, default: false, note: 'Fixture against the bye: team_away_id NULL, scored with the bye score (docs/22)']
+  decided_at datetime [note: 'When the result became decided -- start of the confirmation deadline']
+  first_final_at datetime [note: 'When the result first became final; never cleared -- from then on only neutral admins act on it (docs/17)']
   // Scheduling lifecycle for start_date/location -- independent of result_state above; see
   // docs/12-matchday-scheduling.md.
   scheduling_state SchedulingState [not null, default: 'DEFAULT']
@@ -330,12 +334,30 @@ Table match_event {
   id varchar(14) [pk]
   match_id varchar
   team_id varchar
-  player_id varchar [note: 'plain id, not a FK']
+  player_id varchar [note: 'Single-player events (goal, card)']
+  player_in_id varchar [note: 'SUBSTITUTION: coming in']
+  player_out_id varchar [note: 'SUBSTITUTION: going out']
   timestamp datetime
   type MatchEventType
   home_score int
   away_score int
   json text [note: '@Lob free-form payload']
+}
+
+Table lineup {
+  id varchar(14) [pk, note: 'One team\'s line-up for one fixture (docs/23); unique (match_day_id, team_id)']
+  match_day_id varchar [not null]
+  team_id varchar [not null]
+  submitted_at datetime [note: 'NULL = draft; hidden from the opponent until both are submitted']
+  submitted_by_dtfb_id varchar
+}
+
+Table lineup_entry {
+  id varchar(14) [pk, note: 'One player lined up for one game (slot 1/2 of a double, 1 of a single)']
+  lineup_id varchar [not null]
+  match_id varchar [not null]
+  slot int [not null]
+  player_id varchar [not null]
 }
 
 Table standing {
@@ -398,6 +420,19 @@ Table league_rule_set {
   max_roster_size int [note: 'Enforced by RosterService on addPlayer; null = unconstrained']
   scheduling_mode SchedulingMode [note: 'Read by FixtureGenerationService; null = no convention configured yet (generation requires picking one)']
   scheduling_window_days int [note: 'Only meaningful when scheduling_mode = WINDOW']
+  fixture_mode varchar [note: 'Rule profile RACE | GAMES (docs/22); NULL behaves as GAMES']
+  race_target int [note: 'RACE: e.g. 42']
+  race_step int [note: 'RACE: points per segment, e.g. 6']
+  race_end_rule varchar [note: 'RACE: DRAW_ALLOWED (41:41) | TWO_POINT_LEAD']
+  race_bye_score_winner int [note: 'RACE: bye fixture score, e.g. 42']
+  race_bye_score_loser int [note: 'RACE: e.g. 30']
+  confirmation_minutes int [note: 'Time to confirm once decided; NULL = no deadline']
+  lineup_required boolean [note: 'docs/23: both line-ups before a team enters a result; NULL = required']
+  lineup_max_games_per_player int
+  lineup_max_singles_per_player int
+  lineup_max_players int
+  lineup_block_rule boolean [note: 'RACE: first block of doubles all different, rest all different with >= 2 repeats']
+  max_substitutions int
 }
 
 Table game_plan_entry {
@@ -477,6 +512,14 @@ Ref: match_game.match_day_id >? match_day.id
 Ref: match_set.match_id >? match_game.id
 Ref: match_event.match_id >? match_game.id
 Ref: match_event.team_id >? team.id
+Ref: match_event.player_id >? player.id
+Ref: match_event.player_in_id >? player.id
+Ref: match_event.player_out_id >? player.id
+Ref: lineup.match_day_id > match_day.id
+Ref: lineup.team_id > team.id
+Ref: lineup_entry.lineup_id > lineup.id
+Ref: lineup_entry.match_id > match_game.id
+Ref: lineup_entry.player_id > player.id
 Ref: standing.group_id > comp_group.id
 Ref: standing.team_id > team.id
 Ref: team_participation.team_id >? team.id

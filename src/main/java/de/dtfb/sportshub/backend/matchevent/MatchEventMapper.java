@@ -14,18 +14,27 @@ public interface MatchEventMapper {
 
     @Mapping(source = "match.id", target = "matchId")
     @Mapping(source = "team.id", target = "teamId")
+    @Mapping(source = "player.id", target = "playerId")
+    @Mapping(source = "playerIn.id", target = "playerInId")
+    @Mapping(source = "playerOut.id", target = "playerOutId")
     @Mapping(target = "json", expression = "java(fromJsonString(matchEvent.getJson()))")
     MatchEventDto toDto(MatchEvent matchEvent);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "match", ignore = true)
     @Mapping(target = "team", ignore = true)
+    @Mapping(target = "player", ignore = true)
+    @Mapping(target = "playerIn", ignore = true)
+    @Mapping(target = "playerOut", ignore = true)
     @Mapping(target = "json", expression = "java(toJsonString(matchEventDto.getJson()))")
     MatchEvent toEntity(MatchEventDto matchEventDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "match", ignore = true)
     @Mapping(target = "team", ignore = true)
+    @Mapping(target = "player", ignore = true)
+    @Mapping(target = "playerIn", ignore = true)
+    @Mapping(target = "playerOut", ignore = true)
     @Mapping(target = "json", ignore = true) // handled by updateJsonAfterMapping
     void updateEntityFromDto(MatchEventDto dto, @MappingTarget MatchEvent entity);
 

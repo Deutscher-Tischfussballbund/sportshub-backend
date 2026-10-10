@@ -23,7 +23,7 @@ class MatchEventControllerTest extends de.dtfb.sportshub.backend.support.Authori
     private String matchId;
     private final Instant sampleDate = Instant.now().truncatedTo(ChronoUnit.MICROS);
     private String teamHomeId;
-    private final String playerId = NanoIdUtils.randomNanoId();
+    private String playerId;
 
     @PostConstruct
     void setup() throws Exception {
@@ -37,7 +37,16 @@ class MatchEventControllerTest extends de.dtfb.sportshub.backend.support.Authori
         String teamAwayId = id(createTeam("Foos Fighters"));
         String matchDayId = id(createMatchday(roundId, locationId, teamHomeId, teamAwayId));
         matchId = id(createMatch(matchDayId));
+        de.dtfb.sportshub.backend.player.Player player = new de.dtfb.sportshub.backend.player.Player();
+        player.setFirstName("Event");
+        player.setLastName("Spieler");
+        player.setBirthYear(1990);
+        player.setGender(de.dtfb.sportshub.backend.player.PlayerGender.MALE);
+        playerId = playerRepository.save(player).getId(); // match_event.player_id is a real reference (docs/23)
     }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    de.dtfb.sportshub.backend.player.PlayerRepository playerRepository;
 
     @BeforeEach
     void setupEach() throws Exception {

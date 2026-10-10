@@ -3,21 +3,18 @@ package de.dtfb.sportshub.backend.matchday;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleResolver;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
 import de.dtfb.sportshub.backend.leaguerules.SchedulingMode;
+import de.dtfb.sportshub.backend.lineup.LineupService;
+import de.dtfb.sportshub.backend.lineup.LineupStatus;
 import de.dtfb.sportshub.backend.location.Location;
 import de.dtfb.sportshub.backend.location.LocationNotFoundException;
 import de.dtfb.sportshub.backend.location.LocationRepository;
-import de.dtfb.sportshub.backend.match.Match;
-import de.dtfb.sportshub.backend.match.MatchNotFoundException;
 import de.dtfb.sportshub.backend.match.MatchPlanService;
-import de.dtfb.sportshub.backend.match.MatchRepository;
-import de.dtfb.sportshub.backend.match.MatchState;
 import de.dtfb.sportshub.backend.round.Round;
 import de.dtfb.sportshub.backend.round.RoundNotFoundException;
 import de.dtfb.sportshub.backend.round.RoundRepository;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamNotFoundException;
 import de.dtfb.sportshub.backend.team.TeamRepository;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +22,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class MatchDayService {
@@ -33,36 +31,62 @@ public class MatchDayService {
     private final RoundRepository roundRepository;
     private final LocationRepository locationRepository;
     private final TeamRepository teamRepository;
-    private final MatchRepository matchRepository;
-    private final ApplicationEventPublisher eventPublisher;
     private final LeagueRuleResolver ruleResolver;
     private final MatchPlanService matchPlan;
+    private final FixtureScoreService fixtureScores;
+    private final LineupService lineups;
 
     public MatchDayService(MatchDayRepository repository, MatchDayMapper mapper, RoundRepository roundRepository,
                            LocationRepository locationRepository, TeamRepository teamRepository,
-                           MatchRepository matchRepository, ApplicationEventPublisher eventPublisher,
-                           LeagueRuleResolver ruleResolver, MatchPlanService matchPlan) {
+                           LeagueRuleResolver ruleResolver, MatchPlanService matchPlan,
+                           FixtureScoreService fixtureScores, LineupService lineups) {
         this.repository = repository;
         this.mapper = mapper;
         this.roundRepository = roundRepository;
         this.locationRepository = locationRepository;
         this.teamRepository = teamRepository;
-        this.matchRepository = matchRepository;
-        this.eventPublisher = eventPublisher;
         this.ruleResolver = ruleResolver;
         this.matchPlan = matchPlan;
+        this.fixtureScores = fixtureScores;
+        this.lineups = lineups;
     }
 
     @Transactional(readOnly = true)
     public List<MatchDayDto> getAll() {
-        return mapper.toDtoList(repository.findAllVisible());
+        List<MatchDay> matchDays = repository.findAllVisible();
+        Map<String, FixtureScoreService.FixtureScore> scores = fixtureScores.scores(matchDays);
+        Map<String, LineupStatus[]> lineupStatuses = lineups.statuses(matchDays);
+        return matchDays.stream()
+            .map(matchDay -> withLineups(withScore(mapper.toDto(matchDay), scores.get(matchDay.getId())),
+                matchDay, lineupStatuses.get(matchDay.getId())))
+            .toList();
+    }
+
+    private MatchDayDto withLineups(MatchDayDto dto, MatchDay matchDay, LineupStatus[] statuses) {
+        dto.setLineupRequired(lineups.lineupRequired(matchDay));
+        if (statuses != null) {
+            dto.setLineupHome(statuses[0]);
+            dto.setLineupAway(statuses[1]);
+        }
+        return dto;
+    }
+
+    private static MatchDayDto withScore(MatchDayDto dto, FixtureScoreService.FixtureScore score) {
+        if (score != null) {
+            dto.setScoreHome(score.home());
+            dto.setScoreAway(score.away());
+            dto.setGamesEntered(score.gamesEntered());
+            dto.setGamesTotal(score.gamesTotal());
+        }
+        return dto;
     }
 
     @Transactional(readOnly = true)
     public MatchDayDto get(String id) {
         MatchDay matchDay = repository.findVisibleById(id).orElseThrow(
             () -> new MatchDayNotFoundException(id));
-        return mapper.toDto(matchDay);
+        return withLineups(withScore(mapper.toDto(matchDay), fixtureScores.scores(List.of(matchDay)).get(matchDay.getId())),
+            matchDay, lineups.statuses(List.of(matchDay)).get(matchDay.getId()));
     }
 
     @Transactional
@@ -102,53 +126,6 @@ public class MatchDayService {
             () -> new MatchDayNotFoundException(id));
         matchPlan.deleteGames(matchDay);
         repository.delete(matchDay);
-    }
-
-    @Transactional
-    public MatchDayDto submitResult(String matchDayId, MatchDayResultRequest request, String submitterDtfbId) {
-        MatchDay matchDay = repository.findById(matchDayId)
-            .orElseThrow(() -> new MatchDayNotFoundException(matchDayId));
-
-        if (matchDay.getResultState() != ResultState.OPEN) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Result already submitted for this match day");
-        }
-
-        for (MatchDayResultRequest.MatchResultEntry entry : request.getMatches()) {
-            Match match = matchRepository.findById(entry.getMatchId())
-                .orElseThrow(() -> new MatchNotFoundException(entry.getMatchId()));
-            if (!match.getMatchDay().getId().equals(matchDayId)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Match does not belong to this match day");
-            }
-            match.setHomeScore(entry.getHomeScore());
-            match.setAwayScore(entry.getAwayScore());
-            match.setState(MatchState.PLAYED);
-            matchRepository.save(match);
-        }
-
-        matchDay.setResultState(ResultState.HOME_SUBMITTED);
-        matchDay.setSubmittedByDtfbId(submitterDtfbId);
-        matchDay.setHomeConfirmedAt(Instant.now());
-        return mapper.toDto(repository.save(matchDay));
-    }
-
-    @Transactional
-    public MatchDayDto confirmResult(String matchDayId, String confirmerDtfbId) {
-        MatchDay matchDay = repository.findById(matchDayId)
-            .orElseThrow(() -> new MatchDayNotFoundException(matchDayId));
-
-        if (matchDay.getResultState() != ResultState.HOME_SUBMITTED) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "No submitted result to confirm");
-        }
-        if (confirmerDtfbId.equals(matchDay.getSubmittedByDtfbId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot confirm your own result submission");
-        }
-
-        matchDay.setResultState(ResultState.CONFIRMED);
-        matchDay.setAwayConfirmedAt(Instant.now());
-
-        MatchDay saved = repository.save(matchDay);
-        eventPublisher.publishEvent(new MatchDayConfirmedEvent(this, saved));
-        return mapper.toDto(saved);
     }
 
     /**
