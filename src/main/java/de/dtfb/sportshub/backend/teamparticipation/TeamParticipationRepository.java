@@ -50,6 +50,9 @@ public interface TeamParticipationRepository extends JpaRepository<TeamParticipa
     /** The teams to pair up when generating a group's fixtures — withdrawn teams excluded. */
     List<TeamParticipation> findByGroup_IdAndStatus(String groupId, ParticipationStatus status);
 
+    /** The team's participation in a league (imported seasons, docs/29). */
+    java.util.Optional<TeamParticipation> findFirstByTeam_IdAndLeague_Id(String teamId, String leagueId);
+
     /**
      * Whether the club already has a (non-withdrawn) team other than {@code excludingTeamId}
      * registered in this league -- the one-team-per-club-per-root-league guard

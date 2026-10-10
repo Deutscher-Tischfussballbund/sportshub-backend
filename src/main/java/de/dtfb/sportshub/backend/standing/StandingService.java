@@ -57,23 +57,30 @@ public class StandingService {
     private final LeagueRuleResolver ruleResolver;
     private final MatchDayRepository matchDayRepository;
     private final TeamParticipationRepository participationRepository;
+    private final OfficialTableEntryRepository officialTableRepository;
 
     public StandingService(StandingRepository standingRepository, GroupRepository groupRepository,
                            MatchRepository matchRepository, LeagueRuleResolver ruleResolver,
-                           MatchDayRepository matchDayRepository, TeamParticipationRepository participationRepository) {
+                           MatchDayRepository matchDayRepository, TeamParticipationRepository participationRepository,
+                           OfficialTableEntryRepository officialTableRepository) {
         this.standingRepository = standingRepository;
         this.groupRepository = groupRepository;
         this.matchRepository = matchRepository;
         this.ruleResolver = ruleResolver;
         this.matchDayRepository = matchDayRepository;
         this.participationRepository = participationRepository;
+        this.officialTableRepository = officialTableRepository;
     }
 
-    /** The official table: only final fixtures count. */
+    /** The official table: the group's frozen table if it has one (docs/29), else computed from final fixtures. */
     @Transactional(readOnly = true)
     public List<StandingDto> getByGroup(String groupId) {
         Group group = groupRepository.findVisibleById(groupId)
             .orElseThrow(() -> new GroupNotFoundException(groupId));
+        List<OfficialTableEntry> frozen = officialTableRepository.findByGroupId(groupId);
+        if (!frozen.isEmpty()) {
+            return frozenDtos(group, frozen);
+        }
         return toDtos(compute(group, matchDay -> matchDay.getResultState() == ResultState.CONFIRMED, true), Set.of());
     }
 
@@ -86,6 +93,11 @@ public class StandingService {
     public List<StandingDto> getProvisionalByGroup(String groupId) {
         Group group = groupRepository.findVisibleById(groupId)
             .orElseThrow(() -> new GroupNotFoundException(groupId));
+        List<OfficialTableEntry> frozen = officialTableRepository.findByGroupId(groupId);
+        if (!frozen.isEmpty()) {
+            // A frozen table is final -- there is no live state to show.
+            return frozenDtos(group, frozen);
+        }
         Set<String> provisionalTeams = new HashSet<>();
         Table table = compute(group, matchDay -> {
             if (matchDay.getResultState() == ResultState.SUBMITTED) {
@@ -119,6 +131,44 @@ public class StandingService {
         standingRepository.deleteAll(standingRepository.findByGroupOrderByPointsDescSetsWonDesc(group));
         standingRepository.flush();
         standingRepository.saveAll(compute(group, matchDay -> matchDay.getResultState() == ResultState.CONFIRMED, false).rows());
+    }
+
+    /**
+     * A frozen official table (docs/29) as stored: by place, rows without a place (withdrawn) last, then by
+     * name. A team whose participation is withdrawn is marked and loses its place, as in a computed table.
+     */
+    private List<StandingDto> frozenDtos(Group group, List<OfficialTableEntry> entries) {
+        Set<String> withdrawn = new HashSet<>();
+        for (TeamParticipation gone : participationRepository.findByGroup_IdAndStatus(group.getId(), ParticipationStatus.WITHDRAWN)) {
+            withdrawn.add(gone.getTeam().getId());
+        }
+        return entries.stream()
+            .sorted(Comparator.comparing((OfficialTableEntry e) -> withdrawn.contains(e.getTeam().getId()) || e.getPlace() == null)
+                .thenComparing(OfficialTableEntry::getPlace, Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(e -> e.getTeam().getName(), Comparator.nullsLast(Comparator.naturalOrder())))
+            .map(e -> {
+                boolean isWithdrawn = withdrawn.contains(e.getTeam().getId());
+                StandingDto dto = new StandingDto();
+                dto.setFrozen(true);
+                dto.setWithdrawn(isWithdrawn);
+                dto.setPlace(isWithdrawn ? null : e.getPlace());
+                dto.setTeamId(e.getTeam().getId());
+                dto.setTeamName(e.getTeam().getName());
+                dto.setPlayed(e.getPlayed());
+                dto.setWins(e.getWon());
+                dto.setDraws(e.getDrawn());
+                dto.setLosses(e.getLost());
+                dto.setPoints(e.getPoints());
+                dto.setPointsAdjustment(e.getPointsAdjustment());
+                dto.setSetsWon(e.getGoalsFor());
+                dto.setSetsLost(e.getGoalsAgainst());
+                dto.setSetDifference(e.getGoalsFor() - e.getGoalsAgainst());
+                dto.setGoalsFor(e.getGoalsFor());
+                dto.setGoalsAgainst(e.getGoalsAgainst());
+                dto.setGoalDifference(e.getGoalsFor() - e.getGoalsAgainst());
+                return dto;
+            })
+            .toList();
     }
 
     /** One counted fixture between two teams, as the head-to-head comparison needs it. */

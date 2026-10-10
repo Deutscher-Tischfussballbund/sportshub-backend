@@ -51,6 +51,10 @@ public class ImportItem extends BaseEntity {
     @Column(length = 14)
     private String manualMatchId;
 
+    /** The identity a NEW league/team joins (docs/29), see {@link PlannedItem#linkId()}. */
+    @Column(length = 64)
+    private String linkId;
+
     @Column(columnDefinition = "TEXT")
     private String diff;
 

@@ -11,13 +11,29 @@ public record ImportBatch(Header header,
                           List<ImportedFederation> federations,
                           List<ImportedClub> clubs,
                           List<ImportedPlayer> players,
-                          List<ImportedMembership> memberships) {
+                          List<ImportedMembership> memberships,
+                          List<ImportedSeason> seasons,
+                          List<ImportedLeague> leagues,
+                          List<ImportedTeam> teams,
+                          List<ImportedRosterEntry> rosterEntries,
+                          List<ImportedFixture> fixtures) {
 
     public ImportBatch {
         federations = List.copyOf(federations);
         clubs = List.copyOf(clubs);
         players = List.copyOf(players);
         memberships = List.copyOf(memberships);
+        seasons = List.copyOf(seasons);
+        leagues = List.copyOf(leagues);
+        teams = List.copyOf(teams);
+        rosterEntries = List.copyOf(rosterEntries);
+        fixtures = List.copyOf(fixtures);
+    }
+
+    /** Master data only (docs/28). */
+    public ImportBatch(Header header, List<ImportedFederation> federations, List<ImportedClub> clubs,
+                       List<ImportedPlayer> players, List<ImportedMembership> memberships) {
+        this(header, federations, clubs, players, memberships, List.of(), List.of(), List.of(), List.of(), List.of());
     }
 
     /**

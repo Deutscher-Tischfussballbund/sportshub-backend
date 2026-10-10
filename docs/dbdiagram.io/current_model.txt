@@ -567,7 +567,7 @@ Table import_run {
   exported_at datetime
   format_version int [not null]
   anonymized boolean [not null]
-  status varchar(16) [not null]
+  status varchar(16) [not null, note: 'PREVIEWED | APPLIED | DISCARDED']
   created_at datetime [not null]
   created_by_dtfb_id varchar
   finished_at datetime
@@ -583,11 +583,33 @@ Table import_item {
   label varchar
   action varchar(16) [not null, note: 'NEW | UPDATE | UNCHANGED | CONFLICT | REJECTED']
   target_entity_id varchar(14)
-  manual_match_id varchar(14) [note: 'A player the admin assigned the record to']
+  manual_match_id varchar(14) [note: 'A player (or league/team identity, docs/29) the admin assigned the record to']
+  link_id varchar(64) [note: 'Identity a NEW league/team joins: existing, batch:-shared, or null (docs/29)']
   diff text [note: 'JSON: field -> old/new']
   issues text [note: 'JSON: ImportIssue list']
   payload text [not null, note: 'JSON: the source record, so apply needs no file']
 }
 
+Table official_table_entry {
+  id varchar(14) [pk, note: 'A group\'s frozen official table, served instead of the computed one (docs/29)']
+  group_id varchar [not null]
+  team_id varchar [not null]
+  place int [note: 'Null = no place; may repeat for shared places']
+  played int [not null]
+  won int [not null]
+  drawn int [not null]
+  lost int [not null]
+  goals_for int [not null]
+  goals_against int [not null]
+  points int [not null, note: 'Adjustment included']
+  points_adjustment int [not null]
+  source varchar(32) [not null, note: 'e.g. sportsmanager']
+  indexes {
+    (group_id, team_id) [unique]
+  }
+}
+
+Ref: official_table_entry.group_id > comp_group.id
+Ref: official_table_entry.team_id > team.id
 Ref: player_number.player_id > player.id
 Ref: import_item.run_id > import_run.id

@@ -1,6 +1,6 @@
 # Importer — pluggable sources, one shared preview-and-apply pipeline
 
-> **Proposed 2026-10-10 (Marvin), not yet built (SPO-46).** The importer becomes a framework instead of
+> **Decided and built 2026-10-10 (Marvin), SPO-46.** Past seasons followed the same day: doc 29. The importer becomes a framework instead of
 > one hard-wired class per entity (the old `importer/` package, deleted in `3ae017b`). Each data source —
 > the Sports Manager now, Kickertool (tournament results) later, unknown ones after that — is an
 > `ImportSource` adapter that only turns a file into a neutral `ImportBatch`. Everything after parsing is

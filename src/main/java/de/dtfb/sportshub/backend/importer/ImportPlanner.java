@@ -49,6 +49,8 @@ import java.util.stream.Collectors;
 @Component
 public class ImportPlanner {
 
+    /** Manual match value for a league or team that gets an identity of its own (docs/29). */
+    public static final String OWN_IDENTITY = "own";
     /** {@code SS-NNNN}; the width isn't fixed, numbers may grow. */
     static final Pattern NUMBER_FORMAT = Pattern.compile("\\d{2}-\\d{4,}");
     private static final int OLDEST_PLAUSIBLE_BIRTH_YEAR = 1920;
@@ -61,11 +63,12 @@ public class ImportPlanner {
     private final PlayerNumberRepository numberRepository;
     private final ClubMembershipRepository membershipRepository;
     private final EntityHistoryRepository historyRepository;
+    private final HistoricalPlanner historicalPlanner;
 
     public ImportPlanner(ExternalReferenceRepository referenceRepository, FederationRepository federationRepository,
                          ClubRepository clubRepository, PlayerRepository playerRepository,
                          PlayerNumberRepository numberRepository, ClubMembershipRepository membershipRepository,
-                         EntityHistoryRepository historyRepository) {
+                         EntityHistoryRepository historyRepository, HistoricalPlanner historicalPlanner) {
         this.referenceRepository = referenceRepository;
         this.federationRepository = federationRepository;
         this.clubRepository = clubRepository;
@@ -73,26 +76,22 @@ public class ImportPlanner {
         this.numberRepository = numberRepository;
         this.membershipRepository = membershipRepository;
         this.historyRepository = historyRepository;
+        this.historicalPlanner = historicalPlanner;
     }
 
-    /** The resolved target of a record: an existing id, or null for one the run creates. */
-    private record Target(String entityId, boolean rejected) {
-        static final Target CREATED = new Target(null, false);
-        static final Target REJECTED = new Target(null, true);
-    }
 
     @Transactional(readOnly = true)
     public List<PlannedItem> plan(ImportBatch batch, String targetFederationId, Map<String, String> manualMatches) {
         Context context = new Context(batch.header());
         List<PlannedItem> items = new ArrayList<>();
-        Map<String, Target> federations = new HashMap<>();
-        Map<String, Target> clubs = new HashMap<>();
-        Map<String, Target> players = new HashMap<>();
+        Map<String, PlanTarget> federations = new HashMap<>();
+        Map<String, PlanTarget> clubs = new HashMap<>();
+        Map<String, PlanTarget> players = new HashMap<>();
 
         for (ImportedFederation federation : batch.federations()) {
             PlannedItem item = planFederation(federation, targetFederationId, context);
             items.add(item);
-            federations.put(federation.externalId(), new Target(item.targetEntityId(), false));
+            federations.put(federation.externalId(), new PlanTarget(item.targetEntityId(), false));
         }
         for (ImportedClub club : batch.clubs()) {
             PlannedItem item = planClub(club, federations, targetFederationId, context);
@@ -109,7 +108,7 @@ public class ImportPlanner {
             }
         }
         Map<String, List<ClubMembership>> memberships = membershipRepository
-            .findByPlayerIdIn(players.values().stream().map(Target::entityId).filter(Objects::nonNull).toList())
+            .findByPlayerIdIn(players.values().stream().map(PlanTarget::entityId).filter(Objects::nonNull).toList())
             .stream().collect(Collectors.groupingBy(m -> m.getPlayer().getId()));
         Map<String, String> labels = new HashMap<>();
         items.forEach(item -> labels.put(item.recordType() + ":" + item.externalId(), item.label()));
@@ -117,6 +116,7 @@ public class ImportPlanner {
             items.add(planMembership(membership, players, clubs, memberships, membershipLabel(membership, labels),
                 context));
         }
+        items.addAll(historicalPlanner.plan(batch, clubs, players, manualMatches, context::reference));
         return items;
     }
 
@@ -142,7 +142,7 @@ public class ImportPlanner {
     //endregion
 
     //region clubs
-    private PlannedItem planClub(ImportedClub source, Map<String, Target> federations, String targetFederationId,
+    private PlannedItem planClub(ImportedClub source, Map<String, PlanTarget> federations, String targetFederationId,
                                  Context context) {
         String label = source.name();
         if (source.externalId() == null) {
@@ -155,7 +155,7 @@ public class ImportPlanner {
         Club club = reference == null ? null : context.clubs().get(reference.getEntityId());
         if (club == null) {
             List<ImportIssue> issues = new ArrayList<>();
-            Target federation = source.federationExternalId() == null ? null
+            PlanTarget federation = source.federationExternalId() == null ? null
                 : federations.get(source.federationExternalId());
             if (federation == null || federation.entityId() == null) {
                 issues.add(new ImportIssue(ImportIssueCode.FEDERATION_FALLBACK, targetFederationId));
@@ -208,7 +208,7 @@ public class ImportPlanner {
 
         ExternalReference reference = context.reference(ImportRecordType.PLAYER, source.externalId());
         PlayerNumber byNumber = source.number() == null ? null : context.numbers().get(source.number());
-        String manualMatch = manualMatches.get(source.externalId());
+        String manualMatch = manualMatches.get(ImportService.matchKey(ImportRecordType.PLAYER, source.externalId()));
 
         Player player = null;
         if (manualMatch != null) {
@@ -267,11 +267,11 @@ public class ImportPlanner {
     //endregion
 
     //region memberships
-    private PlannedItem planMembership(ImportedMembership source, Map<String, Target> players,
-                                       Map<String, Target> clubs, Map<String, List<ClubMembership>> memberships,
+    private PlannedItem planMembership(ImportedMembership source, Map<String, PlanTarget> players,
+                                       Map<String, PlanTarget> clubs, Map<String, List<ClubMembership>> memberships,
                                        String label, Context context) {
-        Target player = resolve(source.playerExternalId(), ImportRecordType.PLAYER, players, context);
-        Target club = resolve(source.clubExternalId(), ImportRecordType.CLUB, clubs, context);
+        PlanTarget player = resolve(source.playerExternalId(), ImportRecordType.PLAYER, players, context);
+        PlanTarget club = resolve(source.clubExternalId(), ImportRecordType.CLUB, clubs, context);
         if (player == null) {
             return rejected(ImportRecordType.CLUB_MEMBERSHIP, source.externalId(), label, source,
                 new ImportIssue(ImportIssueCode.UNKNOWN_PLAYER, source.playerExternalId()));
@@ -312,17 +312,17 @@ public class ImportPlanner {
     }
 
     /** A record of this batch, or one an earlier run imported; null if neither. */
-    private static Target resolve(String externalId, ImportRecordType type, Map<String, Target> inBatch,
+    private static PlanTarget resolve(String externalId, ImportRecordType type, Map<String, PlanTarget> inBatch,
                                   Context context) {
         if (externalId == null) {
             return null;
         }
-        Target target = inBatch.get(externalId);
+        PlanTarget target = inBatch.get(externalId);
         if (target != null) {
             return target;
         }
         ExternalReference reference = context.reference(type, externalId);
-        return reference == null ? null : new Target(reference.getEntityId(), false);
+        return reference == null ? null : new PlanTarget(reference.getEntityId(), false);
     }
     //endregion
 
@@ -362,13 +362,13 @@ public class ImportPlanner {
      * What dependent records (memberships) see. A record changed locally still is that entity; one
      * whose number names another player has no reliable identity, so its dependents are blocked too.
      */
-    private static Target target(PlannedItem item) {
+    private static PlanTarget target(PlannedItem item) {
         return switch (item.action()) {
-            case REJECTED -> Target.REJECTED;
+            case REJECTED -> PlanTarget.REJECTED;
             case CONFLICT -> item.hasIssue(ImportIssueCode.NUMBER_BELONGS_TO_OTHER_PLAYER)
-                ? Target.REJECTED : new Target(item.targetEntityId(), false);
-            case NEW -> Target.CREATED;
-            default -> new Target(item.targetEntityId(), false);
+                ? PlanTarget.REJECTED : new PlanTarget(item.targetEntityId(), false);
+            case NEW -> PlanTarget.CREATED;
+            default -> new PlanTarget(item.targetEntityId(), false);
         };
     }
 

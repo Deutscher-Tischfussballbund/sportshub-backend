@@ -62,8 +62,53 @@ class SportsManagerImportSourceTest {
         assertThatThrownBy(() -> source.parse(stream("not json"), "x.json"))
             .isInstanceOf(ImportFormatException.class);
         assertThatThrownBy(() -> source.parse(
-            stream("{\"format\": \"sportshub-sm-export\", \"version\": 2, \"instance\": \"x\"}"), "x.json"))
+            stream("{\"format\": \"sportshub-sm-export\", \"version\": 3, \"instance\": \"x\"}"), "x.json"))
             .isInstanceOf(ImportFormatException.class);
+    }
+
+    @Test
+    void parsesPastSeasons_v2() throws Exception {
+        ImportBatch batch;
+        try (InputStream in = getClass().getResourceAsStream("/import/sm-export-v2.json")) {
+            batch = source.parse(in, "sm-export-v2.json");
+        }
+
+        assertThat(batch.seasons()).containsExactly(new ImportedSeason("5", "2019",
+            java.time.LocalDate.of(2019, 3, 1), java.time.LocalDate.of(2019, 9, 30)));
+        ImportedLeague league = batch.leagues().getFirst();
+        assertThat(league.tableRule()).isEqualTo(1);
+        assertThat(league.mode().gamePlan()).containsExactly(
+            de.dtfb.sportshub.backend.match.MatchType.DOUBLE, de.dtfb.sportshub.backend.match.MatchType.DOUBLE,
+            de.dtfb.sportshub.backend.match.MatchType.SINGLE, de.dtfb.sportshub.backend.match.MatchType.SINGLE);
+        assertThat(league.mode().raceTarget()).isNull();
+
+        ImportedTeam elbe = batch.teams().get(1);
+        assertThat(elbe.identityExternalId()).as("no teamgruppe -> its own id").isEqualTo("501");
+        assertThat(elbe.table().points()).isEqualTo(-1.0);
+        assertThat(elbe.table().adjustment()).isEqualTo(-1.0);
+
+        ImportedFixture played = batch.fixtures().getFirst();
+        assertThat(played.kickOff()).as("SM times are German local time")
+            .isEqualTo(Instant.parse("2019-03-10T13:00:00Z"));
+        assertThat(played.played()).isTrue();
+        assertThat(played.games()).hasSize(4);
+        assertThat(played.games().get(2).homePlayer2()).as("0 = no player").isNull();
+        assertThat(played.games().getFirst().sets()).hasSize(1);
+        assertThat(played.games().get(1).sets()).as("no set details in old data").isEmpty();
+        assertThat(batch.fixtures().get(1).played()).isFalse();
+        assertThat(batch.fixtures().get(1).matchdayTitle()).isEqualTo("Rückrunde");
+        assertThat(batch.rosterEntries().get(1).left()).isTrue();
+    }
+
+    @Test
+    void tableRules_andLeagueNames() {
+        assertThat(HistoricalPlanner.points(1)).containsExactly(2, 1, 0);
+        assertThat(HistoricalPlanner.points(4)).containsExactly(3, 1, 0);
+        assertThat(HistoricalPlanner.points(7)).containsExactly(1, 0, 0);
+        assertThat(HistoricalPlanner.points(24)).containsExactly(3, 1, 0);
+        assertThat(HistoricalPlanner.points(-2)).containsExactly(2, 1, 0);
+        assertThat(HistoricalPlanner.identityName("Landesliga Nord 2019/20")).isEqualTo("landesliga nord");
+        assertThat(HistoricalPlanner.identityName("2. Bundesliga – Saison 2021")).isEqualTo("2 bundesliga saison");
     }
 
     private static InputStream stream(String content) {

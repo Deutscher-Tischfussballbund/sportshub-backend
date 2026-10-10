@@ -29,6 +29,8 @@ import java.util.Objects;
 @Service
 public class ImportService {
 
+    private static final java.util.Set<ImportRecordType> MATCHABLE =
+        java.util.Set.of(ImportRecordType.PLAYER, ImportRecordType.LEAGUE, ImportRecordType.TEAM);
     /** A whole federation's export fits one page, so the preview can show a tab at once. */
     private static final int MAX_PAGE_SIZE = 5000;
     private static final TypeReference<Map<String, FieldChange>> DIFF_TYPE = new TypeReference<>() { };
@@ -104,21 +106,26 @@ public class ImportService {
         return new ImportItemPageDto(items.map(this::toDto).getContent(), items.getTotalElements());
     }
 
-    /** Assigns (or, with null, un-assigns) a player record to an existing player, then plans the run again. */
+    /**
+     * Assigns a record by hand, then plans the run again: a player record to an existing player (docs/28),
+     * a league or team to an existing identity, or {@link ImportPlanner#OWN_IDENTITY} for one of its own
+     * (docs/29). Null removes the assignment.
+     */
     @Transactional
     public ImportRunDto match(String runId, String itemId, String playerId) {
         ImportRun run = requireOpen(runId);
         ImportItem item = itemRepository.findByIdAndRunId(itemId, runId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown import item " + itemId));
-        if (item.getRecordType() != ImportRecordType.PLAYER) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only player records can be assigned");
+        if (!MATCHABLE.contains(item.getRecordType())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only players, leagues and teams can be assigned");
         }
         List<ImportItem> items = itemRepository.findByRunIdOrderByPosition(runId);
         Map<String, String> matches = manualMatches(items);
+        String key = matchKey(item.getRecordType(), item.getExternalId());
         if (playerId == null) {
-            matches.remove(item.getExternalId());
+            matches.remove(key);
         } else {
-            matches.put(item.getExternalId(), playerId);
+            matches.put(key, playerId);
         }
         List<PlannedItem> plan = planner.plan(batch(run, items), run.getTargetFederationId(), matches);
         itemRepository.deleteByRunId(runId);
@@ -177,6 +184,7 @@ public class ImportService {
             item.setAction(planned.action());
             item.setTargetEntityId(planned.targetEntityId());
             item.setManualMatchId(planned.manualMatchId());
+            item.setLinkId(planned.linkId());
             item.setDiff(write(planned.diff()));
             item.setIssues(write(planned.issues()));
             item.setPayload(write(planned.payload()));
@@ -191,24 +199,41 @@ public class ImportService {
         List<ImportedClub> clubs = new ArrayList<>();
         List<ImportedPlayer> players = new ArrayList<>();
         List<ImportedMembership> memberships = new ArrayList<>();
+        List<ImportedSeason> seasons = new ArrayList<>();
+        List<ImportedLeague> leagues = new ArrayList<>();
+        List<ImportedTeam> teams = new ArrayList<>();
+        List<ImportedRosterEntry> rosterEntries = new ArrayList<>();
+        List<ImportedFixture> fixtures = new ArrayList<>();
         for (ImportItem item : items) {
             switch (item.getRecordType()) {
                 case FEDERATION -> federations.add(read(item.getPayload(), ImportedFederation.class));
                 case CLUB -> clubs.add(read(item.getPayload(), ImportedClub.class));
                 case PLAYER -> players.add(read(item.getPayload(), ImportedPlayer.class));
                 case CLUB_MEMBERSHIP -> memberships.add(read(item.getPayload(), ImportedMembership.class));
+                case SEASON -> seasons.add(read(item.getPayload(), ImportedSeason.class));
+                case LEAGUE -> leagues.add(read(item.getPayload(), ImportedLeague.class));
+                case TEAM -> teams.add(read(item.getPayload(), ImportedTeam.class));
+                case ROSTER_ENTRY -> rosterEntries.add(read(item.getPayload(), ImportedRosterEntry.class));
+                case FIXTURE -> fixtures.add(read(item.getPayload(), ImportedFixture.class));
+                default -> { }
             }
         }
         ImportBatch.Header header = new ImportBatch.Header(run.getSource(), run.getInstance(), run.getExportedAt(),
             run.getFormatVersion(), run.isAnonymized());
-        return new ImportBatch(header, federations, clubs, players, memberships);
+        return new ImportBatch(header, federations, clubs, players, memberships, seasons, leagues, teams, rosterEntries,
+            fixtures);
     }
 
     private static Map<String, String> manualMatches(List<ImportItem> items) {
         Map<String, String> matches = new HashMap<>();
         items.stream().filter(item -> item.getManualMatchId() != null)
-            .forEach(item -> matches.put(item.getExternalId(), item.getManualMatchId()));
+            .forEach(item -> matches.put(matchKey(item.getRecordType(), item.getExternalId()), item.getManualMatchId()));
         return matches;
+    }
+
+    /** Manual matches are keyed by record type too -- source ids repeat across types (club 10, team 10). */
+    static String matchKey(ImportRecordType type, String externalId) {
+        return type + ":" + externalId;
     }
 
     private List<String> fingerprints(List<PlannedItem> plan) {
@@ -218,7 +243,7 @@ public class ImportService {
     /** The stored item's fingerprint, built the same way as {@link PlannedItem#fingerprint()}. */
     private String fingerprint(ImportItem item) {
         return new PlannedItem(item.getRecordType(), item.getExternalId(), item.getLabel(), item.getAction(),
-            item.getTargetEntityId(), item.getManualMatchId(), read(item.getDiff(), DIFF_TYPE),
+            item.getTargetEntityId(), item.getManualMatchId(), item.getLinkId(), read(item.getDiff(), DIFF_TYPE),
             read(item.getIssues(), ISSUES_TYPE), null).fingerprint();
     }
 
@@ -245,7 +270,7 @@ public class ImportService {
 
     private ImportItemDto toDto(ImportItem item) {
         return new ImportItemDto(item.getId(), item.getRecordType(), item.getExternalId(), item.getLabel(),
-            item.getAction(), item.getTargetEntityId(), item.getManualMatchId(), read(item.getDiff(), DIFF_TYPE),
+            item.getAction(), item.getTargetEntityId(), item.getManualMatchId(), item.getLinkId(), read(item.getDiff(), DIFF_TYPE),
             read(item.getIssues(), ISSUES_TYPE));
     }
 

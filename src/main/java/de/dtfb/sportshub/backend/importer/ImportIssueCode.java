@@ -13,6 +13,11 @@ public enum ImportIssueCode {
     UNKNOWN_PLAYER(true),
     UNKNOWN_CLUB(true),
     BLOCKED_BY_REJECTED_RECORD(true),
+    SEASON_NOT_ENDED(true),
+    NO_TEAM_LEAGUES(true),
+    CUP_OR_KNOCKOUT(true),
+    UNKNOWN_TEAM(true),
+    NO_OPPONENT(true),
     // conflicts (written as errors: nothing is applied)
     CHANGED_LOCALLY(true),
     NUMBER_BELONGS_TO_OTHER_PLAYER(true),
@@ -25,7 +30,16 @@ public enum ImportIssueCode {
     MATCHED_BY_NUMBER(false),
     MATCHED_MANUALLY(false),
     DUPLICATE_SUSPECT(false),
-    FEDERATION_FALLBACK(false);
+    FEDERATION_FALLBACK(false),
+    // past seasons (docs/29)
+    LINKED_BY_NAME(false),
+    NO_GAME_PLAN(false),
+    NON_INTEGER_POINTS(false),
+    TABLE_DIFFERS(false),
+    NOT_PLAYED(false),
+    UNCONFIRMED_RESULT(false),
+    UNKNOWN_LINEUP_PLAYER(false),
+    NO_KICKOFF(false);
 
     private final boolean error;
 

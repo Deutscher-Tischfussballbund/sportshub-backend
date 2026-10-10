@@ -34,32 +34,38 @@ class ImportWriter {
     private final PlayerNumberService numberService;
     private final ClubMembershipRepository membershipRepository;
     private final EntityHistoryService historyService;
+    private final HistoricalImportWriter historicalWriter;
 
     ImportWriter(ExternalReferenceRepository referenceRepository, ClubRepository clubRepository,
                  PlayerRepository playerRepository, PlayerNumberService numberService,
-                 ClubMembershipRepository membershipRepository, EntityHistoryService historyService) {
+                 ClubMembershipRepository membershipRepository, EntityHistoryService historyService,
+                 HistoricalImportWriter historicalWriter) {
         this.referenceRepository = referenceRepository;
         this.clubRepository = clubRepository;
         this.playerRepository = playerRepository;
         this.numberService = numberService;
         this.membershipRepository = membershipRepository;
         this.historyService = historyService;
+        this.historicalWriter = historicalWriter;
     }
 
     void write(ImportRun run, List<PlannedItem> plan, String actor) {
         Writing writing = new Writing(run, actor);
+        HistoricalImportWriter.Apply history = historicalWriter.start(run, plan, writing);
         for (PlannedItem item : plan) {
             switch (item.recordType()) {
                 case FEDERATION -> writing.federation(item);
                 case CLUB -> writing.club(item);
                 case PLAYER -> writing.player(item);
                 case CLUB_MEMBERSHIP -> writing.membership(item);
+                default -> history.write(item);
             }
         }
+        history.finish();
     }
 
     /** One apply: the ids records got so far, by source id. */
-    private final class Writing {
+    private final class Writing implements WrittenIds {
         private final ImportRun run;
         private final String actor;
         private final Map<String, ExternalReference> references = new HashMap<>();
@@ -242,7 +248,21 @@ class ImportWriter {
             return reference == null ? null : reference.getEntityId();
         }
 
-        private void link(ImportRecordType type, String externalId, String entityId) {
+        @Override
+        public String id(ImportRecordType type, String externalId) {
+            if (externalId == null) return null;
+            return switch (type) {
+                case CLUB -> resolve(type, externalId, clubIds);
+                case PLAYER -> resolve(type, externalId, playerIds);
+                default -> {
+                    ExternalReference reference = references.get(key(type, externalId));
+                    yield reference == null ? null : reference.getEntityId();
+                }
+            };
+        }
+
+        @Override
+        public void link(ImportRecordType type, String externalId, String entityId) {
             ExternalReference reference = references.computeIfAbsent(key(type, externalId), k -> {
                 ExternalReference created = new ExternalReference();
                 created.setSource(run.getSource());
