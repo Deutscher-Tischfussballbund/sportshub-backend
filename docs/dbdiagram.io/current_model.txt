@@ -453,6 +453,20 @@ Table release_note {
   published_at datetime [not null, note: 'Set on create, preserved on edit']
 }
 
+Table maintenance_notice {
+  id varchar(14) [pk, note: 'A planned maintenance window, announced as a bar on top of the app (docs/30) -- global-admin authored']
+  message_de varchar(500) [not null]
+  message_en varchar(500) [not null]
+  starts_at datetime [not null]
+  ends_at datetime [not null]
+  announce_from datetime [not null, note: 'Shown from here until ends_at; defaults to starts_at']
+  read_only boolean [not null, note: 'While running, changes are refused (423) except for global admins']
+  updated_at datetime [not null, note: 'A dismissed notice shows again after an edit']
+  indexes {
+    (announce_from, ends_at)
+  }
+}
+
 // ==================== Tester tracker (separate subsystem) ====================
 // Real tester feedback, unlike the disposable demo/seed domain data; planned to move into its own
 // MySQL schema at the next wipe-requiring migration. No FK into the domain tables.
@@ -567,8 +581,9 @@ Table import_run {
   exported_at datetime
   format_version int [not null]
   anonymized boolean [not null]
-  status varchar(16) [not null, note: 'PREVIEWED | APPLIED | DISCARDED | UNDONE']
+  status varchar(16) [not null, note: 'PREVIEWED | APPLYING | APPLIED | UNDOING | DISCARDED | UNDONE (APPLYING/UNDOING claimed while the work runs)']
   created_at datetime [not null]
+  planned_at datetime [note: 'When the preview was last planned; moves only when a re-plan changed it']
   created_by_dtfb_id varchar
   finished_at datetime
   finished_by_dtfb_id varchar

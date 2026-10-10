@@ -111,9 +111,6 @@
 
 ## Open questions
 
-- **Undoing an applied historical run.** An imported season has results, so it can't be deleted (doc 05). Test
-  imports on the VPS need a way back — proposal: a guarded "remove imported season" while nothing outside the import
-  references it.
 - **Seasons in several installations** (DTFB and the state SMs) become separate seasons per federation — enough?
 - **Names as of then:** the SM only has current player names; per SPO-50 old seasons show current names anyway.
 - **Validation needs real data:** a pseudonymized export of one installation, run by someone with SM access.
@@ -126,6 +123,14 @@
 - **RACE leagues get running scores.** The SM stores goals per game; in a league with a race target the writer
   adds them up, so a game's score is the running score at its end, as RACE expects (doc 22).
 - **Imported dates are fixed** (`SchedulingState.CONFIRMED`): they are history, not proposals.
+- **Undo instead of "remove imported season".** The open question of a way back is answered by the generic undo
+  of doc 28 (journal replayed backwards, refused while anything outside the run depends on it). A re-run that
+  rewrote a fixture's games can't be undone (`REPLACED_DATA`).
+- **Teams without a club are imported** (`TEAM_WITHOUT_CLUB`, a warning): SM hobby and mixed teams have none. The
+  one-team-per-club check skips them. Whether hobby leagues should be a league flag is on the agenda.
+- **Imported fixtures never show under open results** — not even unconfirmed ones; they are history.
+- **A player listed twice in one SM team** (left, then joined again) becomes one roster entry, active if any of
+  its rows is — otherwise the rows would overwrite each other on every run.
 - **`import_item.link_id`** stores the chosen link, so a stale preview is detected like any other change (V20,
   together with `official_table_entry`).
 

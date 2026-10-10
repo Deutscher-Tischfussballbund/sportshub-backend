@@ -89,17 +89,22 @@
 - Now: `ImportSource` (`key()`, `supports()` → `ImportRecordType`s, `parse(InputStream, filename)` →
   `ImportBatch`), Spring beans collected via `List<ImportSource>`. `ImportBatch` = header (`source`,
   `instance`, `exportedAt`, format version, `anonymized`) + neutral records: `ImportedFederation`,
-  `ImportedClub`, `ImportedPlayer`, `ImportedMembership`. Teams, roster entries and results are further
-  record types added when needed — the format allows them, M1 master data comes first.
+  `ImportedClub`, `ImportedPlayer`, `ImportedMembership`; past seasons add `ImportedSeason`, `ImportedLeague`,
+  `ImportedTeam`, `ImportedRosterEntry`, `ImportedFixture` (doc 29).
 - Now: generic `external_reference(source, instance, entity_type, external_id) → entity_id`, unique on the
   first four. Ids are namespaced per source **and installation**.
-- Now: `import_run` (source, instance, file, target federation, status `PREVIEWED`/`APPLIED`/`DISCARDED`/
-  `FAILED`, who, when, counts) and `import_item` (record type, external id, action `NEW`/`UPDATE`/
+- Now: `import_run` (source, instance, file, target federation, status `PREVIEWED`/`APPLYING`/`APPLIED`/
+  `UNDOING`/`DISCARDED`/`UNDONE`, who, when, counts) and `import_item` (record type, external id, action `NEW`/`UPDATE`/
   `UNCHANGED`/`CONFLICT`/`REJECTED`, target entity, manual match, field diff, warnings, reason).
 - Now: **preview** plans without domain writes; **apply** re-plans in one transaction and refuses with
   `409 IMPORT_STALE` if the result differs from the stored preview. Writes go through `PlayerService`,
   `ClubService`, `ClubMembershipService` so rules and `entity_history` stay in one place; the actor is the
   admin's `dtfb_id`. Endpoints under `/v1/admin/imports`, global admin only for now.
+- Now: a run being applied or undone is **claimed** first (`ImportRunGate`: `PREVIEWED`→`APPLYING`,
+  `APPLIED`→`UNDOING`) in a short transaction of its own, so everyone sees it working and a second click gets
+  `409 IMPORT_RUN_BUSY` instead of waiting on locks; a failure releases the claim, a restart releases runs left
+  busy. A lock timeout elsewhere answers `409 BUSY`, not 500. No per-record queries inside the long transaction
+  (each would flush the whole persistence context first): a full SM export applies in ~30 s.
 - Now: open previews don't go stale silently. After a run is applied or undone, the other open previews of the
   **same installation** are **planned again** in the background (the apply answers first) from their stored
   records and manual matches (no file needed), each in its own transaction with the run's row locked, so a
@@ -114,6 +119,9 @@
 - Now: lookup order `external_reference` → (players) any current or alias player number → otherwise
   `NEW`. Name + birth year only raise a **duplicate suspicion**; the admin may assign the record to an
   existing player in the preview ("manual match"). There is no automatic name match.
+- Now: an SM organiser without a matching federation falls back to the run's target federation. Nothing is
+  created and no reference written (a later run may find a better match), so the record stays `UNCHANGED` with
+  a `FEDERATION_FALLBACK` note — a re-run of an applied file shows no differences.
 - Now: **absence never deletes.** A player missing from a newer export stays; SM `ausgetreten` sets
   `ClubMembership.leftAt` (doc 15).
 - Now: `CONFLICT` when a field the source wants to change was edited in the Sports Hub since the last
@@ -160,7 +168,6 @@
   exports there, production refuses anonymized ones.
 
 **Not now**
-- Teams and roster entries of the Regionalliga teams (next record types, after master data).
 - The Kickertool adapter — after the tournament model exists; own ticket.
 - A pull transport (option D) and import rights below global admin.
 - Audit events for applied runs — once doc 27 (SPO-118) is built.
@@ -184,7 +191,7 @@
 - **Name of the hobby prefix, and who may issue hobby numbers** — the Sports Hub on registration, or a
   federation admin? → SPO-117
 - **Scope of the M1 import:** all SM players, or only those with an active membership / recent play?
-  Historical players only matter once old results are imported (M5).
+  With past seasons importable (doc 29), historical players are needed wherever old results are imported.
 - **SM membership status:** `mitgliedsstatus` 2 (restricted) and 3 (passive) are imported as active
   members for now; whether they need their own state is SPO-95.
 - **Does the stricter test-system rule need a team decision?** It goes beyond B-2026-09-28-3 → mention in
