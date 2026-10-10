@@ -25,9 +25,11 @@ import java.util.List;
 public class ImportController {
 
     private final ImportService importService;
+    private final ImportUndoService undoService;
 
-    public ImportController(ImportService importService) {
+    public ImportController(ImportService importService, ImportUndoService undoService) {
         this.importService = importService;
+        this.undoService = undoService;
     }
 
     @GetMapping("/v1/admin/imports/sources")
@@ -72,6 +74,17 @@ public class ImportController {
     @PostMapping("/v1/admin/imports/{runId}/apply")
     public ImportRunDto apply(@PathVariable String runId, @AuthenticationPrincipal Jwt jwt) {
         return importService.apply(runId, dtfbId(jwt));
+    }
+
+    /** What undoing an applied run would do, or why it can't (docs/28). */
+    @GetMapping("/v1/admin/imports/{runId}/undo")
+    public UndoCheckDto undoCheck(@PathVariable String runId) {
+        return undoService.check(runId);
+    }
+
+    @PostMapping("/v1/admin/imports/{runId}/undo")
+    public ImportRunDto undo(@PathVariable String runId, @AuthenticationPrincipal Jwt jwt) {
+        return undoService.undo(runId, dtfbId(jwt));
     }
 
     @DeleteMapping("/v1/admin/imports/{runId}")

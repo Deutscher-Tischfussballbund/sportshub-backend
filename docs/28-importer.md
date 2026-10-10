@@ -158,6 +158,18 @@
 - A pull transport (option D) and import rights below global admin.
 - Audit events for applied runs — once doc 27 (SPO-118) is built.
 
+**Undo** (decided 2026-10-10)
+- Now: every apply is journaled (`import_change`: created / field changed old → new / deleted, in order), captured from
+  Hibernate's insert/update/delete events, so no writer can forget it. Left out: the importer's own records, the
+  standings cache (rebuilt) and the number sequences (issued numbers are never reused).
+- Now: an applied run can be undone by a global admin, on every instance: the journal is replayed backwards --
+  created records deleted, changed fields restored. All or nothing; `GET …/undo` shows what would happen,
+  `POST …/undo` refuses with `409 IMPORT_UNDO_BLOCKED` and the blockers when: a later applied run wrote the same
+  records (undo newest first), a changed field was changed again since, a created record is used outside the run
+  (every association in the model is checked, plus references of other installations), or the run replaced data.
+- Watch for: runs that **replaced** data (a re-import rewriting a fixture's games, docs/29) can't be undone yet --
+  the deleted rows aren't restorable generically. Correct those by another re-import.
+
 ## Open questions
 
 - **Is a player number ever reissued to another person?** Assumed no (the numbers are unique) → unique

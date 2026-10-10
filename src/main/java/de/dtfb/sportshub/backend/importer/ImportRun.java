@@ -50,4 +50,9 @@ public class ImportRun extends BaseEntity {
     private Instant finishedAt;
 
     private String finishedByDtfbId;
+
+    /** When an applied run was undone (docs/28), and by whom. */
+    private Instant undoneAt;
+
+    private String undoneByDtfbId;
 }

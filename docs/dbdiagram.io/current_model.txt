@@ -567,11 +567,13 @@ Table import_run {
   exported_at datetime
   format_version int [not null]
   anonymized boolean [not null]
-  status varchar(16) [not null, note: 'PREVIEWED | APPLIED | DISCARDED']
+  status varchar(16) [not null, note: 'PREVIEWED | APPLIED | DISCARDED | UNDONE']
   created_at datetime [not null]
   created_by_dtfb_id varchar
   finished_at datetime
   finished_by_dtfb_id varchar
+  undone_at datetime [note: 'Applied, then undone (status UNDONE)']
+  undone_by_dtfb_id varchar
 }
 
 Table import_item {
@@ -589,6 +591,20 @@ Table import_item {
   issues text [note: 'JSON: ImportIssue list']
   payload text [not null, note: 'JSON: the source record, so apply needs no file']
 }
+
+Table import_change {
+  id varchar(14) [pk, note: 'One write of an applied run, in order -- the undo journal (docs/28)']
+  run_id varchar [not null]
+  seq int [not null]
+  entity_type varchar(64) [not null, note: 'Entity simple class name']
+  entity_id varchar(64) [not null]
+  operation varchar(16) [not null, note: 'CREATE | UPDATE | DELETE']
+  field varchar(64) [note: 'UPDATE only']
+  old_value text
+  new_value text
+}
+
+Ref: import_change.run_id > import_run.id
 
 Table official_table_entry {
   id varchar(14) [pk, note: 'A group\'s frozen official table, served instead of the computed one (docs/29)']

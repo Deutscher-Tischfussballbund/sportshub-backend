@@ -44,11 +44,14 @@ public class ImportService {
     private final FederationRepository federationRepository;
     private final ObjectMapper objectMapper;
     private final AnonymizationPolicy anonymizationPolicy;
+    private final ImportJournal journal;
+    private final ImportChangeRepository changeRepository;
 
     public ImportService(ImportSourceRegistry sources, ImportPlanner planner, ImportWriter writer,
                          ImportRunRepository runRepository, ImportItemRepository itemRepository,
                          FederationRepository federationRepository, ObjectMapper objectMapper,
-                         @Value("${sportshub.importer.anonymized:allowed}") String anonymizationPolicy) {
+                         @Value("${sportshub.importer.anonymized:allowed}") String anonymizationPolicy,
+                         ImportJournal journal, ImportChangeRepository changeRepository) {
         this.sources = sources;
         this.planner = planner;
         this.writer = writer;
@@ -57,6 +60,8 @@ public class ImportService {
         this.federationRepository = federationRepository;
         this.objectMapper = objectMapper;
         this.anonymizationPolicy = AnonymizationPolicy.valueOf(anonymizationPolicy.trim().toUpperCase());
+        this.journal = journal;
+        this.changeRepository = changeRepository;
     }
 
     public List<ImportSourceDto> sources() {
@@ -134,6 +139,7 @@ public class ImportService {
         return toDto(run);
     }
 
+    /** Writes the checked plan; every write is journaled so the run can be undone ({@link ImportUndoService}). */
     @Transactional
     public ImportRunDto apply(String runId, String actor) {
         ImportRun run = requireOpen(runId);
@@ -142,7 +148,29 @@ public class ImportService {
         if (!fingerprints(plan).equals(items.stream().map(this::fingerprint).toList())) {
             throw new ImportStaleException();
         }
-        writer.write(run, plan, actor);
+        journal.start();
+        List<ImportJournal.Entry> written;
+        try {
+            writer.write(run, plan, actor);
+            runRepository.flush();
+        } finally {
+            written = journal.stop();
+        }
+        List<ImportChange> changes = new ArrayList<>();
+        for (int i = 0; i < written.size(); i++) {
+            ImportJournal.Entry entry = written.get(i);
+            ImportChange change = new ImportChange();
+            change.setRun(run);
+            change.setSeq(i);
+            change.setEntityType(entry.entityType());
+            change.setEntityId(entry.entityId());
+            change.setOperation(entry.operation());
+            change.setField(entry.field());
+            change.setOldValue(entry.oldValue());
+            change.setNewValue(entry.newValue());
+            changes.add(change);
+        }
+        changeRepository.saveAll(changes);
         run.setStatus(ImportRunStatus.APPLIED);
         run.setFinishedAt(Instant.now());
         run.setFinishedByDtfbId(actor);
@@ -259,13 +287,14 @@ public class ImportService {
         return run;
     }
 
-    private ImportRunDto toDto(ImportRun run) {
+    ImportRunDto toDto(ImportRun run) {
         List<ImportCountDto> counts = itemRepository.countByTypeAndAction(run.getId()).stream()
             .map(row -> new ImportCountDto((ImportRecordType) row[0], (ImportAction) row[1], (Long) row[2]))
             .toList();
         return new ImportRunDto(run.getId(), run.getSource(), run.getInstance(), run.getFilename(),
             run.getTargetFederationId(), run.getExportedAt(), run.isAnonymized(), run.getStatus(), run.getCreatedAt(),
-            run.getCreatedByDtfbId(), run.getFinishedAt(), run.getFinishedByDtfbId(), counts);
+            run.getCreatedByDtfbId(), run.getFinishedAt(), run.getFinishedByDtfbId(), run.getUndoneAt(),
+            run.getUndoneByDtfbId(), counts);
     }
 
     private ImportItemDto toDto(ImportItem item) {

@@ -4,5 +4,7 @@ public enum ImportRunStatus {
     /** Planned, nothing written yet. */
     PREVIEWED,
     APPLIED,
-    DISCARDED
+    DISCARDED,
+    /** Applied, then undone: everything it wrote is reverted. */
+    UNDONE
 }

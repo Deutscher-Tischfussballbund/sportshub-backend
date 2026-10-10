@@ -9,6 +9,8 @@ import de.dtfb.sportshub.backend.importer.ImportAnonymizationException;
 import de.dtfb.sportshub.backend.importer.ImportFormatException;
 import de.dtfb.sportshub.backend.importer.ImportRunClosedException;
 import de.dtfb.sportshub.backend.importer.ImportStaleException;
+import de.dtfb.sportshub.backend.importer.ImportUndoBlockedError;
+import de.dtfb.sportshub.backend.importer.ImportUndoBlockedException;
 import de.dtfb.sportshub.backend.group.GroupDeletionBlockedException;
 import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedError;
 import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedException;
@@ -203,6 +205,13 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiError handleImportStale(ImportStaleException ex) {
         return new ApiError("IMPORT_STALE", ex.getMessage());
+    }
+
+    // Undoing an import run something else depends on (docs/28) → 409 listing what blocks it.
+    @ExceptionHandler(ImportUndoBlockedException.class)
+    public ResponseEntity<ImportUndoBlockedError> handleImportUndoBlocked(ImportUndoBlockedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ImportUndoBlockedError("IMPORT_UNDO_BLOCKED", ex.getMessage(), ex.getBlockers()));
     }
 
     // Applying/discarding/assigning in an import run that's already applied or discarded → 409.
