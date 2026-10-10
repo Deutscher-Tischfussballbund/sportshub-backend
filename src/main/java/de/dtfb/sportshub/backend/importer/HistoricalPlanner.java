@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.importer;
 
+import de.dtfb.sportshub.backend.base.BaseEntity;
 import de.dtfb.sportshub.backend.league.League;
 import de.dtfb.sportshub.backend.league.LeagueRepository;
 import de.dtfb.sportshub.backend.match.Match;
@@ -13,6 +14,7 @@ import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.season.SeasonRepository;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -27,7 +29,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Plans the past seasons of a batch (docs/29): seasons, team leagues, teams with their final table, rosters
@@ -40,6 +44,8 @@ import java.util.stream.Collectors;
 class HistoricalPlanner {
 
     static final String BATCH_LINK = "batch:";
+    /** Ids per IN query when loading what earlier runs imported. */
+    private static final int CHUNK = 1000;
     private static final ZoneId ZONE = ZoneId.of("Europe/Berlin");
 
     private final SeasonRepository seasonRepository;
@@ -117,6 +123,17 @@ class HistoricalPlanner {
         private final Map<String, PlanTarget> teamTargets = new HashMap<>();
         private final Map<String, List<ImportedFixture>> fixturesByLeague = new HashMap<>();
 
+        /**
+         * What earlier runs imported for this batch's records, by entity id -- loaded once per type, not per
+         * record: inside a long transaction every single query first flushes the whole persistence context.
+         */
+        private final Map<String, Season> importedSeasons;
+        private final Map<String, League> importedLeagues;
+        private final Map<String, Team> importedTeams;
+        private final Map<String, RosterEntry> importedRosterEntries;
+        private final Map<String, MatchDay> importedFixtures;
+        private final Map<String, List<Match>> importedGames;
+
         private Map<String, League> latestLeagueByName;
         private Map<String, Team> latestTeamByClubAndName;
 
@@ -137,6 +154,34 @@ class HistoricalPlanner {
                     fixturesByLeague.computeIfAbsent(home.leagueExternalId(), k -> new ArrayList<>()).add(fixture);
                 }
             }
+            importedSeasons = imported(ImportRecordType.SEASON, batch.seasons().stream().map(ImportedSeason::externalId),
+                seasonRepository::findAllById);
+            importedLeagues = imported(ImportRecordType.LEAGUE, batch.leagues().stream().map(ImportedLeague::externalId),
+                leagueRepository::findAllById);
+            importedTeams = imported(ImportRecordType.TEAM, batch.teams().stream().map(ImportedTeam::externalId),
+                teamRepository::findAllById);
+            importedRosterEntries = imported(ImportRecordType.ROSTER_ENTRY,
+                batch.rosterEntries().stream().map(ImportedRosterEntry::externalId), rosterRepository::findAllById);
+            importedFixtures = imported(ImportRecordType.FIXTURE,
+                batch.fixtures().stream().map(ImportedFixture::externalId), matchDayRepository::findAllById);
+            importedGames = chunked(List.copyOf(importedFixtures.values()), matchRepository::findByMatchDayIn).stream()
+                .collect(Collectors.groupingBy(m -> m.getMatchDay().getId()));
+        }
+
+        private <T extends BaseEntity> Map<String, T> imported(ImportRecordType type, Stream<String> externalIds,
+                                                               Function<List<String>, List<T>> load) {
+            List<String> ids = externalIds.filter(Objects::nonNull)
+                .map(id -> references.apply(type, id)).filter(Objects::nonNull)
+                .map(ExternalReference::getEntityId).distinct().toList();
+            return chunked(ids, load).stream().collect(Collectors.toMap(BaseEntity::getId, e -> e, (a, b) -> a));
+        }
+
+        private <I, T> List<T> chunked(List<I> ids, Function<List<I>, List<T>> load) {
+            List<T> loaded = new ArrayList<>();
+            for (int i = 0; i < ids.size(); i += CHUNK) {
+                loaded.addAll(load.apply(ids.subList(i, Math.min(i + CHUNK, ids.size()))));
+            }
+            return loaded;
         }
 
         //region seasons
@@ -156,7 +201,7 @@ class HistoricalPlanner {
                     new ImportIssue(ImportIssueCode.SEASON_NOT_ENDED, Objects.toString(source.endDate(), ""))));
             }
             ExternalReference reference = references.apply(ImportRecordType.SEASON, source.externalId());
-            Season season = reference == null ? null : seasonRepository.findById(reference.getEntityId()).orElse(null);
+            Season season = reference == null ? null : importedSeasons.get(reference.getEntityId());
             if (season == null) {
                 return remember(seasonTargets, item(ImportRecordType.SEASON, source.externalId(), label, ImportAction.NEW,
                     null, null, Map.of(), List.of(), source));
@@ -196,7 +241,7 @@ class HistoricalPlanner {
             }
 
             ExternalReference reference = references.apply(ImportRecordType.LEAGUE, source.externalId());
-            League league = reference == null ? null : leagueRepository.findById(reference.getEntityId()).orElse(null);
+            League league = reference == null ? null : importedLeagues.get(reference.getEntityId());
             if (league != null) {
                 Map<String, FieldChange> diff = new LinkedHashMap<>();
                 track(diff, "name", league.getName(), source.name());
@@ -308,7 +353,7 @@ class HistoricalPlanner {
             }
 
             ExternalReference reference = references.apply(ImportRecordType.TEAM, source.externalId());
-            Team team = reference == null ? null : teamRepository.findById(reference.getEntityId()).orElse(null);
+            Team team = reference == null ? null : importedTeams.get(reference.getEntityId());
             if (team != null) {
                 Map<String, FieldChange> diff = new LinkedHashMap<>();
                 track(diff, "name", team.getName(), source.name());
@@ -385,7 +430,7 @@ class HistoricalPlanner {
                     new ImportIssue(ImportIssueCode.UNKNOWN_PLAYER, source.playerExternalId()));
             }
             ExternalReference reference = references.apply(ImportRecordType.ROSTER_ENTRY, source.externalId());
-            RosterEntry entry = reference == null ? null : rosterRepository.findById(reference.getEntityId()).orElse(null);
+            RosterEntry entry = reference == null ? null : importedRosterEntries.get(reference.getEntityId());
             if (entry == null) {
                 return item(ImportRecordType.ROSTER_ENTRY, source.externalId(), label, ImportAction.NEW, null, null,
                     Map.of(), List.of(), source);
@@ -441,7 +486,7 @@ class HistoricalPlanner {
             }
 
             ExternalReference reference = references.apply(ImportRecordType.FIXTURE, source.externalId());
-            MatchDay matchDay = reference == null ? null : matchDayRepository.findById(reference.getEntityId()).orElse(null);
+            MatchDay matchDay = reference == null ? null : importedFixtures.get(reference.getEntityId());
             if (matchDay == null) {
                 return item(ImportRecordType.FIXTURE, source.externalId(), label, ImportAction.NEW, null, null,
                     Map.of(), issues, source);
@@ -455,7 +500,7 @@ class HistoricalPlanner {
 
         /** The stored fixture as a comparable text: state and the game scores in order. */
         private String resultOf(MatchDay matchDay) {
-            String games = matchRepository.findByMatchDay(matchDay).stream()
+            String games = importedGames.getOrDefault(matchDay.getId(), List.of()).stream()
                 .sorted(Comparator.comparing(Match::getPosition, Comparator.nullsLast(Comparator.naturalOrder())))
                 .map(m -> m.getHomeScore() + ":" + m.getAwayScore())
                 .collect(Collectors.joining(" "));

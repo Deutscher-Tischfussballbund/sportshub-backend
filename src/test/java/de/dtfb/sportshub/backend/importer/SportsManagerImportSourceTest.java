@@ -101,6 +101,21 @@ class SportsManagerImportSourceTest {
     }
 
     @Test
+    void aPlayerListedTwiceInOneTeam_isOneRosterEntry_activeIfAnyRowIs() {
+        ImportBatch batch = source.parse(stream("""
+            {"format": "sportshub-sm-export", "version": 2, "instance": "x", "kader": [
+              {"spieler_id": "7", "team_id": 90, "ausgetreten": 0},
+              {"spieler_id": "7", "team_id": 90, "ausgetreten": 1},
+              {"spieler_id": "8", "team_id": 90, "ausgetreten": 1},
+              {"spieler_id": "8", "team_id": 90, "ausgetreten": 1}
+            ]}
+            """), "x.json");
+
+        assertThat(batch.rosterEntries()).containsExactly(
+            new ImportedRosterEntry("7", "90", false), new ImportedRosterEntry("8", "90", true));
+    }
+
+    @Test
     void tableRules_andLeagueNames() {
         assertThat(HistoricalPlanner.points(1)).containsExactly(2, 1, 0);
         assertThat(HistoricalPlanner.points(4)).containsExactly(3, 1, 0);

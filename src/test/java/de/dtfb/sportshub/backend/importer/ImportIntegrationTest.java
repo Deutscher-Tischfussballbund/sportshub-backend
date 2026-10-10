@@ -162,14 +162,61 @@ class ImportIntegrationTest extends AuthorizedControllerTest {
     }
 
     @Test
-    void apply_refusesAStalePreview() throws Exception {
+    void applyingOneRun_refreshesTheOtherOpenPreviewOfTheSameFile() throws Exception {
         Export export = new Export();
         String first = previewId(export.json());
-        apply(previewId(export.json()));
+        String second = previewId(export.json());
+        String plannedBefore = JsonPath.read(runJson(second), "$.plannedAt");
+        apply(first);
 
-        mockMvc.perform(post("/v1/admin/imports/" + first + "/apply"))
+        // Planned again in the background, right after the apply answered.
+        for (int i = 0; i < 100 && plannedBefore.equals(JsonPath.read(runJson(second), "$.plannedAt")); i++) {
+            Thread.sleep(100);
+        }
+        assertThat((String) JsonPath.read(runJson(second), "$.plannedAt")).isNotEqualTo(plannedBefore);
+        assertThat(items(second).values()).allSatisfy(item ->
+            assertThat(item.get("action")).isIn("UNCHANGED", "REJECTED"));
+        apply(second);
+    }
+
+    @Test
+    void apply_refusesAStalePreview_untilItIsRefreshed() throws Exception {
+        Export export = new Export();
+        apply(previewId(export.json()));
+        String runId = previewId(export.json());
+        String plannedBefore = JsonPath.read(runJson(runId), "$.plannedAt");
+
+        Player maren = playerByNumber(export.maren);
+        mockMvc.perform(put("/v1/admin/players/" + maren.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"firstName": "Marlene", "lastName": "%s", "birthYear": 1994, "genderDetail": "female", "active": true}
+                    """.formatted(export.marenLastName)))
+            .andExpect(status().isOk());
+        mockMvc.perform(post("/v1/admin/imports/" + runId + "/apply"))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.code").value("IMPORT_STALE"));
+
+        mockMvc.perform(post("/v1/admin/imports/" + runId + "/refresh"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.plannedAt").value(org.hamcrest.Matchers.not(plannedBefore)));
+        assertThat(items(runId).get("PLAYER:100")).containsEntry("action", "CONFLICT");
+        apply(runId);
+        assertThat(playerRepository.findById(maren.getId()).orElseThrow().getFirstName()).isEqualTo("Marlene");
+    }
+
+    @Test
+    void refresh_withoutChanges_keepsThePlannedTime_andAClosedRunIsRefused() throws Exception {
+        String runId = previewId(new Export().json());
+        String plannedBefore = JsonPath.read(runJson(runId), "$.plannedAt");
+        mockMvc.perform(post("/v1/admin/imports/" + runId + "/refresh"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.plannedAt").value(plannedBefore));
+
+        apply(runId);
+        mockMvc.perform(post("/v1/admin/imports/" + runId + "/refresh"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("IMPORT_RUN_CLOSED"));
     }
 
     @Test
@@ -260,6 +307,11 @@ class ImportIntegrationTest extends AuthorizedControllerTest {
     private String previewId(String json) throws Exception {
         MvcResult result = upload(json).andExpect(status().isOk()).andReturn();
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+    }
+
+    private String runJson(String runId) throws Exception {
+        return mockMvc.perform(get("/v1/admin/imports/" + runId)).andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
     }
 
     private void apply(String runId) throws Exception {

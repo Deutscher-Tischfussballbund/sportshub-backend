@@ -45,6 +45,9 @@ public class ImportRun extends BaseEntity {
     @Column(nullable = false)
     private Instant createdAt;
 
+    /** When the preview was last planned: at upload, after a manual match or a refresh. */
+    private Instant plannedAt;
+
     private String createdByDtfbId;
 
     private Instant finishedAt;

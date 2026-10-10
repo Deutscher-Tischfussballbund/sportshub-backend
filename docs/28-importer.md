@@ -100,6 +100,13 @@
   `409 IMPORT_STALE` if the result differs from the stored preview. Writes go through `PlayerService`,
   `ClubService`, `ClubMembershipService` so rules and `entity_history` stay in one place; the actor is the
   admin's `dtfb_id`. Endpoints under `/v1/admin/imports`, global admin only for now.
+- Now: open previews don't go stale silently. After a run is applied or undone, the other open previews of the
+  **same installation** are **planned again** in the background (the apply answers first) from their stored
+  records and manual matches (no file needed), each in its own transaction with the run's row locked, so a
+  concurrent apply waits for the new plan. Planning loads what earlier runs imported once per record type, never
+  per record (a full SM export of ~17k games re-plans in ~2 s). `POST …/{runId}/refresh` does the
+  same by hand (e.g. after an edit in the Sports Hub). `import_run.planned_at` (V23) only moves when the plan
+  changed; the run page watches it and reloads.
 - Now: a frontend import view — run list, upload (source, target federation, file), run page with tabs per
   action and Apply (confirm dialog) / Discard.
 

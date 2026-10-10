@@ -5,7 +5,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dtfb.sportshub.backend.federation.FederationNotFoundException;
 import de.dtfb.sportshub.backend.federation.FederationRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -38,6 +42,8 @@ public class ImportService {
     private static final TypeReference<Map<String, FieldChange>> DIFF_TYPE = new TypeReference<>() { };
     private static final TypeReference<List<ImportIssue>> ISSUES_TYPE = new TypeReference<>() { };
 
+    private static final Logger log = LoggerFactory.getLogger(ImportService.class);
+
     private final ImportSourceRegistry sources;
     private final ImportPlanner planner;
     private final ImportWriter writer;
@@ -50,13 +56,15 @@ public class ImportService {
     private final ImportChangeRepository changeRepository;
     private final ImportRunGate gate;
     private final TransactionTemplate transaction;
+    private final TaskExecutor background;
 
     public ImportService(ImportSourceRegistry sources, ImportPlanner planner, ImportWriter writer,
                          ImportRunRepository runRepository, ImportItemRepository itemRepository,
                          FederationRepository federationRepository, ObjectMapper objectMapper,
                          @Value("${sportshub.importer.anonymized:allowed}") String anonymizationPolicy,
                          ImportJournal journal, ImportChangeRepository changeRepository, ImportRunGate gate,
-                         PlatformTransactionManager transactionManager) {
+                         PlatformTransactionManager transactionManager,
+                         @Qualifier("applicationTaskExecutor") TaskExecutor background) {
         this.sources = sources;
         this.planner = planner;
         this.writer = writer;
@@ -69,6 +77,7 @@ public class ImportService {
         this.changeRepository = changeRepository;
         this.gate = gate;
         this.transaction = new TransactionTemplate(transactionManager);
+        this.background = background;
     }
 
     public List<ImportSourceDto> sources() {
@@ -93,6 +102,7 @@ public class ImportService {
         run.setAnonymized(batch.header().anonymized());
         run.setStatus(ImportRunStatus.PREVIEWED);
         run.setCreatedAt(Instant.now());
+        run.setPlannedAt(run.getCreatedAt());
         run.setCreatedByDtfbId(actor);
         runRepository.save(run);
 
@@ -143,7 +153,62 @@ public class ImportService {
         itemRepository.deleteByRunId(runId);
         itemRepository.flush();
         store(run, plan);
+        run.setPlannedAt(Instant.now());
         return toDto(run);
+    }
+
+    /**
+     * Plans an open preview again against today's data, from its stored records and manual matches -- the file
+     * isn't needed. {@code plannedAt} only moves when the plan changed, so the page showing the run can tell.
+     */
+    public ImportRunDto refresh(String runId) {
+        find(runId);
+        if (!Boolean.TRUE.equals(transaction.execute(tx -> replan(runId)))) {
+            throw busyOrClosed(runId);
+        }
+        return run(runId);
+    }
+
+    /**
+     * After a run was applied or undone, the other open previews of the same installation are planned again --
+     * the data they were planned against changed (e.g. "create" became "unchanged"). In the background, so the
+     * apply/undo answers as soon as its own work is committed; each preview in its own transaction, one failing
+     * is logged and leaves that preview as it was (applying it is then refused as stale and planned again).
+     */
+    void refreshOpenPreviewsLater(String runId) {
+        ImportRun done = find(runId);
+        List<String> open = runRepository.findByStatusAndSourceAndInstanceAndIdNot(ImportRunStatus.PREVIEWED,
+            done.getSource(), done.getInstance(), runId).stream().map(ImportRun::getId).toList();
+        if (open.isEmpty()) {
+            return;
+        }
+        background.execute(() -> {
+            for (String id : open) {
+                try {
+                    transaction.execute(tx -> replan(id));
+                } catch (RuntimeException e) {
+                    log.warn("Could not refresh the preview of import run {}", id, e);
+                }
+            }
+        });
+    }
+
+    /** False when the run isn't open. Its row stays locked until commit, so a concurrent apply waits for the new plan. */
+    private boolean replan(String runId) {
+        ImportRun run = runRepository.findLocked(runId).orElseThrow(() -> new ImportRunNotFoundException(runId));
+        if (run.getStatus() != ImportRunStatus.PREVIEWED) {
+            return false;
+        }
+        List<ImportItem> items = itemRepository.findByRunIdOrderByPosition(runId);
+        List<PlannedItem> plan = planner.plan(batch(run, items), run.getTargetFederationId(), manualMatches(items));
+        if (fingerprints(plan).equals(items.stream().map(this::fingerprint).toList())) {
+            return true; // unchanged: plannedAt stays, so the page showing the run doesn't reload for nothing
+        }
+        itemRepository.deleteByRunId(runId);
+        itemRepository.flush();
+        store(run, plan);
+        run.setPlannedAt(Instant.now());
+        return true;
     }
 
     /**
@@ -156,12 +221,15 @@ public class ImportService {
         if (!gate.claim(runId, ImportRunStatus.PREVIEWED, ImportRunStatus.APPLYING)) {
             throw busyOrClosed(runId);
         }
+        ImportRunDto applied;
         try {
-            return transaction.execute(tx -> applyClaimed(runId, actor));
+            applied = transaction.execute(tx -> applyClaimed(runId, actor));
         } catch (RuntimeException e) {
             gate.release(runId, ImportRunStatus.APPLYING, ImportRunStatus.PREVIEWED);
             throw e;
         }
+        refreshOpenPreviewsLater(runId);
+        return applied;
     }
 
     private ImportRunDto applyClaimed(String runId, String actor) {
@@ -323,7 +391,7 @@ public class ImportService {
             .toList();
         return new ImportRunDto(run.getId(), run.getSource(), run.getInstance(), run.getFilename(),
             run.getTargetFederationId(), run.getExportedAt(), run.isAnonymized(), run.getStatus(), run.getCreatedAt(),
-            run.getCreatedByDtfbId(), run.getFinishedAt(), run.getFinishedByDtfbId(), run.getUndoneAt(),
+            run.getPlannedAt(), run.getCreatedByDtfbId(), run.getFinishedAt(), run.getFinishedByDtfbId(), run.getUndoneAt(),
             run.getUndoneByDtfbId(), counts);
     }
 

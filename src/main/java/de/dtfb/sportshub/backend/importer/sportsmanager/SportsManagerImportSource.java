@@ -31,6 +31,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -166,12 +167,19 @@ public class SportsManagerImportSource implements ImportSource {
         return result;
     }
 
+    /**
+     * The SM may list a player twice in one team (left, then joined again): one record per team and player,
+     * active if any of its rows is -- otherwise the rows would overwrite each other on every run.
+     */
     private static List<ImportedRosterEntry> rosterEntries(JsonNode root) {
-        List<ImportedRosterEntry> result = new ArrayList<>();
+        Map<String, ImportedRosterEntry> result = new LinkedHashMap<>();
         for (JsonNode node : root.path("kader")) {
-            result.add(new ImportedRosterEntry(text(node, "spieler_id"), text(node, "team_id"), flag(node, "ausgetreten")));
+            ImportedRosterEntry entry = new ImportedRosterEntry(text(node, "spieler_id"), text(node, "team_id"),
+                flag(node, "ausgetreten"));
+            result.merge(entry.teamExternalId() + ":" + entry.playerExternalId(), entry, (first, again) ->
+                new ImportedRosterEntry(first.playerExternalId(), first.teamExternalId(), first.left() && again.left()));
         }
-        return result;
+        return new ArrayList<>(result.values());
     }
 
     private static List<ImportedFixture> fixtures(JsonNode root) {

@@ -87,12 +87,15 @@ public class ImportUndoService {
         if (!gate.claim(runId, ImportRunStatus.APPLIED, ImportRunStatus.UNDOING)) {
             throw importService.busyOrClosed(runId);
         }
+        ImportRunDto undone;
         try {
-            return transaction.execute(tx -> undoClaimed(runId, actor));
+            undone = transaction.execute(tx -> undoClaimed(runId, actor));
         } catch (RuntimeException e) {
             gate.release(runId, ImportRunStatus.UNDOING, ImportRunStatus.APPLIED);
             throw e;
         }
+        importService.refreshOpenPreviewsLater(runId);
+        return undone;
     }
 
     private ImportRunDto undoClaimed(String runId, String actor) {

@@ -136,7 +136,8 @@ public class ImportPlanner {
             return item(ImportRecordType.FEDERATION, source.externalId(), label, ImportAction.NEW,
                 byName.getId(), null, Map.of(), List.of(), source);
         }
-        return item(ImportRecordType.FEDERATION, source.externalId(), label, ImportAction.NEW, targetFederationId,
+        // Nothing is created or linked (the next run may find a better match): unchanged, with the fallback noted.
+        return item(ImportRecordType.FEDERATION, source.externalId(), label, ImportAction.UNCHANGED, targetFederationId,
             null, Map.of(), List.of(new ImportIssue(ImportIssueCode.FEDERATION_FALLBACK, targetFederationId)), source);
     }
     //endregion

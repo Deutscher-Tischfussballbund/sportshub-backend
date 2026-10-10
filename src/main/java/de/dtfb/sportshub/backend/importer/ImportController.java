@@ -76,6 +76,12 @@ public class ImportController {
         return importService.apply(runId, dtfbId(jwt));
     }
 
+    /** Plans an open preview again against today's data (docs/28). */
+    @PostMapping("/v1/admin/imports/{runId}/refresh")
+    public ImportRunDto refresh(@PathVariable String runId) {
+        return importService.refresh(runId);
+    }
+
     /** What undoing an applied run would do, or why it can't (docs/28). */
     @GetMapping("/v1/admin/imports/{runId}/undo")
     public UndoCheckDto undoCheck(@PathVariable String runId) {
