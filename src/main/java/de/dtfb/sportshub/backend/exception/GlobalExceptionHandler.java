@@ -7,6 +7,7 @@ import de.dtfb.sportshub.backend.club.ClubDeletionBlockedException;
 import de.dtfb.sportshub.backend.group.GroupDeletionBlockedError;
 import de.dtfb.sportshub.backend.importer.ImportAnonymizationException;
 import de.dtfb.sportshub.backend.importer.ImportFormatException;
+import de.dtfb.sportshub.backend.importer.ImportRunBusyException;
 import de.dtfb.sportshub.backend.importer.ImportRunClosedException;
 import de.dtfb.sportshub.backend.importer.ImportStaleException;
 import de.dtfb.sportshub.backend.importer.ImportUndoBlockedError;
@@ -36,6 +37,9 @@ import de.dtfb.sportshub.backend.teamparticipation.SeasonEndedError;
 import de.dtfb.sportshub.backend.teamparticipation.SeasonEndedException;
 import de.dtfb.sportshub.backend.tier.TierDeletionBlockedError;
 import de.dtfb.sportshub.backend.tier.TierDeletionBlockedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -51,6 +55,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(NotFoundExceptionMarker.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -214,6 +220,13 @@ public class GlobalExceptionHandler {
             .body(new ImportUndoBlockedError("IMPORT_UNDO_BLOCKED", ex.getMessage(), ex.getBlockers()));
     }
 
+    // The import run is being applied or undone right now (docs/28) → 409, wait for it.
+    @ExceptionHandler(ImportRunBusyException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleImportRunBusy(ImportRunBusyException ex) {
+        return new ApiError("IMPORT_RUN_BUSY", ex.getMessage());
+    }
+
     // Applying/discarding/assigning in an import run that's already applied or discarded → 409.
     @ExceptionHandler(ImportRunClosedException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
@@ -274,10 +287,19 @@ public class GlobalExceptionHandler {
             "You are not allowed to perform this action");
     }
 
-    // Failsafe
+    // Another request holds the rows this one needs (e.g. an import apply still running) and the database
+    // gave up waiting → 409, try again later -- not a server error.
+    @ExceptionHandler(PessimisticLockingFailureException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleLockTimeout() {
+        return new ApiError("BUSY", "Another change to the same data is still running -- try again in a moment");
+    }
+
+    // Failsafe -- logged, since the response says nothing about the cause.
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ApiError handleUnexpected() {
+    public ApiError handleUnexpected(Exception ex) {
+        log.error("Unexpected error", ex);
         return new ApiError(
             "INTERNAL_ERROR",
             "An unexpected error occurred");

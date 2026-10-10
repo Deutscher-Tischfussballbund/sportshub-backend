@@ -39,7 +39,9 @@ public enum ImportIssueCode {
     NOT_PLAYED(false),
     UNCONFIRMED_RESULT(false),
     UNKNOWN_LINEUP_PLAYER(false),
-    NO_KICKOFF(false);
+    NO_KICKOFF(false),
+    /** The source has the team without a club (hobby/pub teams); imported without one. */
+    TEAM_WITHOUT_CLUB(false);
 
     private final boolean error;
 

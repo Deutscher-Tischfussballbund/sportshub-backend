@@ -20,7 +20,6 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,6 +53,7 @@ class HistoricalImportIntegrationTest extends AuthorizedControllerTest {
     @Autowired private MatchRepository matchRepository;
     @Autowired private LineupRepository lineupRepository;
     @Autowired private RosterEntryRepository rosterRepository;
+    @Autowired private de.dtfb.sportshub.backend.team.TeamRepository teamRepository;
 
     @Test
     void preview_takesTheTeamLeague_skipsTheCup() throws Exception {
@@ -71,7 +71,6 @@ class HistoricalImportIntegrationTest extends AuthorizedControllerTest {
     }
 
     @Test
-    @Transactional
     void apply_writesFinalHistory_withTheFrozenTable() throws Exception {
         Export export = new Export();
         apply(previewId(export.json()));
@@ -105,6 +104,19 @@ class HistoricalImportIntegrationTest extends AuthorizedControllerTest {
     }
 
     @Test
+    void unconfirmedImportedResult_isNoOpenResult() throws Exception {
+        Export export = new Export();
+        export.firstFixtureUnconfirmed = true;
+        apply(previewId(export.json()));
+        String fixtureId = entityId(export, ImportRecordType.FIXTURE, "900");
+        assertThat(matchDayRepository.findById(fixtureId).orElseThrow().getResultState()).isEqualTo(ResultState.SUBMITTED);
+
+        mockMvc.perform(get("/v1/matchdays/pending-results"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[?(@.matchDayId == '" + fixtureId + "')]").isEmpty());
+    }
+
+    @Test
     void sameFileAgain_changesNothing() throws Exception {
         Export export = new Export();
         apply(previewId(export.json()));
@@ -121,6 +133,24 @@ class HistoricalImportIntegrationTest extends AuthorizedControllerTest {
 
         assertThat(codes(items.get("SEASON:5"))).containsExactly("SEASON_NOT_ENDED");
         assertThat(codes(items.get("LEAGUE:50"))).containsExactly("BLOCKED_BY_REJECTED_RECORD");
+        assertThat(detail(items.get("LEAGUE:50"))).as("names what blocks it").isEqualTo("2019");
+        assertThat(detail(items.get("TEAM:500"))).startsWith("Landesliga");
+    }
+
+    @Test
+    void teamWithoutClub_isImportedWithoutOne() throws Exception {
+        Export export = new Export();
+        export.elbeWithoutClub = true;
+        String runId = previewId(export.json());
+        Map<String, Map<String, Object>> items = items(runId);
+
+        assertThat(items.get("TEAM:501")).containsEntry("action", "NEW");
+        assertThat(codes(items.get("TEAM:501"))).containsExactly("TEAM_WITHOUT_CLUB");
+        assertThat(items.get("FIXTURE:900")).containsEntry("action", "NEW");
+
+        apply(runId);
+        assertThat(teamRepository.findById(entityId(export, ImportRecordType.TEAM, "501")).orElseThrow().getClub())
+            .isNull();
     }
 
     @Test
@@ -170,6 +200,8 @@ class HistoricalImportIntegrationTest extends AuthorizedControllerTest {
         final String[] numbers = new String[4];
         String lastDay = "2019-09-30";
         int winnerWins = 1;
+        boolean elbeWithoutClub;
+        boolean firstFixtureUnconfirmed;
 
         Export() {
             this(TestIds.unique("L"));
@@ -194,6 +226,12 @@ class HistoricalImportIntegrationTest extends AuthorizedControllerTest {
                 .replace("\"letzter_tag\": \"2019-09-30\"", "\"letzter_tag\": \"" + lastDay + "\"")
                 .replace("\"siege\": 1,", "\"siege\": " + winnerWins + ",");
             for (int i = 0; i < numbers.length; i++) json = json.replace("{{n" + (i + 1) + "}}", numbers[i]);
+            if (firstFixtureUnconfirmed) {
+                json = json.replaceFirst("\"unbestaetigt\": 0", "\"unbestaetigt\": 1");
+            }
+            if (elbeWithoutClub) {
+                json = json.replaceFirst("(\"team_id\": 501,\\s*\"teamgruppe_id\": null,\\s*\"verein_id\": )11", "$1null");
+            }
             return json;
         }
     }
@@ -227,6 +265,11 @@ class HistoricalImportIntegrationTest extends AuthorizedControllerTest {
         List<Map<String, Object>> items = JsonPath.read(result.getResponse().getContentAsString(), "$.items");
         return items.stream().collect(Collectors.toMap(
             item -> item.get("recordType") + ":" + item.get("externalId"), item -> item));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String detail(Map<String, Object> item) {
+        return (String) ((List<Map<String, Object>>) item.get("issues")).getFirst().get("detail");
     }
 
     @SuppressWarnings("unchecked")

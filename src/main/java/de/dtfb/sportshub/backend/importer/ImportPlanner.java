@@ -114,7 +114,7 @@ public class ImportPlanner {
         items.forEach(item -> labels.put(item.recordType() + ":" + item.externalId(), item.label()));
         for (ImportedMembership membership : batch.memberships()) {
             items.add(planMembership(membership, players, clubs, memberships, membershipLabel(membership, labels),
-                context));
+                labels, context));
         }
         items.addAll(historicalPlanner.plan(batch, clubs, players, manualMatches, context::reference));
         return items;
@@ -269,7 +269,7 @@ public class ImportPlanner {
     //region memberships
     private PlannedItem planMembership(ImportedMembership source, Map<String, PlanTarget> players,
                                        Map<String, PlanTarget> clubs, Map<String, List<ClubMembership>> memberships,
-                                       String label, Context context) {
+                                       String label, Map<String, String> labels, Context context) {
         PlanTarget player = resolve(source.playerExternalId(), ImportRecordType.PLAYER, players, context);
         PlanTarget club = resolve(source.clubExternalId(), ImportRecordType.CLUB, clubs, context);
         if (player == null) {
@@ -281,8 +281,11 @@ public class ImportPlanner {
                 new ImportIssue(ImportIssueCode.UNKNOWN_CLUB, source.clubExternalId()));
         }
         if (player.rejected() || club.rejected()) {
+            String blocking = player.rejected()
+                ? labels.getOrDefault(ImportRecordType.PLAYER + ":" + source.playerExternalId(), source.playerExternalId())
+                : labels.getOrDefault(ImportRecordType.CLUB + ":" + source.clubExternalId(), source.clubExternalId());
             return rejected(ImportRecordType.CLUB_MEMBERSHIP, source.externalId(), label, source,
-                ImportIssueCode.BLOCKED_BY_REJECTED_RECORD);
+                new ImportIssue(ImportIssueCode.BLOCKED_BY_REJECTED_RECORD, blocking));
         }
         if (player.entityId() == null || club.entityId() == null) {
             return item(ImportRecordType.CLUB_MEMBERSHIP, source.externalId(), label, ImportAction.NEW, null, null,

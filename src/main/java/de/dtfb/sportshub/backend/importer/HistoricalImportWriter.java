@@ -136,6 +136,10 @@ class HistoricalImportWriter {
         private final Map<String, String> batchIdentities = new HashMap<>();
         private final Map<String, Group> groupsByLeagueId = new HashMap<>();
         private final Map<String, Group> touchedGroups = new LinkedHashMap<>();
+        // Kept in memory instead of one query per record: every query inside this one big transaction makes
+        // Hibernate check all loaded objects first, which turns a season's import quadratic.
+        private final Map<String, Map<Integer, Round>> roundsByGroup = new HashMap<>();
+        private final Map<String, TeamParticipation> participationsByTeamId = new HashMap<>();
 
         Apply(ImportRun run, List<PlannedItem> plan, WrittenIds ids) {
             this.run = run;
@@ -272,7 +276,9 @@ class HistoricalImportWriter {
             if (item.action() == ImportAction.NEW) {
                 team = new Team();
                 team.setSeason(league.getSeason());
-                team.setClub(clubRepository.getReferenceById(ids.id(ImportRecordType.CLUB, source.clubExternalId())));
+                // Hobby teams without a club stay without one (docs/29).
+                String clubId = source.clubExternalId() == null ? null : ids.id(ImportRecordType.CLUB, source.clubExternalId());
+                team.setClub(clubId == null ? null : clubRepository.getReferenceById(clubId));
                 team.setName(source.name());
                 team.setTeamIdentityId(identity(item.linkId()));
                 teamRepository.save(team);
@@ -284,25 +290,28 @@ class HistoricalImportWriter {
                 participation.setRosterStatus(RosterStatus.CONFIRMED);
                 participation.setStatus(ParticipationStatus.ACTIVE);
                 participationRepository.save(participation);
+                participationsByTeamId.put(team.getId(), participation);
+                officialRow(group, team, source, true);
             } else {
                 team = teamRepository.findById(item.targetEntityId()).orElseThrow();
                 if (item.action() == ImportAction.UPDATE) {
                     team.setName(source.name());
                     teamRepository.save(team);
                 }
+                officialRow(group, team, source, false);
             }
-            officialRow(group, team, source);
             touchedGroups.put(group.getId(), group);
             ids.link(ImportRecordType.TEAM, item.externalId(), team.getId());
             ids.link(ImportRecordType.TEAM_IDENTITY, source.identityExternalId(), team.getTeamIdentityId());
         }
 
         /** The team's row of the frozen official table, from the source's final table (docs/29). */
-        private void officialRow(Group group, Team team, ImportedTeam source) {
+        private void officialRow(Group group, Team team, ImportedTeam source, boolean newTeam) {
             ImportedTeam.TableRow table = source.table();
             if (table == null) return;
-            OfficialTableEntry row = officialTableRepository.findByGroupId(group.getId()).stream()
-                .filter(e -> e.getTeam().getId().equals(team.getId())).findFirst().orElseGet(OfficialTableEntry::new);
+            OfficialTableEntry row = newTeam ? new OfficialTableEntry()
+                : officialTableRepository.findByGroupId(group.getId()).stream()
+                    .filter(e -> e.getTeam().getId().equals(team.getId())).findFirst().orElseGet(OfficialTableEntry::new);
             row.setGroup(group);
             row.setTeam(team);
             row.setPlace(table.place());
@@ -325,9 +334,10 @@ class HistoricalImportWriter {
                 Team team = teamRepository.findById(ids.id(ImportRecordType.TEAM, source.teamExternalId())).orElseThrow();
                 ImportedTeam importedTeam = teams.get(source.teamExternalId());
                 String leagueId = importedTeam == null ? null : ids.id(ImportRecordType.LEAGUE, importedTeam.leagueExternalId());
-                TeamParticipation participation = (leagueId == null
-                    ? participationRepository.findVisibleByTeamId(team.getId()).stream().findFirst()
-                    : participationRepository.findFirstByTeam_IdAndLeague_Id(team.getId(), leagueId)).orElseThrow();
+                TeamParticipation participation = participationsByTeamId.computeIfAbsent(team.getId(), teamId ->
+                    (leagueId == null
+                        ? participationRepository.findVisibleByTeamId(teamId).stream().findFirst()
+                        : participationRepository.findFirstByTeam_IdAndLeague_Id(teamId, leagueId)).orElseThrow());
                 entry = new RosterEntry();
                 entry.setParticipation(participation);
                 entry.setPlayer(playerRepository.getReferenceById(ids.id(ImportRecordType.PLAYER, source.playerExternalId())));
@@ -393,15 +403,18 @@ class HistoricalImportWriter {
         /** One round per source matchday, named after its title, else "Spieltag N". */
         private Round round(Group group, ImportedFixture source) {
             int index = source.matchday() != null ? source.matchday() : 0;
-            return roundRepository.findByGroupIdOrderByIndex(group.getId()).stream()
-                .filter(r -> Objects.equals(r.getIndex(), index)).findFirst()
-                .orElseGet(() -> {
-                    Round round = new Round();
-                    round.setGroup(group);
-                    round.setIndex(index);
-                    round.setName(source.matchdayTitle() != null ? source.matchdayTitle() : "Spieltag " + index);
-                    return roundRepository.save(round);
-                });
+            Map<Integer, Round> rounds = roundsByGroup.computeIfAbsent(group.getId(), groupId -> {
+                Map<Integer, Round> existing = new HashMap<>();
+                roundRepository.findByGroupIdOrderByIndex(groupId).forEach(r -> existing.putIfAbsent(r.getIndex(), r));
+                return existing;
+            });
+            return rounds.computeIfAbsent(index, i -> {
+                Round round = new Round();
+                round.setGroup(group);
+                round.setIndex(i);
+                round.setName(source.matchdayTitle() != null ? source.matchdayTitle() : "Spieltag " + i);
+                return roundRepository.save(round);
+            });
         }
 
         /**

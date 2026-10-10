@@ -184,7 +184,7 @@ class HistoricalPlanner {
             PlanTarget seasonTarget = target(seasonTargets, ImportRecordType.SEASON, source.seasonExternalId());
             if (seasonTarget == null || seasonTarget.rejected()) {
                 return remember(leagueTargets, rejected(ImportRecordType.LEAGUE, source.externalId(), label, source,
-                    ImportIssue.of(ImportIssueCode.BLOCKED_BY_REJECTED_RECORD)));
+                    blockedBy(season != null ? season.name() : source.seasonExternalId())));
             }
             List<ImportIssue> issues = new ArrayList<>();
             if (source.mode() == null || source.mode().gamePlan().isEmpty()) {
@@ -284,14 +284,24 @@ class HistoricalPlanner {
             PlanTarget leagueTarget = target(leagueTargets, ImportRecordType.LEAGUE, source.leagueExternalId());
             if (leagueTarget == null || leagueTarget.rejected()) {
                 return remember(teamTargets, rejected(ImportRecordType.TEAM, source.externalId(), label, source,
-                    ImportIssue.of(ImportIssueCode.BLOCKED_BY_REJECTED_RECORD)));
-            }
-            PlanTarget club = target(clubs, ImportRecordType.CLUB, source.clubExternalId());
-            if (club == null || club.rejected()) {
-                return remember(teamTargets, rejected(ImportRecordType.TEAM, source.externalId(), label, source,
-                    new ImportIssue(ImportIssueCode.UNKNOWN_CLUB, source.clubExternalId())));
+                    blockedBy(leagueLabel(source.leagueExternalId()))));
             }
             List<ImportIssue> issues = new ArrayList<>();
+            // Hobby and pub teams play without a club in the source -- imported as they were (agenda: hobby leagues).
+            PlanTarget club = null;
+            if (source.clubExternalId() == null) {
+                issues.add(ImportIssue.of(ImportIssueCode.TEAM_WITHOUT_CLUB));
+            } else {
+                club = target(clubs, ImportRecordType.CLUB, source.clubExternalId());
+                if (club == null) {
+                    return remember(teamTargets, rejected(ImportRecordType.TEAM, source.externalId(), label, source,
+                        new ImportIssue(ImportIssueCode.UNKNOWN_CLUB, source.clubExternalId())));
+                }
+                if (club.rejected()) {
+                    return remember(teamTargets, rejected(ImportRecordType.TEAM, source.externalId(), label, source,
+                        blockedBy(source.clubExternalId())));
+                }
+            }
             if (source.table() != null && source.table().points() != null
                 && source.table().points() != Math.rint(source.table().points())) {
                 issues.add(new ImportIssue(ImportIssueCode.NON_INTEGER_POINTS, source.table().points().toString()));
@@ -322,8 +332,9 @@ class HistoricalPlanner {
                 // The source already linked this team to one imported earlier.
                 link = identity.getEntityId();
             } else {
-                Team existing = club.entityId() == null ? null
-                    : latestTeamByClubAndName().get(club.entityId() + "|" + identityName(source.name()));
+                Team existing = club != null && club.entityId() == null ? null
+                    : latestTeamByClubAndName().get(clubKey(club == null ? null : club.entityId()) + "|"
+                        + identityName(source.name()));
                 if (existing != null) {
                     link = existing.getTeamIdentityId();
                     issues.add(new ImportIssue(ImportIssueCode.LINKED_BY_NAME, existing.getName()
@@ -340,12 +351,17 @@ class HistoricalPlanner {
             if (latestTeamByClubAndName == null) {
                 latestTeamByClubAndName = new HashMap<>();
                 teamRepository.findAll().stream()
-                    .filter(t -> t.getClub() != null && t.getSeason() != null)
+                    .filter(t -> t.getSeason() != null)
                     .sorted(Comparator.comparing((Team t) -> t.getSeason().getStartDate(),
                         Comparator.nullsFirst(Comparator.naturalOrder())))
-                    .forEach(t -> latestTeamByClubAndName.put(t.getClub().getId() + "|" + identityName(t.getName()), t));
+                    .forEach(t -> latestTeamByClubAndName.put(
+                        clubKey(t.getClub() == null ? null : t.getClub().getId()) + "|" + identityName(t.getName()), t));
             }
             return latestTeamByClubAndName;
+        }
+        /** Teams without a club are matched among teams without a club. */
+        private String clubKey(String clubId) {
+            return clubId == null ? "-" : clubId;
         }
         //endregion
 
@@ -355,9 +371,13 @@ class HistoricalPlanner {
             String label = playerLabels.getOrDefault(source.playerExternalId(), source.playerExternalId()) + " → "
                 + (team != null ? team.name() : source.teamExternalId());
             PlanTarget teamTarget = target(teamTargets, ImportRecordType.TEAM, source.teamExternalId());
-            if (teamTarget == null || teamTarget.rejected()) {
+            if (teamTarget == null) {
                 return rejected(ImportRecordType.ROSTER_ENTRY, source.externalId(), label, source,
-                    ImportIssue.of(ImportIssueCode.BLOCKED_BY_REJECTED_RECORD));
+                    new ImportIssue(ImportIssueCode.UNKNOWN_TEAM, source.teamExternalId()));
+            }
+            if (teamTarget.rejected()) {
+                return rejected(ImportRecordType.ROSTER_ENTRY, source.externalId(), label, source,
+                    blockedBy(teamLabel(source.teamExternalId())));
             }
             PlanTarget player = target(players, ImportRecordType.PLAYER, source.playerExternalId());
             if (player == null || player.rejected()) {
@@ -395,11 +415,12 @@ class HistoricalPlanner {
             PlanTarget awayTarget = target(teamTargets, ImportRecordType.TEAM, source.awayTeamExternalId());
             if (homeTarget == null || awayTarget == null) {
                 return rejected(ImportRecordType.FIXTURE, source.externalId(), label, source,
-                    ImportIssue.of(ImportIssueCode.UNKNOWN_TEAM));
+                    new ImportIssue(ImportIssueCode.UNKNOWN_TEAM,
+                        homeTarget == null ? source.homeTeamExternalId() : source.awayTeamExternalId()));
             }
             if (homeTarget.rejected() || awayTarget.rejected()) {
                 return rejected(ImportRecordType.FIXTURE, source.externalId(), label, source,
-                    ImportIssue.of(ImportIssueCode.BLOCKED_BY_REJECTED_RECORD));
+                    blockedBy(teamLabel(homeTarget.rejected() ? source.homeTeamExternalId() : source.awayTeamExternalId())));
             }
             List<ImportIssue> issues = new ArrayList<>();
             if (!source.played()) {
@@ -467,6 +488,25 @@ class HistoricalPlanner {
         //endregion
 
         //region helpers
+        /** "Rejected because …" -- naming the record that was rejected, so the admin knows where to look. */
+        private ImportIssue blockedBy(String blocking) {
+            return new ImportIssue(ImportIssueCode.BLOCKED_BY_REJECTED_RECORD, blocking);
+        }
+
+        private String leagueLabel(String externalId) {
+            ImportedLeague league = leaguesById.get(externalId);
+            if (league == null) return externalId;
+            ImportedSeason season = seasonsById.get(league.seasonExternalId());
+            return league.name() + (season != null && season.name() != null ? " · " + season.name() : "");
+        }
+
+        private String teamLabel(String externalId) {
+            ImportedTeam team = teamsById.get(externalId);
+            if (team == null) return externalId;
+            ImportedLeague league = leaguesById.get(team.leagueExternalId());
+            return team.name() + (league != null ? " · " + league.name() : "");
+        }
+
         /** A record of this batch, or one an earlier run imported; null if neither. */
         private PlanTarget target(Map<String, PlanTarget> inBatch, ImportRecordType type, String externalId) {
             if (externalId == null) return null;

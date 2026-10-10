@@ -13,7 +13,9 @@ import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -44,15 +46,20 @@ public class ImportUndoService {
     private final StandingService standingService;
     private final ImportService importService;
     private final DefaultFormattingConversionService conversion = new DefaultFormattingConversionService();
+    private final ImportRunGate gate;
+    private final TransactionTemplate transaction;
 
     public ImportUndoService(ImportRunRepository runRepository, ImportChangeRepository changeRepository,
                              ExternalReferenceRepository referenceRepository, StandingService standingService,
-                             ImportService importService) {
+                             ImportService importService, ImportRunGate gate,
+                             PlatformTransactionManager transactionManager) {
         this.runRepository = runRepository;
         this.changeRepository = changeRepository;
         this.referenceRepository = referenceRepository;
         this.standingService = standingService;
         this.importService = importService;
+        this.gate = gate;
+        this.transaction = new TransactionTemplate(transactionManager);
     }
 
     @Transactional(readOnly = true)
@@ -71,9 +78,25 @@ public class ImportUndoService {
         return new UndoCheckDto(blockers.isEmpty(), created, changed, blockers);
     }
 
-    @Transactional
+    /**
+     * Undoes the run -- marked UNDOING first, in a transaction of its own, so everyone sees it running; back to
+     * APPLIED if the undo fails or is refused.
+     */
     public ImportRunDto undo(String runId, String actor) {
-        ImportRun run = requireApplied(runId);
+        requireApplied(runId);
+        if (!gate.claim(runId, ImportRunStatus.APPLIED, ImportRunStatus.UNDOING)) {
+            throw importService.busyOrClosed(runId);
+        }
+        try {
+            return transaction.execute(tx -> undoClaimed(runId, actor));
+        } catch (RuntimeException e) {
+            gate.release(runId, ImportRunStatus.UNDOING, ImportRunStatus.APPLIED);
+            throw e;
+        }
+    }
+
+    private ImportRunDto undoClaimed(String runId, String actor) {
+        ImportRun run = runRepository.findById(runId).orElseThrow(() -> new ImportRunNotFoundException(runId));
         List<ImportChange> changes = changeRepository.findByRunIdOrderBySeqAsc(runId);
         List<UndoBlocker> blockers = blockers(run, changes);
         if (!blockers.isEmpty()) {
@@ -96,8 +119,8 @@ public class ImportUndoService {
             Object entity = entityManager.find(type, change.getEntityId());
             if (entity == null) continue;
             if (change.getOperation() == ImportChangeOperation.CREATE) {
+                // Deletes go out in the order of remove() -- newest first -- at the single flush below.
                 entityManager.remove(entity);
-                entityManager.flush();
             } else if (change.getOperation() == ImportChangeOperation.UPDATE) {
                 write(entity, change.getField(), change.getOldValue());
             }
@@ -268,7 +291,7 @@ public class ImportUndoService {
     private ImportRun requireApplied(String runId) {
         ImportRun run = runRepository.findById(runId).orElseThrow(() -> new ImportRunNotFoundException(runId));
         if (run.getStatus() != ImportRunStatus.APPLIED) {
-            throw new ImportRunClosedException(runId);
+            throw importService.busyOrClosed(runId);
         }
         return run;
     }

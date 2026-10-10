@@ -10,7 +10,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.InputStream;
@@ -46,12 +48,15 @@ public class ImportService {
     private final AnonymizationPolicy anonymizationPolicy;
     private final ImportJournal journal;
     private final ImportChangeRepository changeRepository;
+    private final ImportRunGate gate;
+    private final TransactionTemplate transaction;
 
     public ImportService(ImportSourceRegistry sources, ImportPlanner planner, ImportWriter writer,
                          ImportRunRepository runRepository, ImportItemRepository itemRepository,
                          FederationRepository federationRepository, ObjectMapper objectMapper,
                          @Value("${sportshub.importer.anonymized:allowed}") String anonymizationPolicy,
-                         ImportJournal journal, ImportChangeRepository changeRepository) {
+                         ImportJournal journal, ImportChangeRepository changeRepository, ImportRunGate gate,
+                         PlatformTransactionManager transactionManager) {
         this.sources = sources;
         this.planner = planner;
         this.writer = writer;
@@ -62,6 +67,8 @@ public class ImportService {
         this.anonymizationPolicy = AnonymizationPolicy.valueOf(anonymizationPolicy.trim().toUpperCase());
         this.journal = journal;
         this.changeRepository = changeRepository;
+        this.gate = gate;
+        this.transaction = new TransactionTemplate(transactionManager);
     }
 
     public List<ImportSourceDto> sources() {
@@ -139,10 +146,26 @@ public class ImportService {
         return toDto(run);
     }
 
-    /** Writes the checked plan; every write is journaled so the run can be undone ({@link ImportUndoService}). */
-    @Transactional
+    /**
+     * Writes the checked plan; every write is journaled so the run can be undone ({@link ImportUndoService}).
+     * The run is marked APPLYING first, in a transaction of its own, so everyone sees the apply running; the
+     * writing itself is one transaction -- if it fails, the run goes back to PREVIEWED.
+     */
     public ImportRunDto apply(String runId, String actor) {
-        ImportRun run = requireOpen(runId);
+        find(runId);
+        if (!gate.claim(runId, ImportRunStatus.PREVIEWED, ImportRunStatus.APPLYING)) {
+            throw busyOrClosed(runId);
+        }
+        try {
+            return transaction.execute(tx -> applyClaimed(runId, actor));
+        } catch (RuntimeException e) {
+            gate.release(runId, ImportRunStatus.APPLYING, ImportRunStatus.PREVIEWED);
+            throw e;
+        }
+    }
+
+    private ImportRunDto applyClaimed(String runId, String actor) {
+        ImportRun run = find(runId);
         List<ImportItem> items = itemRepository.findByRunIdOrderByPosition(runId);
         List<PlannedItem> plan = planner.plan(batch(run, items), run.getTargetFederationId(), manualMatches(items));
         if (!fingerprints(plan).equals(items.stream().map(this::fingerprint).toList())) {
@@ -282,9 +305,16 @@ public class ImportService {
     private ImportRun requireOpen(String runId) {
         ImportRun run = find(runId);
         if (run.getStatus() != ImportRunStatus.PREVIEWED) {
-            throw new ImportRunClosedException(runId);
+            throw busyOrClosed(runId);
         }
         return run;
+    }
+
+    /** Why a run can't be worked on: busy right now, or already applied/discarded/undone. */
+    RuntimeException busyOrClosed(String runId) {
+        ImportRunStatus status = runRepository.findById(runId).map(ImportRun::getStatus).orElse(null);
+        return status == ImportRunStatus.APPLYING || status == ImportRunStatus.UNDOING
+            ? new ImportRunBusyException(runId) : new ImportRunClosedException(runId);
     }
 
     ImportRunDto toDto(ImportRun run) {

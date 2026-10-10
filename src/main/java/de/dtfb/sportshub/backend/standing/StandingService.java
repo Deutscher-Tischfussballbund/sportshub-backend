@@ -190,7 +190,15 @@ public class StandingService {
 
         Map<String, Standing> byTeam = new LinkedHashMap<>();
         List<Outcome> outcomes = new ArrayList<>();
-        for (MatchDay matchDay : matchDayRepository.findByRoundGroupId(group.getId())) {
+        List<MatchDay> matchDays = matchDayRepository.findByRoundGroupId(group.getId());
+        // All games of the group in one query, not one per fixture (an imported season has hundreds).
+        Map<String, List<Match>> gamesByFixture = new HashMap<>();
+        if (!matchDays.isEmpty()) {
+            for (Match match : matchRepository.findByMatchDayIn(matchDays)) {
+                gamesByFixture.computeIfAbsent(match.getMatchDay().getId(), k -> new ArrayList<>()).add(match);
+            }
+        }
+        for (MatchDay matchDay : matchDays) {
             if (!counts.test(matchDay)) continue;
             // A fixture without its teams (incomplete data) can't be tallied.
             if (matchDay.getTeamHome() == null || (!matchDay.isBye() && matchDay.getTeamAway() == null)) continue;
@@ -202,7 +210,8 @@ public class StandingService {
                 continue;
             }
 
-            int[] score = race ? raceScore(matchDay) : gameScore(matchDay);
+            List<Match> games = gamesByFixture.getOrDefault(matchDay.getId(), List.of());
+            int[] score = race ? raceScore(games) : gameScore(games);
             int homeScore = score[0];
             int awayScore = score[1];
             boolean homeWon = score[2] > score[3];
@@ -237,10 +246,10 @@ public class StandingService {
      * RACE: the running score of the last entered segment is the fixture's score -- goals for/against
      * and the winner alike. Returns {home goals, away goals, home "wins", away "wins"}.
      */
-    private int[] raceScore(MatchDay matchDay) {
+    private static int[] raceScore(List<Match> games) {
         int home = 0;
         int away = 0;
-        List<Match> segments = new ArrayList<>(matchRepository.findByMatchDay(matchDay));
+        List<Match> segments = new ArrayList<>(games);
         segments.sort(Comparator.comparing(Match::getPosition, Comparator.nullsLast(Comparator.naturalOrder())));
         for (Match segment : segments) {
             if (segment.getHomeScore() == null || segment.getAwayScore() == null) break;
@@ -251,10 +260,10 @@ public class StandingService {
     }
 
     /** GAMES: game scores add up; the side with more game wins wins. */
-    private int[] gameScore(MatchDay matchDay) {
+    private static int[] gameScore(List<Match> games) {
         int homeWins = 0, awayWins = 0;
         int homeSets = 0, awaySets = 0;
-        for (Match match : matchRepository.findByMatchDay(matchDay)) {
+        for (Match match : games) {
             Integer home = match.getHomeScore();
             Integer away = match.getAwayScore();
             if (home == null || away == null) continue;

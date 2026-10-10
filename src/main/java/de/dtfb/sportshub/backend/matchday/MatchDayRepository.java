@@ -26,8 +26,14 @@ public interface MatchDayRepository extends JpaRepository<MatchDay, String> {
 
     long countByLocationId(String locationId);
 
-    /** Entered, not yet final results in seasons that aren't archived (pending-results overview). */
-    @Query("select e from MatchDay e where e.resultState = :state and e.round.group.tier.league.season.archivedAt is null")
+    /**
+     * Entered, not yet final results in seasons that aren't archived (pending-results overview). Imported
+     * fixtures (docs/29) are history -- an unconfirmed result from the old system is nobody's to-do.
+     */
+    @Query("""
+        select e from MatchDay e where e.resultState = :state and e.round.group.tier.league.season.archivedAt is null
+          and not exists (select 1 from ExternalReference r
+            where r.entityType = de.dtfb.sportshub.backend.importer.ImportRecordType.FIXTURE and r.entityId = e.id)""")
     List<MatchDay> findVisibleByResultState(@Param("state") ResultState state);
 
     @Query("select e from MatchDay e where e.round.group.tier.league.season.archivedAt is null")

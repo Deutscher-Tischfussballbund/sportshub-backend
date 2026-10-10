@@ -45,6 +45,9 @@ class ImportIntegrationTest extends AuthorizedControllerTest {
     @Autowired
     private PlayerNumberService numberService;
 
+    @Autowired
+    private ImportRunGate gate;
+
     @Test
     void preview_classifiesEveryRecord_withoutWritingAnything() throws Exception {
         Export export = new Export();
@@ -167,6 +170,20 @@ class ImportIntegrationTest extends AuthorizedControllerTest {
         mockMvc.perform(post("/v1/admin/imports/" + first + "/apply"))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.code").value("IMPORT_STALE"));
+    }
+
+    @Test
+    void applyWhileApplying_isBusy_andTheStatusShowsIt() throws Exception {
+        String runId = previewId(new Export().json());
+        assertThat(gate.claim(runId, ImportRunStatus.PREVIEWED, ImportRunStatus.APPLYING)).isTrue();
+
+        mockMvc.perform(get("/v1/admin/imports/" + runId)).andExpect(jsonPath("$.status").value("APPLYING"));
+        mockMvc.perform(post("/v1/admin/imports/" + runId + "/apply"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("IMPORT_RUN_BUSY"));
+
+        gate.release(runId, ImportRunStatus.APPLYING, ImportRunStatus.PREVIEWED);
+        apply(runId);
     }
 
     @Test
