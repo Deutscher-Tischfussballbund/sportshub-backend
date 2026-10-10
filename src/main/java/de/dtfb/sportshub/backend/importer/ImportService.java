@@ -29,6 +29,8 @@ import java.util.Objects;
 @Service
 public class ImportService {
 
+    /** A whole federation's export fits one page, so the preview can show a tab at once. */
+    private static final int MAX_PAGE_SIZE = 5000;
     private static final TypeReference<Map<String, FieldChange>> DIFF_TYPE = new TypeReference<>() { };
     private static final TypeReference<List<ImportIssue>> ISSUES_TYPE = new TypeReference<>() { };
 
@@ -98,7 +100,7 @@ public class ImportService {
     public ImportItemPageDto items(String runId, ImportAction action, ImportRecordType recordType, int page, int size) {
         find(runId);
         Page<ImportItem> items = itemRepository.search(runId, action, recordType,
-            PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, 500)));
+            PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, MAX_PAGE_SIZE)));
         return new ImportItemPageDto(items.map(this::toDto).getContent(), items.getTotalElements());
     }
 
@@ -153,10 +155,12 @@ public class ImportService {
 
     private void requireAllowed(ImportBatch.Header header) {
         if (anonymizationPolicy == AnonymizationPolicy.REQUIRED && !header.anonymized()) {
-            throw new ImportFormatException("This instance only accepts pseudonymized exports");
+            throw new ImportAnonymizationException("IMPORT_ANONYMIZATION_REQUIRED",
+                "This instance only accepts pseudonymized exports");
         }
         if (anonymizationPolicy == AnonymizationPolicy.FORBIDDEN && header.anonymized()) {
-            throw new ImportFormatException("This instance does not accept pseudonymized exports");
+            throw new ImportAnonymizationException("IMPORT_ANONYMIZED_FORBIDDEN",
+                "This instance does not accept pseudonymized exports");
         }
     }
 

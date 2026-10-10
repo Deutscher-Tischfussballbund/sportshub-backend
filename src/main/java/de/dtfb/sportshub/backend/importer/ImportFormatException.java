@@ -1,6 +1,6 @@
 package de.dtfb.sportshub.backend.importer;
 
-/** The uploaded file isn't in the chosen source's format (or is refused for this instance). Mapped to 400. */
+/** The uploaded file isn't in the chosen source's format. Mapped to 400. */
 public class ImportFormatException extends RuntimeException {
 
     public ImportFormatException(String message) {

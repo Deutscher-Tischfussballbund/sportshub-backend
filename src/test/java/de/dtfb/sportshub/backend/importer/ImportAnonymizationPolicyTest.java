@@ -27,6 +27,6 @@ class ImportAnonymizationPolicyTest extends AuthorizedControllerTest {
                 .param("source", "sportsmanager")
                 .param("targetFederationId", "fed-hh"))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.message").value("This instance only accepts pseudonymized exports"));
+            .andExpect(jsonPath("$.code").value("IMPORT_ANONYMIZATION_REQUIRED"));
     }
 }

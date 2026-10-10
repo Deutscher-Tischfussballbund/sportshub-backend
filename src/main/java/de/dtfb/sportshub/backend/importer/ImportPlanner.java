@@ -111,8 +111,11 @@ public class ImportPlanner {
         Map<String, List<ClubMembership>> memberships = membershipRepository
             .findByPlayerIdIn(players.values().stream().map(Target::entityId).filter(Objects::nonNull).toList())
             .stream().collect(Collectors.groupingBy(m -> m.getPlayer().getId()));
+        Map<String, String> labels = new HashMap<>();
+        items.forEach(item -> labels.put(item.recordType() + ":" + item.externalId(), item.label()));
         for (ImportedMembership membership : batch.memberships()) {
-            items.add(planMembership(membership, players, clubs, memberships, context));
+            items.add(planMembership(membership, players, clubs, memberships, membershipLabel(membership, labels),
+                context));
         }
         return items;
     }
@@ -266,8 +269,7 @@ public class ImportPlanner {
     //region memberships
     private PlannedItem planMembership(ImportedMembership source, Map<String, Target> players,
                                        Map<String, Target> clubs, Map<String, List<ClubMembership>> memberships,
-                                       Context context) {
-        String label = source.externalId();
+                                       String label, Context context) {
         Target player = resolve(source.playerExternalId(), ImportRecordType.PLAYER, players, context);
         Target club = resolve(source.clubExternalId(), ImportRecordType.CLUB, clubs, context);
         if (player == null) {
@@ -299,6 +301,14 @@ public class ImportPlanner {
         }
         return item(ImportRecordType.CLUB_MEMBERSHIP, source.externalId(), label, ImportAction.NEW, null, null,
             Map.of(), List.of(), source);
+    }
+
+    /** "Player → Club" from the batch's own labels, falling back to the source ids. */
+    private static String membershipLabel(ImportedMembership source, Map<String, String> labels) {
+        String player = labels.getOrDefault(ImportRecordType.PLAYER + ":" + source.playerExternalId(),
+            source.playerExternalId());
+        String club = labels.getOrDefault(ImportRecordType.CLUB + ":" + source.clubExternalId(), source.clubExternalId());
+        return player + " → " + club;
     }
 
     /** A record of this batch, or one an earlier run imported; null if neither. */

@@ -5,6 +5,7 @@ import de.dtfb.sportshub.backend.location.LocationDeletionBlockedException;
 import de.dtfb.sportshub.backend.club.ClubDeletionBlockedError;
 import de.dtfb.sportshub.backend.club.ClubDeletionBlockedException;
 import de.dtfb.sportshub.backend.group.GroupDeletionBlockedError;
+import de.dtfb.sportshub.backend.importer.ImportAnonymizationException;
 import de.dtfb.sportshub.backend.importer.ImportFormatException;
 import de.dtfb.sportshub.backend.importer.ImportRunClosedException;
 import de.dtfb.sportshub.backend.importer.ImportStaleException;
@@ -182,12 +183,19 @@ public class GlobalExceptionHandler {
             .body(new RuleSetEditBlockedError("GAME_PLAN_LOCKED", ex.getMessage()));
     }
 
-    // Import file not in the chosen source's format, or refused by this instance's anonymization
-    // policy (docs/28) → 400 with the parser's message.
+    // Import file not in the chosen source's format (docs/28) → 400 with the parser's message.
     @ExceptionHandler(ImportFormatException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiError handleImportFormat(ImportFormatException ex) {
         return new ApiError("IMPORT_FORMAT", ex.getMessage());
+    }
+
+    // Export refused by this instance's anonymization policy (docs/28): a real export on a test
+    // system, or a pseudonymized one in production → 400 with a code naming which.
+    @ExceptionHandler(ImportAnonymizationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleImportAnonymization(ImportAnonymizationException ex) {
+        return new ApiError(ex.getCode(), ex.getMessage());
     }
 
     // Applying an import whose preview no longer matches the data → 409, upload again (docs/28).
