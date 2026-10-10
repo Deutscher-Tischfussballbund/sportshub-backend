@@ -1,6 +1,9 @@
 package de.dtfb.sportshub.backend.configuration;
 
 import de.dtfb.sportshub.backend.access.apikey.ApiKeyAuthenticationFilter;
+import de.dtfb.sportshub.backend.access.auth.AuthorizationService;
+import de.dtfb.sportshub.backend.maintenance.MaintenanceNoticeService;
+import de.dtfb.sportshub.backend.maintenance.MaintenanceReadOnlyFilter;
 import de.dtfb.sportshub.backend.access.apikey.ApiKeyService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -29,12 +32,16 @@ public class SecurityConfig {
     /** Allowed CORS origins for the API. Comma-separated; set per profile (see application-*.yaml). */
     private final List<String> allowedOrigins;
     private final ApiKeyService apiKeyService;
+    private final MaintenanceNoticeService maintenanceNotices;
+    private final AuthorizationService authz;
 
     public SecurityConfig(
         @Value("${sportshub.cors.allowed-origins}") List<String> allowedOrigins,
-        ApiKeyService apiKeyService) {
+        ApiKeyService apiKeyService, MaintenanceNoticeService maintenanceNotices, AuthorizationService authz) {
         this.allowedOrigins = allowedOrigins;
         this.apiKeyService = apiKeyService;
+        this.maintenanceNotices = maintenanceNotices;
+        this.authz = authz;
     }
 
     // Falls through from TrackerSecurityConfig's chain (@Order(1), matches only /tracker/** and
@@ -62,6 +69,9 @@ public class SecurityConfig {
             // Read-only machine access via backend-issued API keys (X-API-Key), checked before the
             // JWT filter; requests without the header fall through to JWT auth unchanged.
             .addFilterBefore(new ApiKeyAuthenticationFilter(apiKeyService), BearerTokenAuthenticationFilter.class)
+            // A running read-only maintenance window refuses changes (SPO-119) -- after authentication,
+            // so global admins (who do the maintenance) can be let through.
+            .addFilterAfter(new MaintenanceReadOnlyFilter(maintenanceNotices, authz), BearerTokenAuthenticationFilter.class)
             // 401s (missing or invalid credentials) carry an ApiError body like every other error.
             .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(authenticationEntryPoint))
             .oauth2ResourceServer(oauth2 -> oauth2
