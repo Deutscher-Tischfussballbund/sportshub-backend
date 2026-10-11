@@ -3,8 +3,6 @@ package de.dtfb.sportshub.backend.team;
 import de.dtfb.sportshub.backend.club.Club;
 import de.dtfb.sportshub.backend.club.ClubNotFoundException;
 import de.dtfb.sportshub.backend.club.ClubRepository;
-import de.dtfb.sportshub.backend.history.EntityHistoryService;
-import de.dtfb.sportshub.backend.history.HistoryEntityType;
 import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.season.SeasonNotFoundException;
 import de.dtfb.sportshub.backend.season.SeasonRepository;
@@ -13,9 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -30,15 +26,13 @@ public class TeamService {
     private final TeamMapper mapper;
     private final ClubRepository clubRepository;
     private final SeasonRepository seasonRepository;
-    private final EntityHistoryService historyService;
 
     public TeamService(TeamRepository repository, TeamMapper mapper, ClubRepository clubRepository,
-                       SeasonRepository seasonRepository, EntityHistoryService historyService) {
+                       SeasonRepository seasonRepository) {
         this.repository = repository;
         this.mapper = mapper;
         this.clubRepository = clubRepository;
         this.seasonRepository = seasonRepository;
-        this.historyService = historyService;
     }
 
     /**
@@ -53,7 +47,7 @@ public class TeamService {
      */
     public List<TeamDto> getAll(String seasonId, String clubId, String federationId, String teamIdentityId) {
         List<Team> teams = seasonId != null ? repository.findBySeasonId(seasonId) : latestPerIdentity();
-        return toDtoListAsOf(teams.stream()
+        return toDtoList(teams.stream()
             .filter(t -> clubId == null || (t.getClub() != null && clubId.equals(t.getClub().getId())))
             .filter(t -> federationId == null
                 || (t.getClub() != null && federationId.equals(t.getClub().getFederationId())))
@@ -109,7 +103,7 @@ public class TeamService {
         Team team = repository.findById(id)
             .or(() -> latestForIdentity(id))
             .orElseThrow(() -> new TeamNotFoundException(id));
-        return toDtoAsOf(team);
+        return toDto(team);
     }
 
     @Transactional
@@ -122,7 +116,7 @@ public class TeamService {
         newTeam.setSeason(resolveSeason(teamDto.getSeasonId()));
         resolveClub(teamDto, newTeam);
         Team savedTeam = repository.save(newTeam);
-        return toDtoAsOf(savedTeam);
+        return toDto(savedTeam);
     }
 
     @Transactional
@@ -134,7 +128,7 @@ public class TeamService {
         resolveClub(teamDto, team);
 
         Team savedTeam = repository.save(team);
-        return toDtoAsOf(savedTeam);
+        return toDto(savedTeam);
     }
 
     @Transactional
@@ -186,30 +180,19 @@ public class TeamService {
             .orElseThrow(() -> new SeasonNotFoundException(seasonId));
     }
 
-    private List<TeamDto> toDtoListAsOf(List<Team> teams) {
-        return teams.stream().map(this::toDtoAsOf).toList();
+    private List<TeamDto> toDtoList(List<Team> teams) {
+        return teams.stream().map(this::toDto).toList();
     }
 
     /**
-     * Maps a team, resolving its club's display name. For an ENDED season, this freezes the name as
-     * it stood at that season's start -- Club stays a single, un-duplicated row (see
-     * {@code EntityHistoryService}), so a club rename after a past season must not rewrite that
-     * season's historical display. A current/future season is still live, so it always shows today's
-     * club name instead -- otherwise a rename would incorrectly freeze the in-progress season at
-     * whatever name was current at its start, hiding the update.
+     * Maps a team with its club's <em>current</em> name -- in every season, ended ones too
+     * (B-2026-09-14-5, SPO-50). Earlier names stay in {@code entity_history}, visible to admins only.
+     * The team's own name is per season by design (a {@code Team} row per season), so it isn't affected.
      */
-    private TeamDto toDtoAsOf(Team team) {
+    private TeamDto toDto(Team team) {
         TeamDto dto = mapper.toDto(team);
-        Club club = team.getClub();
-        if (club != null) {
-            Season season = team.getSeason();
-            boolean ended = season != null && season.hasEnded();
-            Instant asOf = ended && season.getStartDate() != null
-                ? season.getStartDate().atStartOfDay(ZoneOffset.UTC).toInstant() : null;
-            String name = asOf == null ? club.getName()
-                : historyService.fieldsAsOf(HistoryEntityType.CLUB, club.getId(), List.of("name"), asOf)
-                    .getOrDefault("name", club.getName());
-            dto.setClubName(name);
+        if (team.getClub() != null) {
+            dto.setClubName(team.getClub().getName());
         }
         return dto;
     }

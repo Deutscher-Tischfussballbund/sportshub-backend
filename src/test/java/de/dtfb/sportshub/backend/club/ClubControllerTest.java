@@ -19,9 +19,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Club is a single, un-duplicated row (see {@code docs/14-team-player-versioning.md}) -- editing
- * it records a change-history entry per changed field instead of cloning the row. A team that
- * already existed under the club's old name must keep showing that old name for its own season
- * (see {@link de.dtfb.sportshub.backend.team.TeamDto#getClubName()}).
+ * it records a change-history entry per changed field instead of cloning the row. Teams show the
+ * club's <em>current</em> name in every season, ended ones too (B-2026-09-14-5, SPO-50; see
+ * {@link de.dtfb.sportshub.backend.team.TeamDto#getClubName()}); the old name stays in the history.
  */
 class ClubControllerTest extends AuthorizedControllerTest {
 
@@ -146,7 +146,7 @@ class ClubControllerTest extends AuthorizedControllerTest {
     }
 
     @Test
-    void clubRename_doesNotRewriteAnEndedSeasonsTeamsHistoricalDisplay() throws Exception {
+    void clubRename_showsInAnEndedSeasonsTeamsToo_theOldNameStaysInTheHistory() throws Exception {
         String federationId = createFederation();
         String clubId = createClub(federationId);
         String seasonId = createSeason(federationId, "2020-01-01", "2020-12-31");
@@ -170,13 +170,13 @@ class ClubControllerTest extends AuthorizedControllerTest {
                     """, federationId)))
             .andExpect(status().isOk());
 
-        // the team's own display still shows the club's name as of the team's (ended) season, not today's
+        // the ended season's team shows the club's current name
         mockMvc.perform(get("/v1/teams/" + teamId))
-            .andExpect(jsonPath("$.clubName").value("Testverein"));
+            .andExpect(jsonPath("$.clubName").value("Umbenannter Verein"));
 
-        // but the club itself, read directly, shows its current name
-        mockMvc.perform(get("/v1/clubs"))
-            .andExpect(jsonPath("$[?(@.id == '" + clubId + "')].name").value("Umbenannter Verein"));
+        // the old name is kept in the admin-only change history
+        mockMvc.perform(get("/v1/clubs/" + clubId + "/history"))
+            .andExpect(jsonPath("$[?(@.fieldName == 'name')].oldValue").value(org.hamcrest.Matchers.hasItem("Testverein")));
     }
 
     @Test
@@ -207,10 +207,6 @@ class ClubControllerTest extends AuthorizedControllerTest {
     }
 
     private String createSeason(String federationId, String startDate, String endDate) throws Exception {
-        // A real startDate is required: an ENDED season's TeamDto.clubName is reconstructed as of
-        // the team's own season start (see TeamService#toDtoAsOf) -- a null startDate would fall
-        // back to the club's current name and clubRename_doesNotRewrite... would not actually
-        // exercise the point-in-time path.
         String endDateJson = endDate == null ? "" : String.format(", \"endDate\": \"%s\"", endDate);
         MvcResult result = mockMvc.perform(post("/v1/seasons")
                 .contentType(MediaType.APPLICATION_JSON)

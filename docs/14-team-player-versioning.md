@@ -127,25 +127,15 @@ New package `history`: a generic, reusable mechanism (not one table per entity t
   /v1/admin/players/{id}` and `PUT /v1/clubs/{id}` (neither existed before this pass; both
   are new, minimal admin endpoints so the mechanism has something to exercise). `GET
   /v1/admin/players/{id}/history` / `GET /v1/clubs/{id}/history` expose the raw log.
-- **⚠️ Decided to roll back (2026-09-14, B-2026-09-14-5, ticket SPO-50 — not done yet):** the team
-  decided that history is stored and admin-visible, but old names must **not** be shown in old
-  seasons' displays. The two `fieldsAsOf` display call sites below are therefore to be removed;
-  `entity_history` itself and its admin endpoints stay. Until SPO-50 lands, the code still behaves
-  as described below.
-- **Point-in-time reconstruction is the actual point** — `EntityHistoryService.fieldsAsOf(type,
-  id, fieldNames, asOf)` finds, for each field, the earliest change *after* `asOf` and returns its
-  `oldValue` (the value still in effect at `asOf`); a field with no such entry falls back to the
-  entity's current value. This only applies to an **ended** season (`Season.hasEnded()`, i.e.
-  `endDate` is in the past) — a current/future season is still live, so it always shows today's
-  value instead of freezing at some earlier point; otherwise a rename during an in-progress season
-  would incorrectly hide itself from that season's own display. Two call sites use this today:
-  - `RosterService.getRoster` — for an ended season's roster only — resolves each roster entry's
-    player name as of `RosterEntry.addedAt` — the moment that player joined that roster — onto
-    `RosterEntryDto.firstName`/`lastName`. A rename after the season ended doesn't rewrite how that
-    old roster displays; a rename during a still-open season shows immediately.
-  - `TeamService` — for a team whose season has ended only — resolves the team's club name as of
-    the team's own `season.startDate` onto `TeamDto.clubName`, for the same reason on the
-    Team→Club side.
+- **Displays show current names — the point-in-time display was rolled back (2026-10-11, SPO-50,
+  decision B-2026-09-14-5).** History is stored and admin-visible, but never shown outward: a roster
+  (`RosterService.getRoster`) shows each player's current name and a team (`TeamDto.clubName`) its
+  club's current name, in ended seasons too. Until then, ended seasons reconstructed the old name via
+  `EntityHistoryService.fieldsAsOf` (player name as of `RosterEntry.addedAt`, club name as of the
+  season start); that method and both call sites are gone (restorable from git, `RosterService`/
+  `TeamService` before SPO-50). A per-rename choice "retroactive yes/no" for federation admins is
+  planned for version 1.1 (SPO-83). A **team's own name** isn't affected: `Team` is copied per
+  season, so an old season keeps its team name by design.
 - Player edit authorization is `@authz.isAdmin()` only (global admin). The original reason — no
   club/region linkage on `Player` — no longer holds: `ClubMembership` ([15](./15-club-membership.md))
   now links a player to clubs and so to federations. Widening edit rights to club admins and up is

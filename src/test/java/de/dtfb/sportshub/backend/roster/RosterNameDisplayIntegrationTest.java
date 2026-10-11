@@ -17,19 +17,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Player is a single, un-duplicated row: a rename must not rewrite how a player already on a
- * roster displays there -- but only for a season that's over. {@link RosterService#getRoster}
- * reconstructs an ENDED season's roster with the name as it stood when the player was added to
- * that specific roster (see {@code EntityHistoryService#fieldsAsOf}); a current/future season's
- * roster is still live, so it must keep showing today's name instead.
+ * A roster shows its players' <em>current</em> names, in ended seasons too (B-2026-09-14-5, SPO-50):
+ * the point-in-time display of old names was rolled back. Earlier names stay in the player's change
+ * history, which only admins see.
  */
-class RosterHistoricalDisplayIntegrationTest extends AuthorizedControllerTest {
+class RosterNameDisplayIntegrationTest extends AuthorizedControllerTest {
 
     @Autowired
     private PlayerRepository playerRepository;
 
     @Test
-    void rosterEntry_ofEndedSeason_keepsShowingTheNameThePlayerHadWhenAdded() throws Exception {
+    void rosterEntry_ofEndedSeason_showsTheCurrentName_theOldOneStaysInTheHistory() throws Exception {
         String federationId = createFederation();
         // Registering into an already-ended season is rejected (SeasonEndedException), so the
         // season starts open -- exactly like a real season does -- and is ended only afterward,
@@ -62,15 +60,16 @@ class RosterHistoricalDisplayIntegrationTest extends AuthorizedControllerTest {
                     """))
             .andExpect(status().isOk());
 
-        // the roster still shows the name as it was when the player was added, not today's name
+        // the ended season's roster shows today's name, like everywhere else
         mockMvc.perform(get(rosterUrl))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].firstName").value("Lukas"))
+            .andExpect(jsonPath("$[0].firstName").value("Lucas"))
             .andExpect(jsonPath("$[0].lastName").value("Bauer"));
 
-        // but the player, read directly, shows the current name
-        mockMvc.perform(get("/v1/players/" + playerId))
-            .andExpect(jsonPath("$.firstName").value("Lucas"));
+        // the old name is kept in the admin-only change history
+        mockMvc.perform(get("/v1/admin/players/" + playerId + "/history"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[?(@.fieldName == 'firstName')].oldValue").value(org.hamcrest.Matchers.hasItem("Lukas")));
     }
 
     @Test
@@ -102,7 +101,7 @@ class RosterHistoricalDisplayIntegrationTest extends AuthorizedControllerTest {
                     """))
             .andExpect(status().isOk());
 
-        // the season is still open, so the roster must reflect the rename, not freeze it
+        // a running season shows today's name as well
         mockMvc.perform(get(rosterUrl))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].firstName").value("Lucas"))
