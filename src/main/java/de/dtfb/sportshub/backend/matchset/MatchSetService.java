@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.matchset;
 
+import de.dtfb.sportshub.backend.exception.FilterRequiredException;
 import de.dtfb.sportshub.backend.match.Match;
 import de.dtfb.sportshub.backend.match.MatchNotFoundException;
 import de.dtfb.sportshub.backend.match.MatchRepository;
@@ -21,8 +22,9 @@ public class MatchSetService {
     }
 
     @Transactional(readOnly = true)
-    public List<MatchSetDto> getAll() {
-        return mapper.toDtoList(repository.findAllVisible());
+    public List<MatchSetDto> getAll(String matchId, String matchDayId) {
+        FilterRequiredException.requireAny(List.of("matchId", "matchDayId"), matchId, matchDayId);
+        return mapper.toDtoList(repository.findVisible(matchId, matchDayId));
     }
 
     @Transactional(readOnly = true)

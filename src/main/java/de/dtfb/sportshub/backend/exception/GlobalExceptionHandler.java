@@ -96,6 +96,12 @@ public class GlobalExceptionHandler {
             .body(new ApiError("CATEGORY_SHORT_NAME_TAKEN", ex.getMessage()));
     }
 
+    // A large collection requested without any scoping filter (SPO-120) → 400.
+    @ExceptionHandler(FilterRequiredException.class)
+    public ResponseEntity<ApiError> handleFilterRequired(FilterRequiredException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiError("FILTER_REQUIRED", ex.getMessage()));
+    }
+
     // Federation create/update would reuse another federation's abbreviation (case-insensitive) → 409.
     @ExceptionHandler(FederationAbbreviationTakenException.class)
     public ResponseEntity<ApiError> handleFederationAbbreviationTaken(FederationAbbreviationTakenException ex) {

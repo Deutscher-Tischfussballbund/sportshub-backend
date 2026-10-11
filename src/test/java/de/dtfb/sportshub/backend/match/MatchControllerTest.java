@@ -4,6 +4,7 @@ import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.annotation.PostConstruct;
 import org.assertj.core.api.Assertions;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -43,8 +44,26 @@ class MatchControllerTest extends de.dtfb.sportshub.backend.support.AuthorizedCo
     }
 
     @Test
-    void getAllMatches() throws Exception {
-        mockMvc.perform(get("/v1/matches")).andExpect(status().isOk());
+    void getAllMatches_needsTheFixture() throws Exception {
+        mockMvc.perform(get("/v1/matches")).andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("FILTER_REQUIRED"));
+        String id = url.substring(url.lastIndexOf('/') + 1);
+        mockMvc.perform(get("/v1/matches").param("matchDayId", matchDayId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[*].id").value(Matchers.hasItem(id)));
+        mockMvc.perform(get("/v1/matches").param("matchDayId", NanoIdUtils.randomNanoId()))
+            .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void getAllSetsAndEvents_needAGameOrAFixture() throws Exception {
+        String id = url.substring(url.lastIndexOf('/') + 1);
+        for (String path : new String[] {"/v1/matchsets", "/v1/matchevents"}) {
+            mockMvc.perform(get(path)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("FILTER_REQUIRED"));
+            mockMvc.perform(get(path).param("matchDayId", matchDayId)).andExpect(status().isOk());
+            mockMvc.perform(get(path).param("matchId", id)).andExpect(status().isOk());
+        }
     }
 
     @Test

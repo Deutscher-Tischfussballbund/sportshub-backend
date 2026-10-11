@@ -18,9 +18,11 @@ public class MatchEventController {
         this.service = service;
     }
 
+    /** Events of one game or one fixture; {@code matchId} or {@code matchDayId} is required (SPO-120). */
     @GetMapping
-    public List<MatchEventDto> getAllMatchEvents() {
-        return service.getAll();
+    public List<MatchEventDto> getAllMatchEvents(@RequestParam(required = false) String matchId,
+                                                 @RequestParam(required = false) String matchDayId) {
+        return service.getAll(matchId, matchDayId);
     }
 
     @PostMapping
