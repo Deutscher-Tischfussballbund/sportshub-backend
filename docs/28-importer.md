@@ -5,7 +5,7 @@
 > the Sports Manager now, Kickertool (tournament results) later, unknown ones after that — is an
 > `ImportSource` adapter that only turns a file into a neutral `ImportBatch`. Everything after parsing is
 > shared: matching against existing records via a generic `external_reference` table, validation,
-> a **preview** (new / changed / unchanged / conflict / rejected), an explicit **apply** through the
+> a **preview** (new / changed / unchanged / to target federation / conflict / rejected), an explicit **apply** through the
 > existing services, and a run log. Imports are **re-runnable**: the same or a newer export shows only
 > the differences. Sports Manager data arrives as a new **"Sports Hub export"** written by
 > `com_sportsmanager` itself (one UTF-8 JSON with all SM ids), pseudonymized deterministically for the
@@ -95,7 +95,7 @@
   first four. Ids are namespaced per source **and installation**.
 - Now: `import_run` (source, instance, file, target federation, status `PREVIEWED`/`APPLYING`/`APPLIED`/
   `UNDOING`/`DISCARDED`/`UNDONE`, who, when, counts) and `import_item` (record type, external id, action `NEW`/`UPDATE`/
-  `UNCHANGED`/`CONFLICT`/`REJECTED`, target entity, manual match, field diff, warnings, reason).
+  `UNCHANGED`/`FALLBACK`/`CONFLICT`/`REJECTED`, target entity, manual match, field diff, warnings, reason).
 - Now: **preview** plans without domain writes; **apply** re-plans in one transaction and refuses with
   `409 IMPORT_STALE` if the result differs from the stored preview. Writes go through `PlayerService`,
   `ClubService`, `ClubMembershipService` so rules and `entity_history` stay in one place; the actor is the
@@ -119,9 +119,15 @@
 - Now: lookup order `external_reference` → (players) any current or alias player number → otherwise
   `NEW`. Name + birth year only raise a **duplicate suspicion**; the admin may assign the record to an
   existing player in the preview ("manual match"). There is no automatic name match.
-- Now: an SM organiser without a matching federation falls back to the run's target federation. Nothing is
-  created and no reference written (a later run may find a better match), so the record stays `UNCHANGED` with
-  a `FEDERATION_FALLBACK` note — a re-run of an applied file shows no differences.
+- Now: SM organisers (`veranstalter`) map onto existing federations; an import never creates one. Lookup
+  order: an earlier link → the federation's **abbreviation** (`federation.abbreviation`, compared with
+  `veranstalterkuerzel`, ignoring case) → its name (exact, ignoring case). A first match is `NEW` (a new link)
+  with a `FEDERATION_BY_ABBREVIATION`/`FEDERATION_BY_NAME` note naming the federation (SPO-125).
+- Now: an organiser without a matching federation gets its own action **`FALLBACK`** ("to target federation"):
+  its records go into the run's target federation, nothing is created and no reference written (a later run
+  may find a better match), with a `FEDERATION_FALLBACK` note. It used to show as `UNCHANGED`, which read like
+  "already there" (SPO-125). The SM organiser table also holds local organisers (city leagues such as "Lübeck
+  Liga", "Regionalliga Kiel") — the Sports Hub has no level for them, so they always fall back.
 - Now: **absence never deletes.** A player missing from a newer export stays; SM `ausgetreten` sets
   `ClubMembership.leftAt` (doc 15).
 - Now: `CONFLICT` when a field the source wants to change was edited in the Sports Hub since the last

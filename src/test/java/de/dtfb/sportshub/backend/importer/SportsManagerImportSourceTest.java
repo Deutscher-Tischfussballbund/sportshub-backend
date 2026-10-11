@@ -31,7 +31,7 @@ class SportsManagerImportSourceTest {
         assertThat(batch.header().anonymized()).isTrue();
         assertThat(batch.header().exportedAt()).isEqualTo(Instant.parse("2026-10-10T12:00:00Z"));
 
-        assertThat(batch.federations()).containsExactly(new ImportedFederation("1", "Hamburg"));
+        assertThat(batch.federations()).containsExactly(new ImportedFederation("1", "Hamburg", null));
         assertThat(batch.clubs().getFirst())
             .isEqualTo(new ImportedClub("10", "Kickerfreunde Alster", "KFA", "Hamburg", "1", true));
         assertThat(batch.clubs().get(1).shortName()).isNull();

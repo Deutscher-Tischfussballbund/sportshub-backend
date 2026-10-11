@@ -217,7 +217,8 @@ public class SportsManagerImportSource implements ImportSource {
     private static List<ImportedFederation> federations(JsonNode root) {
         List<ImportedFederation> result = new ArrayList<>();
         for (JsonNode node : root.path("veranstalter")) {
-            result.add(new ImportedFederation(text(node, "veranstalter_id"), text(node, "veranstalterbezeichnung")));
+            result.add(new ImportedFederation(text(node, "veranstalter_id"), text(node, "veranstalterbezeichnung"),
+                text(node, "veranstalterkuerzel")));
         }
         return result;
     }

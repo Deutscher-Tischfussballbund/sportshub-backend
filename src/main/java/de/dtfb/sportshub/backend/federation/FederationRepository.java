@@ -8,6 +8,9 @@ import java.util.Optional;
 public interface FederationRepository extends JpaRepository<Federation, String> {
     Optional<Federation> findByName(String organisation);
 
+    boolean existsByAbbreviationIgnoreCase(String abbreviation);
+    boolean existsByAbbreviationIgnoreCaseAndIdNot(String abbreviation, String id);
+
     /** Whether any federation still uses this rule set as its default (rule-set delete guard). */
     boolean existsByDefaultRuleSetId(String ruleSetId);
 

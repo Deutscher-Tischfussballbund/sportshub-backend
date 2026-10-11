@@ -31,6 +31,10 @@ public enum ImportIssueCode {
     MATCHED_MANUALLY(false),
     DUPLICATE_SUSPECT(false),
     FEDERATION_FALLBACK(false),
+    /** The organiser was linked to an existing federation by its abbreviation; detail = the federation's name. */
+    FEDERATION_BY_ABBREVIATION(false),
+    /** The organiser was linked to an existing federation by its name; detail = the federation's name. */
+    FEDERATION_BY_NAME(false),
     // past seasons (docs/29)
     LINKED_BY_NAME(false),
     NO_GAME_PLAN(false),

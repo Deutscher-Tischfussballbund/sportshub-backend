@@ -134,6 +134,7 @@ Enum ScopeType {
 Table federation {
   id varchar(14) [pk, note: 'A Landesverband / region, or the root federation (DTFB)']
   name varchar
+  abbreviation varchar(32) [unique, note: 'Optional short name, e.g. TFVSH; unique ignoring case. The importer maps SM organisers by it (docs/28)']
   default_rule_set_id varchar [note: 'The template (blueprint) a new league copies when none is chosen (docs/21); null = the seeded DTFB Standard. Not read at runtime']
   parent_federation_id varchar [note: 'self-referencing tree; null = the single root federation (docs/16)']
 }

@@ -2,6 +2,7 @@ package de.dtfb.sportshub.backend.federation;
 
 import de.dtfb.sportshub.backend.base.BaseEntity;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -13,6 +14,13 @@ import lombok.Setter;
 @Setter
 public class Federation extends BaseEntity {
     private String name;
+
+    /**
+     * Short name such as {@code TFVSH}. Optional, unique ignoring case. The importer maps source
+     * organisers by it (docs/28, SPO-125).
+     */
+    @Column(unique = true, length = 32)
+    private String abbreviation;
 
     /**
      * The federation's default league rule set — the last fallback when neither a group's tier nor

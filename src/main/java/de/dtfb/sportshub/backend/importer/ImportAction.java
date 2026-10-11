@@ -5,6 +5,8 @@ public enum ImportAction {
     NEW,
     UPDATE,
     UNCHANGED,
+    /** An organiser without a matching federation: its records go into the run's target federation, no link. */
+    FALLBACK,
     /** Changed in the Sports Hub since the last import, or its number belongs to someone else -- not written. */
     CONFLICT,
     /** Unusable (an error, or blocked by a rejected record it depends on) -- not written. */

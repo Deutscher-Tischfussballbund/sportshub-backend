@@ -86,7 +86,7 @@ VALUES ('player-f1', 'Lukas', 'Bauer', 'DE', 1991, 'MALE', 'A', TRUE),
 -- ---------------------------------------------------------------------------
 -- Hamburg — TFVHH (Tischfussballverband Hamburg). Helmut Poppen.
 -- ---------------------------------------------------------------------------
-INSERT INTO federation (id, name) VALUES ('fed-tfvhh', 'Tischfussballverband Hamburg');
+INSERT INTO federation (id, name, abbreviation) VALUES ('fed-tfvhh', 'Tischfussballverband Hamburg', 'TFVHH');
 INSERT INTO club (id, name, short_name, city, active, federation_id)
 VALUES ('club-tfvhh', 'Test-Verein Hamburg', 'TVHH', 'Hamburg', TRUE, 'fed-tfvhh');
 -- team_identity_id = own id: these are each the only (so far) season-less copy of their identity;
@@ -106,7 +106,7 @@ VALUES ('ra-poppen-reg', 'user-poppen', 'REGION_ADMIN', 'REGION', 'fed-tfvhh', N
 -- ---------------------------------------------------------------------------
 -- Mitteldeutschland — MTFV (Mitteldeutscher Tischfussballverband e.V.). Daniel Görlich.
 -- ---------------------------------------------------------------------------
-INSERT INTO federation (id, name) VALUES ('fed-mtfv', 'Mitteldeutscher Tischfussballverband e.V.');
+INSERT INTO federation (id, name, abbreviation) VALUES ('fed-mtfv', 'Mitteldeutscher Tischfussballverband e.V.', 'MTFV');
 INSERT INTO club (id, name, short_name, city, active, federation_id)
 VALUES ('club-mtfv', 'Test-Verein Mitteldeutschland', 'TVMD', 'Leipzig', TRUE, 'fed-mtfv');
 INSERT INTO team (id, name, club_id, team_identity_id)
@@ -123,7 +123,7 @@ VALUES ('ra-goerlic-reg', 'user-goerlic', 'REGION_ADMIN', 'REGION', 'fed-mtfv', 
 -- ---------------------------------------------------------------------------
 -- NRW — NWTFV (Nordrhein-Westfälischer Tischfussballverband). Stefan Engelhardt.
 -- ---------------------------------------------------------------------------
-INSERT INTO federation (id, name) VALUES ('fed-nwtfv', 'Nordrhein-Westfälischer Tischfussballverband');
+INSERT INTO federation (id, name, abbreviation) VALUES ('fed-nwtfv', 'Nordrhein-Westfälischer Tischfussballverband', 'NWTFV');
 INSERT INTO club (id, name, short_name, city, active, federation_id)
 VALUES ('club-nwtfv', 'Test-Verein NRW', 'TVNRW', 'Köln', TRUE, 'fed-nwtfv');
 INSERT INTO team (id, name, club_id, team_identity_id)
@@ -140,7 +140,7 @@ VALUES ('ra-engelh-reg', 'user-engelha', 'REGION_ADMIN', 'REGION', 'fed-nwtfv', 
 -- ---------------------------------------------------------------------------
 -- Saarland — STFV (Saarländischer Tischfussball Verband e.V.). Jürgen Meyer.
 -- ---------------------------------------------------------------------------
-INSERT INTO federation (id, name) VALUES ('fed-stfv', 'Saarländischer Tischfussball Verband e.V.');
+INSERT INTO federation (id, name, abbreviation) VALUES ('fed-stfv', 'Saarländischer Tischfussball Verband e.V.', 'STFV');
 INSERT INTO club (id, name, short_name, city, active, federation_id)
 VALUES ('club-stfv', 'Test-Verein Saarland', 'TVSL', 'Saarbrücken', TRUE, 'fed-stfv');
 INSERT INTO team (id, name, club_id, team_identity_id)

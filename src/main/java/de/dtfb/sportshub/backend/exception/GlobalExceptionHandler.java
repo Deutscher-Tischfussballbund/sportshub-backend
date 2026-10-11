@@ -23,6 +23,7 @@ import de.dtfb.sportshub.backend.leaguerules.RuleSetEditBlockedException;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetNameTakenError;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetNameTakenException;
 import de.dtfb.sportshub.backend.category.CategoryShortNameTakenException;
+import de.dtfb.sportshub.backend.federation.FederationAbbreviationTakenException;
 import de.dtfb.sportshub.backend.roster.PlayerNotClubMemberError;
 import de.dtfb.sportshub.backend.roster.PlayerNotClubMemberException;
 import de.dtfb.sportshub.backend.roster.PlayerNotEligibleError;
@@ -93,6 +94,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleCategoryShortNameTaken(CategoryShortNameTakenException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new ApiError("CATEGORY_SHORT_NAME_TAKEN", ex.getMessage()));
+    }
+
+    // Federation create/update would reuse another federation's abbreviation (case-insensitive) → 409.
+    @ExceptionHandler(FederationAbbreviationTakenException.class)
+    public ResponseEntity<ApiError> handleFederationAbbreviationTaken(FederationAbbreviationTakenException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ApiError("FEDERATION_ABBREVIATION_TAKEN", ex.getMessage()));
     }
 
     // Roster addPlayer/submit refused because player(s) fail the league category's eligibility

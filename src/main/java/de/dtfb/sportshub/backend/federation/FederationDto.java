@@ -8,6 +8,11 @@ import lombok.Setter;
 public class FederationDto {
     private String id;
     private String name;
+    /**
+     * Optional short name, unique ignoring case. On update, {@code null} keeps the current value
+     * (callers save the object back without it); an empty string clears it.
+     */
+    private String abbreviation;
     /** Optional federation-wide default league rule set (last fallback in rule resolution). */
     private String defaultRuleSetId;
     /** The federation directly above this one, or null at the top of the tree. */
