@@ -38,7 +38,8 @@
   others are unknown. Tournaments are still parked in the model (doc 09 §5).
 - The old importer read a custom JSON (`import-format/importFormat.json`) of the pre-split competition
   tree, matched teams by name, never imported player master data, and had no preview. It is not reusable.
-- There are up to five SM installations (DTFB, TFVHH, MTFV, TFVSH, STFVH), each with its own ids.
+- There are about 13 SM installations (roughly one per state, plus the DTFB's), each with its own ids. How
+  clubs are matched and placed across them, in any order: doc 31.
 - The SM's existing downloads are a poor source: the player CSV (`adminExportSpieler`) has no
   `spieler_id`/`verein_id` — clubs only by name and town —, its columns depend on export options, and it
   is Latin-1 encoded. Matching clubs by name breaks on the first rename or typo fix.
