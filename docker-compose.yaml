@@ -13,7 +13,9 @@
 # Start:
 #   docker compose build                  # build the image locally, or:
 #   docker compose pull                   # pull the released tag from GHCR
-#   docker compose up -d
+#   docker compose up -d --no-build       # never fall back to building stale source
+#
+# SPORTSHUB_TAG is the release WITHOUT the `v` (git tag v0.6.0 -> image 0.6.0).
 
 services:
   sportshub-backend:

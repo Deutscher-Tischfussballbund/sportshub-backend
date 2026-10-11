@@ -91,15 +91,16 @@ Use `dtfb-keycloak/nginx.example.conf` as-is (already fixed) — key points if h
 
 ```bash
 cd sportshub-backend
-docker compose pull       # or `docker compose build` if no release tag has been cut yet
-docker compose up -d
+docker compose pull sportshub-backend   # or `docker compose build` if no release tag has been cut yet
+docker compose up -d --no-build
 docker compose logs -f sportshub-backend   # Flyway applies V1, then Hibernate validate, "Started"
 ```
 
 `.env` needs `SPORTSHUB_DB_USER`/`PASSWORD`, `KEYCLOAK_ISSUER_URI` (public,
 `https://sh-id-test.dtfb.de/realms/dtfb`), `KEYCLOAK_JWK_SET_URI` (leave default — internal, works
 since both stacks share the `dtfb` network), `SPORTSHUB_CORS_ALLOWED_ORIGINS`
-(`https://sh-admin-test.dtfb.de`), `SPORTSHUB_TAG` (pin a released version, don't float `latest`),
+(`https://sh-admin-test.dtfb.de`), `SPORTSHUB_TAG` (pin a released version **without the `v`**, e.g.
+`0.6.0` — see the ⚠️ below; don't float `latest`),
 `GITHUB_OAUTH_CLIENT_ID`/`SECRET` (see §4a), `SPORTSHUB_BOOTSTRAP_ADMIN_DTFB_ID` (optional — see
 the ⚠️ below, the SQL bootstrap in §6 makes this redundant for the two global admins).
 
@@ -113,6 +114,15 @@ git checkout main && git pull
 git tag -a v0.X.Y -m "..."
 git push origin v0.X.Y
 ```
+
+**⚠️ The image tag has no `v`.** `release.yml` tags the image with `type=semver,pattern={{version}}`,
+so git tag `v0.6.0` publishes `sportshub-backend:0.6.0` (plus `latest`) — there is no `:v0.6.0`.
+Set `SPORTSHUB_TAG=0.6.0`. A wrong tag is worse than a failed pull: the service also has `build: .`,
+so a plain `docker compose up -d` after the failed pull **silently builds the image from the VPS's own
+(stale) backend checkout** and starts old code under the new tag name. On the `v0.6.0` rollout that
+container died in Hibernate's schema validation before touching the data, but don't count on that.
+Always start with `up -d --no-build` (fails loudly when the image is missing) and check the running
+image with `docker inspect sportshub-backend-sportshub-backend-1 --format '{{.Config.Image}}'`.
 
 (`dtfb-frontend-ng` has the mirror-image gotcha: its `build-and-push.yaml` only builds
 `on: push: branches: [main]`. If the app's code lives on a not-yet-merged branch, there is no
@@ -146,7 +156,9 @@ New. Homepage = the API subdomain; **Authorization callback URL** must be exactl
 
 ```bash
 cd dtfb-frontend-ng
-docker compose up -d   # build: . is already wired — build locally if no GHCR image exists (see §4)
+git pull                       # the checkout belongs to `deploy`: as root, `sudo -u deploy git pull`
+docker compose build           # no GHCR image for the migration branch (see §4), build on the VPS
+docker compose up -d --no-build
 ```
 
 `.env`: `API_BASE_PATH` (`https://sh-api-test.dtfb.de`), `KEYCLOAK_URL`
@@ -281,12 +293,32 @@ as executed:
    ```
    One player had free text in `gender`; it was set to `'man'`/`'woman'` by hand (the old value,
    so `V9` maps it) before pulling.
-3. `SPORTSHUB_TAG=v0.5.0`, `docker compose pull && up -d` — Flyway applied 4 migrations. The pull
+3. `docker compose pull && up -d` — Flyway applied 4 migrations. (Correction, 2026-10-11:
+   `SPORTSHUB_TAG` was in fact not set, so this ran `latest`, which was `0.5.0` at the time.) The pull
    first failed with `unauthorized` (expired GHCR PAT, see §1).
 4. Frontend immediately after, built locally from `feature/sportshub-backend-migration`
    (`037c0ab`) as before.
 5. Verified: logins for all tiers, gender dropdown, category eligible side, clubs/federations
    pages, a read-only API key (`GET` 200, `/v1/regions` 404, writes refused), tracker issues intact.
+
+**2026-10-11: `v0.6.0` deployed (no wipe needed, SPO-124).** `V13`–`V23` (rule-set blueprints,
+league identity, result entry, fixture modes, line-ups, importer, past seasons, import undo,
+maintenance notices) are additive; their only data steps are backfills. Pre-flight against the old
+data: `match_day` empty, no `match_event` rows, no duplicate `player.national_id` (the
+`PlayerNumberBackfill` fills the unique `player_number.number` from it on startup). Steps as executed:
+
+1. Backup as in the `v0.5.0` note (`backup-pre-v0.6.0-<date>.sql`), plus a copy of `.env`.
+2. Frontend image built on the VPS from `feature/sportshub-backend-migration` (`1c9ca74`) before the
+   switch, so both go out together.
+3. `SPORTSHUB_TAG=0.6.0` (first tried `v0.6.0` — see the ⚠️ in §4), `pull`, `up -d --no-build`.
+   Flyway applied 11 migrations in 0.6 s, `RuleSetSnapshotBackfill` created 6 league/tier snapshots.
+4. Frontend `up -d --no-build`.
+5. The importer stays at the prod default `anonymized: required` here: only pseudonymized exports on
+   the test instance.
+
+The frontend container reports `unhealthy` although it serves fine: its healthcheck's `wget
+localhost` resolves to `::1`, nginx listens on IPv4 only. Fixed in `dtfb-frontend-ng`'s compose
+(`127.0.0.1`).
 
 ## 9. Redeploying a schema-breaking migration (DB wipe + reseed)
 
@@ -318,7 +350,7 @@ done for `v0.3.0` (2026-08-26) — full steps and every gotcha hit along the way
    docker compose exec sportshub-db mysql -u "$SPORTSHUB_DB_USER" -p"$SPORTSHUB_DB_PASSWORD" \
      -e "DROP DATABASE sportshub; CREATE DATABASE sportshub CHARACTER SET utf8mb4;"
    ```
-4. Update `SPORTSHUB_TAG` in `.env`, `docker compose pull && docker compose up -d`, tail logs
+4. Update `SPORTSHUB_TAG` in `.env` (no `v`), `docker compose pull && docker compose up -d --no-build`, tail logs
    until Flyway applies every migration and Hibernate `validate` passes.
 5. Restore the tracker backup now that the schema exists:
    ```bash
