@@ -1,6 +1,6 @@
 # Multi-installation import — clubs across Sports Manager installations, in any order
 
-> **Proposed (SPO-126).** There are about 13 Sports Manager installations (roughly one per state, plus the DTFB),
+> **Discussion — draft for the meeting 12.10., not yet proposed to the team (SPO-126).** There are about 13 Sports Manager installations (roughly one per state, plus the DTFB),
 > and they can be imported in **any order** — the DTFB installation most likely first. Every run matches clubs
 > against the clubs of all installations (suspicion by name + town, confirmed by hand, then remembered); a new club
 > always lands in a **state federation**, never in the root (organiser first, otherwise a suggestion from its

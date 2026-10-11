@@ -1,6 +1,6 @@
 # Team registration with approval — one path for every league
 
-> **Proposed (SPO-51, for the meeting 12.10.).** Registering a team for a league becomes a request that
+> **Discussion — draft for the meeting 12.10., not yet proposed to the team (SPO-51).** Registering a team for a league becomes a request that
 > is **approved** before the team counts: the captain (or the club admin) registers the team with its
 > roster, the **club admin** confirms a captain's request, and the **federation admin** of the league's
 > federation approves or rejects it — the three stages of doc 25 (B-2026-09-28-7), for every league

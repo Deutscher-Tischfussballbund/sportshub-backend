@@ -1,6 +1,6 @@
 # Public view — fixtures, results and tables for spectators
 
-> **Proposed (SPO-110, for the meeting 12.10.).** Spectators need a page without login: the M1 link
+> **Discussion — draft for the meeting 12.10., not yet proposed to the team (SPO-110).** Spectators need a page without login: the M1 link
 > from dtfb.de (SPO-59) has nothing to point to yet. Proposal: a **small public frontend of the Sports
 > Hub** (its own Angular project in this workspace, no Keycloak) on its own host, e.g.
 > `live.dtfb.de`. Its nginx forwards an **allow-list of read-only `GET`s** to the backend and adds a
