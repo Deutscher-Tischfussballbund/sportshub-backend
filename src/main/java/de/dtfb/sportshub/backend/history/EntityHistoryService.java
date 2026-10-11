@@ -4,15 +4,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
- * Records field-level changes to an entity and reconstructs past values from them. This is the
- * alternative to duplicating a whole row per season (see docs): a player/club stays a single row,
- * and any display that needs "the value as it was back then" reconstructs it on read via
- * {@link #fieldsAsOf} instead of reading a season-specific copy.
+ * Records field-level changes to an entity -- the alternative to duplicating a whole row per season
+ * (docs/14): a player/club stays a single row. The log is for admins only; displays always show the
+ * current values (B-2026-09-14-5, SPO-50 rolled back the point-in-time display of old names).
  */
 @Service
 public class EntityHistoryService {
@@ -43,27 +40,5 @@ public class EntityHistoryService {
     @Transactional(readOnly = true)
     public List<EntityHistoryDto> history(HistoryEntityType entityType, String entityId) {
         return mapper.toDtoList(repository.findByEntityTypeAndEntityIdOrderByChangedAtDesc(entityType, entityId));
-    }
-
-    /**
-     * For each of {@code fieldNames}, the value that was in effect at {@code asOf} -- found by
-     * taking the earliest recorded change *after* {@code asOf} and returning its {@code oldValue}
-     * (the value immediately before that change, i.e. still in effect at {@code asOf}). A field
-     * absent from the returned map has had no change since {@code asOf} -- the caller falls back
-     * to the entity's current value.
-     */
-    @Transactional(readOnly = true)
-    public Map<String, String> fieldsAsOf(HistoryEntityType entityType, String entityId, List<String> fieldNames,
-                                           Instant asOf) {
-        List<EntityHistoryEntry> changesAfter = repository
-            .findByEntityTypeAndEntityIdAndChangedAtAfterOrderByChangedAtAsc(entityType, entityId, asOf);
-        Map<String, String> result = new HashMap<>();
-        for (String field : fieldNames) {
-            changesAfter.stream()
-                .filter(e -> e.getFieldName().equals(field))
-                .findFirst()
-                .ifPresent(e -> result.put(field, e.getOldValue()));
-        }
-        return result;
     }
 }

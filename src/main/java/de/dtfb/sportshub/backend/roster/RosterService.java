@@ -4,8 +4,6 @@ import de.dtfb.sportshub.backend.category.Category;
 import de.dtfb.sportshub.backend.category.CategoryEligibility;
 import de.dtfb.sportshub.backend.club.Club;
 import de.dtfb.sportshub.backend.clubmembership.ClubMembershipService;
-import de.dtfb.sportshub.backend.history.EntityHistoryService;
-import de.dtfb.sportshub.backend.history.HistoryEntityType;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleResolver;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
 import de.dtfb.sportshub.backend.player.Player;
@@ -28,7 +26,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Roster management (L2): the players on a team's roster for one participation, plus the whole
@@ -53,7 +50,6 @@ public class RosterService {
     private final TeamParticipationMapper participationMapper;
     private final PlayerRepository playerRepository;
     private final PlayerDirectoryService playerDirectoryService;
-    private final EntityHistoryService historyService;
     private final ClubMembershipService clubMembershipService;
     private final LeagueRuleResolver ruleResolver;
     private final CategoryEligibility categoryEligibility;
@@ -61,7 +57,7 @@ public class RosterService {
     public RosterService(RosterEntryRepository rosterRepository, RosterEntryMapper rosterMapper,
                          TeamParticipationRepository participationRepository,
                          TeamParticipationMapper participationMapper, PlayerRepository playerRepository,
-                         PlayerDirectoryService playerDirectoryService, EntityHistoryService historyService,
+                         PlayerDirectoryService playerDirectoryService,
                          ClubMembershipService clubMembershipService, LeagueRuleResolver ruleResolver,
                          CategoryEligibility categoryEligibility) {
         this.rosterRepository = rosterRepository;
@@ -70,7 +66,6 @@ public class RosterService {
         this.participationMapper = participationMapper;
         this.playerRepository = playerRepository;
         this.playerDirectoryService = playerDirectoryService;
-        this.historyService = historyService;
         this.clubMembershipService = clubMembershipService;
         this.ruleResolver = ruleResolver;
         this.categoryEligibility = categoryEligibility;
@@ -80,37 +75,20 @@ public class RosterService {
     public List<RosterEntryDto> getRoster(String participationId) {
         getParticipation(participationId); // 404 if the participation is unknown
         return rosterRepository.findByParticipationIdAndRemovedAtIsNull(participationId).stream()
-            .map(this::toDtoAsOfAdded)
+            .map(this::toDto)
             .toList();
     }
 
     /**
-     * Maps a roster entry, resolving its player's display name. For an ENDED season, this freezes
-     * the name as it stood when the player was added to THIS roster ({@link RosterEntry#getAddedAt()})
-     * -- not today's name -- since Player is a single, un-duplicated row and a later rename must not
-     * rewrite a past season's historical display. A current/future season's roster is still live, so
-     * it always shows today's name instead -- otherwise a rename would incorrectly freeze the
-     * in-progress season at whatever name was current when the player was added, hiding the update.
-     * See {@link EntityHistoryService#fieldsAsOf}.
+     * Maps a roster entry with its player's <em>current</em> name -- in every season, ended ones too
+     * (B-2026-09-14-5, SPO-50). Earlier names stay in {@code entity_history}, visible to admins only.
      */
-    private RosterEntryDto toDtoAsOfAdded(RosterEntry entry) {
+    private RosterEntryDto toDto(RosterEntry entry) {
         RosterEntryDto dto = rosterMapper.toDto(entry);
         Player player = entry.getPlayer();
-        if (seasonHasEnded(entry.getParticipation())) {
-            Map<String, String> historical = historyService.fieldsAsOf(
-                HistoryEntityType.PLAYER, player.getId(), List.of("firstName", "lastName"), entry.getAddedAt());
-            dto.setFirstName(historical.getOrDefault("firstName", player.getFirstName()));
-            dto.setLastName(historical.getOrDefault("lastName", player.getLastName()));
-        } else {
-            dto.setFirstName(player.getFirstName());
-            dto.setLastName(player.getLastName());
-        }
+        dto.setFirstName(player.getFirstName());
+        dto.setLastName(player.getLastName());
         return dto;
-    }
-
-    private boolean seasonHasEnded(TeamParticipation participation) {
-        Season season = participation.getLeague() == null ? null : participation.getLeague().getSeason();
-        return season != null && season.hasEnded();
     }
 
     /** Athlete search for "add player", across the whole player directory. */

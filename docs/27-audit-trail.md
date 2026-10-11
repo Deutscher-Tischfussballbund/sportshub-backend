@@ -29,8 +29,8 @@
 - Line-ups (doc 23) keep only `submittedAt`/`submittedByDtfbId` of the latest save; drafts, an admin's
   later edit and removed substitutions leave no trace.
 - `entity_history` (`EntityHistoryEntry`: entity type, id, field, old/new value, `changedAt`,
-  `changedByDtfbId`) exists for `PLAYER` and `CLUB` only. Its job is reconstructing a value **as of a
-  date** (roster names in an ended season), not recording actions.
+  `changedByDtfbId`) exists for `PLAYER` and `CLUB` only. It records field changes for admins (displays
+  show current values since SPO-50, doc 14), not actions.
 - Logging is practically absent (a handful of `log.info` calls in startup jobs).
 
 ## Options considered
@@ -59,7 +59,7 @@
   change, so the trail never contradicts the data. Rows are never updated or deleted, except by
   retention.
 - **Table fields stay** as display values of the current state ("entered by", "confirmed at").
-  **`entity_history` stays** for point-in-time reconstruction; it may become one source of audit events
+  **`entity_history` stays** as the admin-visible field log; it may become one source of audit events
   later. **Logs** are for operations only (errors, performance), optionally mirroring audit events.
 - **Visibility**: the **federation admins of the league's federation** (`REGION_ADMIN` of
   `League.season.federation`) and global admins — **each federation separately**: a DTFB root-federation
