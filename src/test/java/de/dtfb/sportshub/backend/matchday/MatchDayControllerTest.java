@@ -73,6 +73,10 @@ class MatchDayControllerTest extends de.dtfb.sportshub.backend.support.Authorize
         }
         mockMvc.perform(get("/v1/matchdays").param("teamId", NanoIdUtils.randomNanoId()))
             .andExpect(jsonPath("$").isEmpty());
+        String identity = JsonPath.read(mockMvc.perform(get("/v1/teams/" + teamAwayId))
+            .andReturn().getResponse().getContentAsString(), "$.teamIdentityId");
+        mockMvc.perform(get("/v1/matchdays").param("teamId", identity))
+            .andExpect(jsonPath("$[*].id").value(Matchers.contains(id)));
         // dates are inclusive calendar days
         mockMvc.perform(get("/v1/matchdays").param("groupId", groupId)
                 .param("from", today.toString()).param("to", today.toString()))

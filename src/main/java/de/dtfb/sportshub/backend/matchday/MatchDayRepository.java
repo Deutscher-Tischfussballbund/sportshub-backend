@@ -39,7 +39,8 @@ public interface MatchDayRepository extends JpaRepository<MatchDay, String> {
 
     /**
      * Fixtures of seasons that aren't archived, narrowed by the optional filters (SPO-120); a null filter
-     * doesn't narrow. {@code teamId} matches either side; {@code from}/{@code to} bound the kick-off
+     * doesn't narrow. {@code teamId} matches either side, by
+     * team row or team identity (the team area addresses a team across seasons); {@code from}/{@code to} bound the kick-off
      * ({@code to} exclusive), fixtures without one drop out once either is set.
      */
     @Query("""
@@ -48,7 +49,8 @@ public interface MatchDayRepository extends JpaRepository<MatchDay, String> {
           and (:roundId is null or e.round.id = :roundId)
           and (:leagueId is null or e.round.group.tier.league.id = :leagueId)
           and (:seasonId is null or e.round.group.tier.league.season.id = :seasonId)
-          and (:teamId is null or e.teamHome.id = :teamId or e.teamAway.id = :teamId)
+          and (:teamId is null or e.teamHome.id = :teamId or e.teamAway.id = :teamId
+               or e.teamHome.teamIdentityId = :teamId or e.teamAway.teamIdentityId = :teamId)
           and (:from is null or e.startDate >= :from)
           and (:to is null or e.startDate < :to)
           and (:state is null or e.resultState = :state)""")

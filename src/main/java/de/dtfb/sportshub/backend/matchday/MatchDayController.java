@@ -27,7 +27,7 @@ public class MatchDayController {
     /**
      * Fixtures, narrowed by the filters (AND). At least one of {@code groupId}, {@code roundId},
      * {@code leagueId}, {@code seasonId}, {@code teamId} is required (SPO-120); {@code teamId} matches either
-     * side, {@code from}/{@code to} are inclusive calendar days of the kick-off.
+     * side, by team row or team identity, {@code from}/{@code to} are inclusive calendar days of the kick-off.
      */
     @GetMapping
     public List<MatchDayDto> getAllMatchDays(@RequestParam(required = false) String groupId,

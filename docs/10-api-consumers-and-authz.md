@@ -159,7 +159,7 @@ collections are large (one state: 1,632 fixtures, 17,231 games; all ~13 installa
   on fixtures and a free-text `q` where there is a search. Flat parameters, no nested paths
   (`/v1/matchdays?groupId=…`, not `/v1/groups/{id}/matchdays`).
 - Now: **a scope instead of paging.** `GET /v1/matchdays` needs one of `groupId`, `roundId`, `leagueId`,
-  `seasonId`, `teamId`; `/v1/matches` needs `matchDayId`; `/v1/matchsets` and `/v1/matchevents` need `matchId`
+  `seasonId`, `teamId` (either side, team row or identity); `/v1/matches` needs `matchDayId`; `/v1/matchsets` and `/v1/matchevents` need `matchId`
   or `matchDayId` — otherwise `400 FILTER_REQUIRED`. A scoped list is small enough without pages.
 - Now: the structure lists filter but stay unscoped-callable: rounds (`groupId`, `leagueId`), groups (`tierId`,
   `leagueId`, `seasonId`), tiers (`leagueId`, `seasonId`), leagues (`seasonId`, `federationId` = the season's,
