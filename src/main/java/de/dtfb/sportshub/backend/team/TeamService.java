@@ -47,10 +47,21 @@ public class TeamService {
      * the rows that actually exist in one specific season.
      */
     @Transactional(readOnly = true)
-    public List<TeamDto> getAll(String seasonId) {
-        if (seasonId != null) {
-            return toDtoListAsOf(repository.findBySeasonId(seasonId));
-        }
+    /**
+     * A season's teams, or without a season the latest version of every team identity -- then narrowed by
+     * the club, the club's federation and the identity (SPO-120). Null filters don't narrow.
+     */
+    public List<TeamDto> getAll(String seasonId, String clubId, String federationId, String teamIdentityId) {
+        List<Team> teams = seasonId != null ? repository.findBySeasonId(seasonId) : latestPerIdentity();
+        return toDtoListAsOf(teams.stream()
+            .filter(t -> clubId == null || (t.getClub() != null && clubId.equals(t.getClub().getId())))
+            .filter(t -> federationId == null
+                || (t.getClub() != null && federationId.equals(t.getClub().getFederationId())))
+            .filter(t -> teamIdentityId == null || teamIdentityId.equals(t.getTeamIdentityId()))
+            .toList());
+    }
+
+    private List<Team> latestPerIdentity() {
         Map<String, Team> latestByIdentity = new LinkedHashMap<>();
         for (Team team : repository.findAll()) {
             Team existing = latestByIdentity.get(team.getTeamIdentityId());
@@ -58,7 +69,7 @@ public class TeamService {
                 latestByIdentity.put(team.getTeamIdentityId(), team);
             }
         }
-        return toDtoListAsOf(new ArrayList<>(latestByIdentity.values()));
+        return new ArrayList<>(latestByIdentity.values());
     }
 
     private boolean isLater(Team candidate, Team current) {

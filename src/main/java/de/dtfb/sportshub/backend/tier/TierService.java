@@ -43,8 +43,8 @@ public class TierService {
     }
 
     @Transactional(readOnly = true)
-    public List<TierDto> getAll() {
-        return mapper.toDtoList(repository.findAllVisible());
+    public List<TierDto> getAll(String leagueId, String seasonId) {
+        return mapper.toDtoList(repository.findVisible(leagueId, seasonId));
     }
 
     @Transactional(readOnly = true)

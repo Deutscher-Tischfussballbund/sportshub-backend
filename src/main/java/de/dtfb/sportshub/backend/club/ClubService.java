@@ -34,8 +34,9 @@ public class ClubService {
     }
 
     @Transactional(readOnly = true)
-    public List<ClubDto> getAll() {
-        return mapper.toDtoList(repository.findAll());
+    public List<ClubDto> getAll(String federationId, Boolean active, String q) {
+        String pattern = q == null || q.isBlank() ? null : "%" + q.trim().toLowerCase(java.util.Locale.ROOT) + "%";
+        return mapper.toDtoList(repository.findFiltered(federationId, active, pattern));
     }
 
     @Transactional

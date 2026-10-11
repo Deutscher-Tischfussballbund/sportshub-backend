@@ -46,18 +46,9 @@ public class TeamParticipationService {
 
     /** Placements, optionally narrowed to one league (preferred), one season, or one team. */
     @Transactional(readOnly = true)
-    public List<TeamParticipationDto> getAll(String seasonId, String leagueId, String teamId) {
-        List<TeamParticipation> participations;
-        if (leagueId != null) {
-            participations = repository.findVisibleByLeagueId(leagueId);
-        } else if (seasonId != null) {
-            participations = repository.findVisibleBySeasonId(seasonId);
-        } else if (teamId != null) {
-            participations = repository.findVisibleByTeamId(teamId);
-        } else {
-            participations = repository.findAllVisible();
-        }
-        return mapper.toDtoList(participations);
+    public List<TeamParticipationDto> getAll(String seasonId, String leagueId, String teamId, String groupId) {
+        // All filters combine (AND); before SPO-120 only the first one given was applied.
+        return mapper.toDtoList(repository.findVisible(seasonId, leagueId, teamId, groupId));
     }
 
     /**

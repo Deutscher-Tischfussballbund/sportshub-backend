@@ -1,5 +1,7 @@
 package de.dtfb.sportshub.backend.league;
 
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import de.dtfb.sportshub.backend.season.Season;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -47,4 +49,13 @@ public interface LeagueRepository extends JpaRepository<League, String> {
 
     /** The league owning this snapshot, if any (docs/21 -- a snapshot has exactly one owner). */
     Optional<League> findFirstByRuleSetId(String ruleSetId);
+
+    /** Leagues of seasons that aren't archived, narrowed by the optional filters (SPO-120). */
+    @Query("""
+        select e from League e where e.season.archivedAt is null
+          and (:seasonId is null or e.season.id = :seasonId)
+          and (:federationId is null or e.season.federation.id = :federationId)
+          and (:leagueIdentityId is null or e.leagueIdentityId = :leagueIdentityId)""")
+    List<League> findVisible(@Param("seasonId") String seasonId, @Param("federationId") String federationId,
+                             @Param("leagueIdentityId") String leagueIdentityId);
 }

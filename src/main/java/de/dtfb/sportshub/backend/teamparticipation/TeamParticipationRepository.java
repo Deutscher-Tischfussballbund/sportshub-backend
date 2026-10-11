@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.teamparticipation;
 
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -10,6 +11,19 @@ public interface TeamParticipationRepository extends JpaRepository<TeamParticipa
 
     @Query("select p from TeamParticipation p where p.league.season.archivedAt is null")
     List<TeamParticipation> findAllVisible();
+
+    /**
+     * Participations of seasons that aren't archived, narrowed by the optional filters (SPO-120). {@code teamId}
+     * matches a team row or its identity, across seasons.
+     */
+    @Query("""
+        select p from TeamParticipation p where p.league.season.archivedAt is null
+          and (:seasonId is null or p.league.season.id = :seasonId)
+          and (:leagueId is null or p.league.id = :leagueId)
+          and (:teamId is null or p.team.id = :teamId or p.team.teamIdentityId = :teamId)
+          and (:groupId is null or p.group.id = :groupId)""")
+    List<TeamParticipation> findVisible(@Param("seasonId") String seasonId, @Param("leagueId") String leagueId,
+                                        @Param("teamId") String teamId, @Param("groupId") String groupId);
 
     @Query("select p from TeamParticipation p where p.id = :id and p.league.season.archivedAt is null")
     Optional<TeamParticipation> findVisibleById(String id);

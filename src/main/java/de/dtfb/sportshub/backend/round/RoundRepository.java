@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.round;
 
+import org.springframework.data.repository.query.Param;
 import de.dtfb.sportshub.backend.group.Group;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -17,6 +18,13 @@ public interface RoundRepository extends JpaRepository<Round, String> {
 
     @Query("select e from Round e where e.group.tier.league.season.archivedAt is null")
     List<Round> findAllVisible();
+
+    /** Rounds of seasons that aren't archived, narrowed by the optional filters (SPO-120). */
+    @Query("""
+        select e from Round e where e.group.tier.league.season.archivedAt is null
+          and (:groupId is null or e.group.id = :groupId)
+          and (:leagueId is null or e.group.tier.league.id = :leagueId)""")
+    List<Round> findVisible(@Param("groupId") String groupId, @Param("leagueId") String leagueId);
 
     @Query("select e from Round e where e.id = :id and e.group.tier.league.season.archivedAt is null")
     Optional<Round> findVisibleById(String id);

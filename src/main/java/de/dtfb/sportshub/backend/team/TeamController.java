@@ -19,8 +19,11 @@ public class TeamController {
     }
 
     @GetMapping
-    public List<TeamDto> getAllTeams(@RequestParam(required = false) String seasonId) {
-        return service.getAll(seasonId);
+    public List<TeamDto> getAllTeams(@RequestParam(required = false) String seasonId,
+                                     @RequestParam(required = false) String clubId,
+                                     @RequestParam(required = false) String federationId,
+                                     @RequestParam(required = false) String teamIdentityId) {
+        return service.getAll(seasonId, clubId, federationId, teamIdentityId);
     }
 
     @PostMapping

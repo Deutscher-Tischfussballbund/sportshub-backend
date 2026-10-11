@@ -19,8 +19,9 @@ public class TierController {
     }
 
     @GetMapping
-    public List<TierDto> getAllTiers() {
-        return service.getAll();
+    public List<TierDto> getAllTiers(@RequestParam(required = false) String leagueId,
+                                     @RequestParam(required = false) String seasonId) {
+        return service.getAll(leagueId, seasonId);
     }
 
     @PostMapping

@@ -22,13 +22,13 @@ public class SeasonController {
     }
 
     @GetMapping
-    public List<SeasonDto> getAllSeasons() {
-        return service.getAll();
+    public List<SeasonDto> getAllSeasons(@RequestParam(required = false) String federationId) {
+        return service.getAll(federationId);
     }
 
     @GetMapping("/archived")
-    public List<SeasonDto> getArchived() {
-        return service.getArchived();
+    public List<SeasonDto> getArchived(@RequestParam(required = false) String federationId) {
+        return service.getArchived(federationId);
     }
 
     @PostMapping

@@ -29,8 +29,9 @@ public class TeamParticipationController {
     @GetMapping
     public List<TeamParticipationDto> getAllTeamParticipations(@RequestParam(required = false) String seasonId,
                                              @RequestParam(required = false) String leagueId,
-                                             @RequestParam(required = false) String teamId) {
-        return service.getAll(seasonId, leagueId, teamId);
+                                             @RequestParam(required = false) String teamId,
+                                             @RequestParam(required = false) String groupId) {
+        return service.getAll(seasonId, leagueId, teamId, groupId);
     }
 
     /**

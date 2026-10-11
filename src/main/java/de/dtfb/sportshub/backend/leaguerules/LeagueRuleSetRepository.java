@@ -12,6 +12,8 @@ public interface LeagueRuleSetRepository extends JpaRepository<LeagueRuleSet, St
     /** The blueprint library -- snapshots are private to their league/tier (docs/21). */
     List<LeagueRuleSet> findBySnapshotFalse();
 
+    List<LeagueRuleSet> findBySnapshotFalseAndFederation_Id(String federationId);
+
     /**
      * Templates (blueprints) of one owner -- a federation, or DTFB-wide when {@code federationId} is
      * null -- whose name matches case-insensitively. Backs the unique-template-name rule (docs/21).

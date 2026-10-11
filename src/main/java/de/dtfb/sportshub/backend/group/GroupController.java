@@ -34,8 +34,10 @@ public class GroupController {
     }
 
     @GetMapping
-    public List<GroupDto> getAllGroups() {
-        return service.getAll();
+    public List<GroupDto> getAllGroups(@RequestParam(required = false) String tierId,
+                                       @RequestParam(required = false) String leagueId,
+                                       @RequestParam(required = false) String seasonId) {
+        return service.getAll(tierId, leagueId, seasonId);
     }
 
     @PostMapping

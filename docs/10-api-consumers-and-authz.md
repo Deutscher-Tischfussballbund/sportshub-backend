@@ -149,6 +149,27 @@ human. See [20-api-keys.md](./20-api-keys.md) for the design and the rejected al
 
 ---
 
+## 6. List filters instead of paging (SPO-120)
+
+The read endpoints serve the admin app and API-key consumers alike (§2), and after the SM imports the big
+collections are large (one state: 1,632 fixtures, 17,231 games; all ~13 installations: ~20k fixtures, ~220k games).
+
+- Now: filters are optional query parameters, combined with **AND**, named `<entity>Id` (`seasonId`,
+  `leagueId`, `groupId`, `teamId`, `federationId`, …), plus `from`/`to` (inclusive calendar days, Europe/Berlin)
+  on fixtures and a free-text `q` where there is a search. Flat parameters, no nested paths
+  (`/v1/matchdays?groupId=…`, not `/v1/groups/{id}/matchdays`).
+- Now: **a scope instead of paging.** `GET /v1/matchdays` needs one of `groupId`, `roundId`, `leagueId`,
+  `seasonId`, `teamId`; `/v1/matches` needs `matchDayId`; `/v1/matchsets` and `/v1/matchevents` need `matchId`
+  or `matchDayId` — otherwise `400 FILTER_REQUIRED`. A scoped list is small enough without pages.
+- Now: the structure lists filter but stay unscoped-callable: rounds (`groupId`, `leagueId`), groups (`tierId`,
+  `leagueId`, `seasonId`), tiers (`leagueId`, `seasonId`), leagues (`seasonId`, `federationId` = the season's,
+  `leagueIdentityId`), seasons and archived seasons (`federationId`), teams (`seasonId`, `clubId`, `federationId`
+  = the club's, `teamIdentityId`), participations (`seasonId`, `leagueId`, `teamId` = row or identity, `groupId`),
+  clubs (`federationId`, `active`, `q` on name/short name/town), rule-set blueprints (`federationId`).
+- Now: small reference lists stay unfiltered (federations, categories, release notes, maintenance notices, API
+  keys, role catalogue, import runs, tracker).
+- Not now: paging; `updatedSince` for syncing consumers (no change timestamp on the entities yet).
+
 ## Status
 
 | Concern | State |
