@@ -17,11 +17,13 @@ public interface FederationMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "defaultRuleSet", ignore = true)
     @Mapping(target = "parentFederation", ignore = true)
+    @Mapping(target = "abbreviation", ignore = true)
     Federation toEntity(FederationDto federationDto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "defaultRuleSet", ignore = true)
     @Mapping(target = "parentFederation", ignore = true)
+    @Mapping(target = "abbreviation", ignore = true)
     void updateEntityFromDto(FederationDto dto, @MappingTarget Federation entity);
 
     List<FederationDto> toDtoList(List<Federation> federations);

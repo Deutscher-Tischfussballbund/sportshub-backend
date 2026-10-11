@@ -28,8 +28,8 @@
 -- Root federation (DTFB) plus the Landesverbände, each pointing at it via parent_federation_id --
 -- a general self-referencing tree (Federation#isRoot), not hardcoded to two levels; today's real
 -- data just happens to be exactly two.
-INSERT INTO federation (id, name)
-VALUES ('fed-dtfb', 'DTFB');
+INSERT INTO federation (id, name, abbreviation)
+VALUES ('fed-dtfb', 'DTFB', 'DTFB');
 
 INSERT INTO federation (id, name, parent_federation_id)
 VALUES ('fed-bw', 'Baden-Württemberg', 'fed-dtfb'),

@@ -131,13 +131,21 @@ public class ImportPlanner {
             return item(ImportRecordType.FEDERATION, source.externalId(), label, ImportAction.UNCHANGED,
                 reference.getEntityId(), null, Map.of(), List.of(), source);
         }
+        Federation byAbbreviation = isBlank(source.abbreviation()) ? null
+            : context.federationsByAbbreviation().get(normalize(source.abbreviation()));
+        if (byAbbreviation != null) {
+            return item(ImportRecordType.FEDERATION, source.externalId(), label, ImportAction.NEW,
+                byAbbreviation.getId(), null, Map.of(),
+                List.of(new ImportIssue(ImportIssueCode.FEDERATION_BY_ABBREVIATION, byAbbreviation.getName())), source);
+        }
         Federation byName = source.name() == null ? null : context.federationsByName().get(normalize(source.name()));
         if (byName != null) {
             return item(ImportRecordType.FEDERATION, source.externalId(), label, ImportAction.NEW,
-                byName.getId(), null, Map.of(), List.of(), source);
+                byName.getId(), null, Map.of(),
+                List.of(new ImportIssue(ImportIssueCode.FEDERATION_BY_NAME, byName.getName())), source);
         }
-        // Nothing is created or linked (the next run may find a better match): unchanged, with the fallback noted.
-        return item(ImportRecordType.FEDERATION, source.externalId(), label, ImportAction.UNCHANGED, targetFederationId,
+        // Nothing is created or linked (the next run may find a better match): its records go into the target.
+        return item(ImportRecordType.FEDERATION, source.externalId(), label, ImportAction.FALLBACK, targetFederationId,
             null, Map.of(), List.of(new ImportIssue(ImportIssueCode.FEDERATION_FALLBACK, targetFederationId)), source);
     }
     //endregion
@@ -412,6 +420,7 @@ public class ImportPlanner {
         private Map<String, ExternalReference> references;
         private Map<String, String> externalIdsByEntity;
         private Map<String, Federation> federationsByName;
+        private Map<String, Federation> federationsByAbbreviation;
         private Map<String, Club> clubs;
         private Map<String, Player> players;
         private Map<String, List<Player>> playersByName;
@@ -448,6 +457,15 @@ public class ImportPlanner {
                     .collect(Collectors.toMap(f -> normalize(f.getName()), Function.identity(), (a, b) -> a));
             }
             return federationsByName;
+        }
+
+        Map<String, Federation> federationsByAbbreviation() {
+            if (federationsByAbbreviation == null) {
+                federationsByAbbreviation = federationRepository.findAll().stream()
+                    .filter(f -> !isBlank(f.getAbbreviation()))
+                    .collect(Collectors.toMap(f -> normalize(f.getAbbreviation()), Function.identity(), (a, b) -> a));
+            }
+            return federationsByAbbreviation;
         }
 
         Map<String, Club> clubs() {

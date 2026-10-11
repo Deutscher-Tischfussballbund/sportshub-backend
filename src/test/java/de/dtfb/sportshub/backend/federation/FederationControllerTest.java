@@ -66,6 +66,34 @@ class FederationControllerTest extends de.dtfb.sportshub.backend.support.Authori
         updateFederationDefault(federationId, ruleSetB).andExpect(status().isOk());
     }
 
+    @Test
+    void abbreviation_isTrimmedUniqueIgnoringCase_keptWhenOmitted_andClearedWhenEmpty() throws Exception {
+        String abbreviation = TestIds.unique("TV");
+        String id = JsonPath.read(mockMvc.perform(post("/v1/federations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\": \"Testverband\", \"abbreviation\": \" " + abbreviation + " \"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.abbreviation").value(abbreviation))
+            .andReturn().getResponse().getContentAsString(), "$.id");
+
+        mockMvc.perform(post("/v1/federations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\": \"Zweiter\", \"abbreviation\": \"" + abbreviation.toLowerCase() + "\"}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("FEDERATION_ABBREVIATION_TAKEN"));
+
+        // the rule-set dialog saves the federation back without the abbreviation: it stays
+        mockMvc.perform(put("/v1/federations/" + id)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"name\": \"Testverband\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.abbreviation").value(abbreviation));
+
+        mockMvc.perform(put("/v1/federations/" + id)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"name\": \"Testverband\", \"abbreviation\": \"\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.abbreviation").doesNotExist());
+    }
+
     //region helpers
     private org.springframework.test.web.servlet.ResultActions updateFederationDefault(
         String federationId, String ruleSetId) throws Exception {

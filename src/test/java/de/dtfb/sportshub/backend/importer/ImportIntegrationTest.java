@@ -1,6 +1,8 @@
 package de.dtfb.sportshub.backend.importer;
 
 import com.jayway.jsonpath.JsonPath;
+import de.dtfb.sportshub.backend.federation.Federation;
+import de.dtfb.sportshub.backend.federation.FederationRepository;
 import de.dtfb.sportshub.backend.player.Player;
 import de.dtfb.sportshub.backend.player.PlayerNumberKind;
 import de.dtfb.sportshub.backend.player.PlayerNumberService;
@@ -48,9 +50,16 @@ class ImportIntegrationTest extends AuthorizedControllerTest {
     @Autowired
     private ImportRunGate gate;
 
+    @Autowired
+    private FederationRepository federationRepository;
+
     @Test
     void preview_classifiesEveryRecord_withoutWritingAnything() throws Exception {
         Export export = new Export();
+        Federation abbreviated = new Federation();
+        abbreviated.setName("Verband mit Kürzel");
+        abbreviated.setAbbreviation(export.abbreviation);
+        export.abbreviatedFederationId = federationRepository.save(abbreviated).getId();
         long playersBefore = playerRepository.count();
 
         String runId = upload(export.json()).andExpect(status().isOk())
@@ -62,6 +71,12 @@ class ImportIntegrationTest extends AuthorizedControllerTest {
         Map<String, Map<String, Object>> items = items(runId);
 
         assertThat(items.get("FEDERATION:1")).containsEntry("action", "NEW").containsEntry("targetEntityId", "fed-hh");
+        assertThat(codes(items.get("FEDERATION:1"))).containsExactly("FEDERATION_BY_NAME");
+        assertThat(items.get("FEDERATION:2")).containsEntry("action", "NEW")
+            .containsEntry("targetEntityId", export.abbreviatedFederationId);
+        assertThat(codes(items.get("FEDERATION:2"))).containsExactly("FEDERATION_BY_ABBREVIATION");
+        assertThat(items.get("FEDERATION:3")).containsEntry("action", "FALLBACK").containsEntry("targetEntityId", "fed-hh");
+        assertThat(codes(items.get("FEDERATION:3"))).containsExactly("FEDERATION_FALLBACK");
         assertThat(codes(items.get("CLUB:11"))).containsExactly("FEDERATION_FALLBACK");
         assertThat(items.get("PLAYER:100")).containsEntry("action", "NEW");
         assertThat(codes(items.get("PLAYER:101")))
@@ -91,7 +106,7 @@ class ImportIntegrationTest extends AuthorizedControllerTest {
         String again = previewId(export.json());
         Map<String, Map<String, Object>> items = items(again);
         assertThat(items.values()).allSatisfy(item ->
-            assertThat(item.get("action")).isIn("UNCHANGED", "REJECTED"));
+            assertThat(item.get("action")).isIn("UNCHANGED", "FALLBACK", "REJECTED"));
         assertThat(items.get("PLAYER:101")).containsEntry("targetEntityId", olaf.getId());
     }
 
@@ -175,7 +190,7 @@ class ImportIntegrationTest extends AuthorizedControllerTest {
         }
         assertThat((String) JsonPath.read(runJson(second), "$.plannedAt")).isNotEqualTo(plannedBefore);
         assertThat(items(second).values()).allSatisfy(item ->
-            assertThat(item.get("action")).isIn("UNCHANGED", "REJECTED"));
+            assertThat(item.get("action")).isIn("UNCHANGED", "FALLBACK", "REJECTED"));
         apply(second);
     }
 
@@ -268,13 +283,19 @@ class ImportIntegrationTest extends AuthorizedControllerTest {
         String marenLastName = TestIds.unique("Fiktiv");
         final String olafLastName = TestIds.unique("Erfunden");
         String olafNumber;
+        final String abbreviation = TestIds.unique("ab");
+        String abbreviatedFederationId;
 
         String json() {
             return """
                 {
                   "format": "sportshub-sm-export", "version": 1, "instance": "%s",
                   "exportedAt": "2026-10-10T12:00:00Z", "anonymized": true,
-                  "veranstalter": [ { "veranstalter_id": 1, "veranstalterbezeichnung": "Hamburg" } ],
+                  "veranstalter": [
+                    { "veranstalter_id": 1, "veranstalterbezeichnung": "Hamburg", "veranstalterkuerzel": "" },
+                    { "veranstalter_id": 2, "veranstalterbezeichnung": "Anderer Name", "veranstalterkuerzel": "%s" },
+                    { "veranstalter_id": 3, "veranstalterbezeichnung": "Lübeck Liga", "veranstalterkuerzel": "" }
+                  ],
                   "vereine": [
                     { "verein_id": 10, "vereinsname": "Kickerfreunde Alster", "vereinssitz": "Hamburg", "veranstalter_id": 1 },
                     { "verein_id": 11, "vereinsname": "TFC Elbe", "veranstalter_id": 99 }
@@ -291,7 +312,7 @@ class ImportIntegrationTest extends AuthorizedControllerTest {
                     { "spieler_id": 102, "verein_id": 10, "mitgliedsstatus": 1 }
                   ]
                 }
-                """.formatted(instance, maren, marenFirstName, marenLastName,
+                """.formatted(instance, abbreviation.toUpperCase(), maren, marenFirstName, marenLastName,
                 olafNumber == null ? "null" : "\"" + olafNumber + "\"", olafLastName);
         }
     }

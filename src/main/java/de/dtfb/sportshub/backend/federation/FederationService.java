@@ -39,6 +39,11 @@ public class FederationService {
     @Transactional
     public FederationDto create(FederationDto federationDto) {
         Federation federation = mapper.toEntity(federationDto);
+        String abbreviation = normalizeAbbreviation(federationDto.getAbbreviation());
+        if (abbreviation != null && repository.existsByAbbreviationIgnoreCase(abbreviation)) {
+            throw new FederationAbbreviationTakenException(abbreviation);
+        }
+        federation.setAbbreviation(abbreviation);
         federation.setDefaultRuleSet(resolveRuleSet(federationDto.getDefaultRuleSetId()));
         federation.setParentFederation(resolveParentForCreate(federationDto.getParentFederationId()));
 
@@ -80,10 +85,29 @@ public class FederationService {
         }
 
         mapper.updateEntityFromDto(federationDto, federation);
+        if (federationDto.getAbbreviation() != null) {
+            String abbreviation = normalizeAbbreviation(federationDto.getAbbreviation());
+            if (abbreviation != null && repository.existsByAbbreviationIgnoreCaseAndIdNot(abbreviation, id)) {
+                throw new FederationAbbreviationTakenException(abbreviation);
+            }
+            federation.setAbbreviation(abbreviation);
+        }
         federation.setDefaultRuleSet(resolveRuleSet(newRuleSetId));
 
         Federation savedFederation = repository.save(federation);
         return mapper.toDto(savedFederation);
+    }
+
+    /** Trimmed; blank means none. */
+    private static String normalizeAbbreviation(String abbreviation) {
+        if (abbreviation == null || abbreviation.isBlank()) {
+            return null;
+        }
+        String trimmed = abbreviation.trim();
+        if (trimmed.length() > 32) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "abbreviation is longer than 32 characters");
+        }
+        return trimmed;
     }
 
     /** The default must be a blueprint -- a league's private snapshot can't serve as a template. */
