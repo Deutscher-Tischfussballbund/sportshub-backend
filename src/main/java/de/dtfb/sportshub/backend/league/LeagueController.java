@@ -21,8 +21,10 @@ public class LeagueController {
     }
 
     @GetMapping
-    public List<LeagueDto> getAllLeagues() {
-        return service.getAll();
+    public List<LeagueDto> getAllLeagues(@RequestParam(required = false) String seasonId,
+                                         @RequestParam(required = false) String federationId,
+                                         @RequestParam(required = false) String leagueIdentityId) {
+        return service.getAll(seasonId, federationId, leagueIdentityId);
     }
 
     @PostMapping

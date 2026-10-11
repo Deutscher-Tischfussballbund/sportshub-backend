@@ -26,14 +26,16 @@ public class SeasonService {
 
     /** Active (non-archived) seasons only. */
     @Transactional(readOnly = true)
-    public List<SeasonDto> getAll() {
-        return mapper.toDtoList(repository.findByArchivedAtIsNull());
+    public List<SeasonDto> getAll(String federationId) {
+        return mapper.toDtoList(federationId == null ? repository.findByArchivedAtIsNull()
+            : repository.findByArchivedAtIsNullAndFederation_Id(federationId));
     }
 
     /** Archived (soft-deleted) seasons, for an explicit archive view. */
     @Transactional(readOnly = true)
-    public List<SeasonDto> getArchived() {
-        return mapper.toDtoList(repository.findByArchivedAtIsNotNull());
+    public List<SeasonDto> getArchived(String federationId) {
+        return mapper.toDtoList(federationId == null ? repository.findByArchivedAtIsNotNull()
+            : repository.findByArchivedAtIsNotNullAndFederation_Id(federationId));
     }
 
     @Transactional(readOnly = true)

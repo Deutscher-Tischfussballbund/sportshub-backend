@@ -25,8 +25,8 @@ public class GroupService {
     }
 
     @Transactional(readOnly = true)
-    public List<GroupDto> getAll() {
-        return mapper.toDtoList(repository.findAllVisible());
+    public List<GroupDto> getAll(String tierId, String leagueId, String seasonId) {
+        return mapper.toDtoList(repository.findVisible(tierId, leagueId, seasonId));
     }
 
     @Transactional(readOnly = true)

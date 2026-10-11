@@ -19,8 +19,8 @@ public class LeagueRuleSetController {
     }
 
     @GetMapping
-    public List<LeagueRuleSetDto> getAllLeagueRuleSets() {
-        return service.getAll();
+    public List<LeagueRuleSetDto> getAllLeagueRuleSets(@RequestParam(required = false) String federationId) {
+        return service.getAll(federationId);
     }
 
     @PostMapping

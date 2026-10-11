@@ -69,8 +69,9 @@ public class LeagueRuleSetService {
 
     /** The blueprint library (archived ones included, flagged). Snapshots are private to their owner. */
     @Transactional(readOnly = true)
-    public List<LeagueRuleSetDto> getAll() {
-        return repository.findBySnapshotFalse().stream().map(this::assemble).toList();
+    public List<LeagueRuleSetDto> getAll(String federationId) {
+        return (federationId == null ? repository.findBySnapshotFalse()
+            : repository.findBySnapshotFalseAndFederation_Id(federationId)).stream().map(this::assemble).toList();
     }
 
     @Transactional(readOnly = true)

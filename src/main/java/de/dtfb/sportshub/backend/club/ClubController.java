@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.club;
 
+import org.springframework.web.bind.annotation.RequestParam;
 import de.dtfb.sportshub.backend.history.EntityHistoryDto;
 import de.dtfb.sportshub.backend.history.EntityHistoryService;
 import de.dtfb.sportshub.backend.history.HistoryEntityType;
@@ -31,8 +32,10 @@ public class ClubController {
     }
 
     @GetMapping("/v1/clubs")
-    public List<ClubDto> clubs() {
-        return service.getAll();
+    public List<ClubDto> clubs(@RequestParam(required = false) String federationId,
+                               @RequestParam(required = false) Boolean active,
+                               @RequestParam(required = false) String q) {
+        return service.getAll(federationId, active, q);
     }
 
     @PostMapping("/v1/clubs")

@@ -4,12 +4,15 @@ import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.annotation.PostConstruct;
 import org.assertj.core.api.Assertions;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -21,6 +24,9 @@ class MatchDayControllerTest extends de.dtfb.sportshub.backend.support.Authorize
 
     private String url;
     private String roundId;
+    private String groupId;
+    private String leagueId;
+    private String seasonId;
     private String locationId;
     private String teamHomeId;
     private String teamAwayId;
@@ -28,10 +34,10 @@ class MatchDayControllerTest extends de.dtfb.sportshub.backend.support.Authorize
 
     @PostConstruct
     void setup() throws Exception {
-        String seasonId = id(createSeason());
-        String leagueId = id(createLeague(seasonId));
+        seasonId = id(createSeason());
+        leagueId = id(createLeague(seasonId));
         String tierId = id(createTier(leagueId));
-        String groupId = id(createGroup(tierId));
+        groupId = id(createGroup(tierId));
         roundId = id(createRound(groupId));
 
         locationId = id(createLocation());
@@ -46,8 +52,41 @@ class MatchDayControllerTest extends de.dtfb.sportshub.backend.support.Authorize
     }
 
     @Test
-    void getAllMatchdays() throws Exception {
-        mockMvc.perform(get("/v1/matchdays")).andExpect(status().isOk());
+    void getAllMatchdays_withoutAScope_isRefused() throws Exception {
+        mockMvc.perform(get("/v1/matchdays")).andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("FILTER_REQUIRED"));
+        // from/to/resultState alone don't scope
+        mockMvc.perform(get("/v1/matchdays").param("from", "2026-01-01").param("resultState", "OPEN"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAllMatchdays_filtersCombineWithAnd() throws Exception {
+        String id = url.substring(url.lastIndexOf('/') + 1);
+        LocalDate today = LocalDate.ofInstant(sampleDate, ZoneId.of("Europe/Berlin"));
+
+        for (String[] scope : new String[][] {{"groupId", groupId}, {"roundId", roundId}, {"leagueId", leagueId},
+            {"seasonId", seasonId}, {"teamId", teamHomeId}, {"teamId", teamAwayId}}) {
+            mockMvc.perform(get("/v1/matchdays").param(scope[0], scope[1]))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id").value(Matchers.contains(id)));
+        }
+        mockMvc.perform(get("/v1/matchdays").param("teamId", NanoIdUtils.randomNanoId()))
+            .andExpect(jsonPath("$").isEmpty());
+        String identity = JsonPath.read(mockMvc.perform(get("/v1/teams/" + teamAwayId))
+            .andReturn().getResponse().getContentAsString(), "$.teamIdentityId");
+        mockMvc.perform(get("/v1/matchdays").param("teamId", identity))
+            .andExpect(jsonPath("$[*].id").value(Matchers.contains(id)));
+        // dates are inclusive calendar days
+        mockMvc.perform(get("/v1/matchdays").param("groupId", groupId)
+                .param("from", today.toString()).param("to", today.toString()))
+            .andExpect(jsonPath("$[*].id").value(Matchers.contains(id)));
+        mockMvc.perform(get("/v1/matchdays").param("groupId", groupId).param("from", today.plusDays(1).toString()))
+            .andExpect(jsonPath("$").isEmpty());
+        mockMvc.perform(get("/v1/matchdays").param("groupId", groupId).param("to", today.minusDays(1).toString()))
+            .andExpect(jsonPath("$").isEmpty());
+        mockMvc.perform(get("/v1/matchdays").param("groupId", groupId).param("resultState", "CONFIRMED"))
+            .andExpect(jsonPath("$").isEmpty());
     }
 
     @Test

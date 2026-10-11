@@ -14,4 +14,8 @@ public interface SeasonRepository extends JpaRepository<Season, String> {
 
     /** Archived (soft-deleted) seasons. */
     List<Season> findByArchivedAtIsNotNull();
+
+    List<Season> findByArchivedAtIsNullAndFederation_Id(String federationId);
+
+    List<Season> findByArchivedAtIsNotNullAndFederation_Id(String federationId);
 }

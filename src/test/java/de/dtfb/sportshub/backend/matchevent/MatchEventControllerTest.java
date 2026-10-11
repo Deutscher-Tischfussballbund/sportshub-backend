@@ -56,7 +56,7 @@ class MatchEventControllerTest extends de.dtfb.sportshub.backend.support.Authori
 
     @Test
     void getAllMatchEvents() throws Exception {
-        mockMvc.perform(get("/v1/matchevents")).andExpect(status().isOk());
+        mockMvc.perform(get("/v1/matchevents").param("matchId", matchId)).andExpect(status().isOk());
     }
 
     @Test

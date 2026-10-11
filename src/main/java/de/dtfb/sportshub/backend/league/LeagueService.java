@@ -48,9 +48,9 @@ public class LeagueService {
     }
 
     @Transactional(readOnly = true)
-    public List<LeagueDto> getAll() {
+    public List<LeagueDto> getAll(String seasonId, String federationId, String leagueIdentityId) {
         // Hide leagues whose season is archived (gateway into the archived subtree).
-        return mapper.toDtoList(repository.findBySeason_ArchivedAtIsNull());
+        return mapper.toDtoList(repository.findVisible(seasonId, federationId, leagueIdentityId));
     }
 
     @Transactional(readOnly = true)

@@ -21,8 +21,8 @@ public class RoundService {
     }
 
     @Transactional(readOnly = true)
-    public List<RoundDto> getAll() {
-        return mapper.toDtoList(repository.findAllVisible());
+    public List<RoundDto> getAll(String groupId, String leagueId) {
+        return mapper.toDtoList(repository.findVisible(groupId, leagueId));
     }
 
     @Transactional(readOnly = true)

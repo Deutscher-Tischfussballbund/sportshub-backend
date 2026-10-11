@@ -19,8 +19,9 @@ public class RoundController {
     }
 
     @GetMapping
-    public List<RoundDto> getAllRounds() {
-        return service.getAll();
+    public List<RoundDto> getAllRounds(@RequestParam(required = false) String groupId,
+                                       @RequestParam(required = false) String leagueId) {
+        return service.getAll(groupId, leagueId);
     }
 
     @PostMapping

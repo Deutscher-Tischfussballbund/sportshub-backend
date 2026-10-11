@@ -22,8 +22,10 @@ public interface MatchRepository extends JpaRepository<Match, String> {
         + "and (m.homeScore is not null or m.awayScore is not null)")
     boolean existsScoredInGroup(@Param("groupId") String groupId);
 
-    @Query("select e from Match e where e.matchDay.round.group.tier.league.season.archivedAt is null")
-    List<Match> findAllVisible();
+    /** The games of one fixture (SPO-120), in their order. */
+    @Query("select e from Match e where e.matchDay.id = :matchDayId "
+        + "and e.matchDay.round.group.tier.league.season.archivedAt is null order by e.position")
+    List<Match> findVisibleByMatchDayId(@Param("matchDayId") String matchDayId);
 
     @Query("select e from Match e where e.id = :id and e.matchDay.round.group.tier.league.season.archivedAt is null")
     Optional<Match> findVisibleById(String id);

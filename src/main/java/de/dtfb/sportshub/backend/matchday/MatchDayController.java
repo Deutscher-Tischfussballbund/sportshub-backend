@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.matchday;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -22,9 +24,23 @@ public class MatchDayController {
         this.resultService = resultService;
     }
 
+    /**
+     * Fixtures, narrowed by the filters (AND). At least one of {@code groupId}, {@code roundId},
+     * {@code leagueId}, {@code seasonId}, {@code teamId} is required (SPO-120); {@code teamId} matches either
+     * side, by team row or team identity, {@code from}/{@code to} are inclusive calendar days of the kick-off.
+     */
     @GetMapping
-    public List<MatchDayDto> getAllMatchDays() {
-        return service.getAll();
+    public List<MatchDayDto> getAllMatchDays(@RequestParam(required = false) String groupId,
+                                             @RequestParam(required = false) String roundId,
+                                             @RequestParam(required = false) String leagueId,
+                                             @RequestParam(required = false) String seasonId,
+                                             @RequestParam(required = false) String teamId,
+                                             @RequestParam(required = false)
+                                             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                             @RequestParam(required = false)
+                                             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+                                             @RequestParam(required = false) ResultState resultState) {
+        return service.getAll(MatchDayFilter.of(groupId, roundId, leagueId, seasonId, teamId, from, to, resultState));
     }
 
     @PostMapping

@@ -138,7 +138,7 @@ class FixtureGenerationServiceIntegrationTest extends AuthorizedControllerTest {
         List<Object[]> pairs = matchDayPairsForRounds(List.of(roundIds.get(0)));
         Assertions.assertThat(pairs).hasSize(1);
 
-        String matchDaysJson = mockMvc.perform(get("/v1/matchdays"))
+        String matchDaysJson = mockMvc.perform(get("/v1/matchdays").param("groupId", groupId))
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         List<Object> all = JsonPath.read(matchDaysJson, "$");
         Instant startDate = null;
@@ -428,14 +428,14 @@ class FixtureGenerationServiceIntegrationTest extends AuthorizedControllerTest {
     }
 
     private List<Object[]> matchDayPairsForRounds(List<String> roundIds) throws Exception {
-        String matchDaysJson = mockMvc.perform(get("/v1/matchdays"))
-            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        List<Object> all = JsonPath.read(matchDaysJson, "$");
         List<Object[]> pairs = new ArrayList<>();
-        for (Object raw : all) {
-            @SuppressWarnings("unchecked")
-            var matchDay = (java.util.Map<String, Object>) raw;
-            if (roundIds.contains(matchDay.get("roundId"))) {
+        for (String roundId : roundIds) {
+            String matchDaysJson = mockMvc.perform(get("/v1/matchdays").param("roundId", roundId))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            List<Object> all = JsonPath.read(matchDaysJson, "$");
+            for (Object raw : all) {
+                @SuppressWarnings("unchecked")
+                var matchDay = (java.util.Map<String, Object>) raw;
                 pairs.add(new Object[] {matchDay.get("teamHomeId"), matchDay.get("teamAwayId")});
             }
         }

@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,8 +37,27 @@ public interface MatchDayRepository extends JpaRepository<MatchDay, String> {
             where r.entityType = de.dtfb.sportshub.backend.importer.ImportRecordType.FIXTURE and r.entityId = e.id)""")
     List<MatchDay> findVisibleByResultState(@Param("state") ResultState state);
 
-    @Query("select e from MatchDay e where e.round.group.tier.league.season.archivedAt is null")
-    List<MatchDay> findAllVisible();
+    /**
+     * Fixtures of seasons that aren't archived, narrowed by the optional filters (SPO-120); a null filter
+     * doesn't narrow. {@code teamId} matches either side, by
+     * team row or team identity (the team area addresses a team across seasons); {@code from}/{@code to} bound the kick-off
+     * ({@code to} exclusive), fixtures without one drop out once either is set.
+     */
+    @Query("""
+        select e from MatchDay e where e.round.group.tier.league.season.archivedAt is null
+          and (:groupId is null or e.round.group.id = :groupId)
+          and (:roundId is null or e.round.id = :roundId)
+          and (:leagueId is null or e.round.group.tier.league.id = :leagueId)
+          and (:seasonId is null or e.round.group.tier.league.season.id = :seasonId)
+          and (:teamId is null or e.teamHome.id = :teamId or e.teamAway.id = :teamId
+               or e.teamHome.teamIdentityId = :teamId or e.teamAway.teamIdentityId = :teamId)
+          and (:from is null or e.startDate >= :from)
+          and (:to is null or e.startDate < :to)
+          and (:state is null or e.resultState = :state)""")
+    List<MatchDay> findVisible(@Param("groupId") String groupId, @Param("roundId") String roundId,
+                               @Param("leagueId") String leagueId, @Param("seasonId") String seasonId,
+                               @Param("teamId") String teamId, @Param("from") Instant from,
+                               @Param("to") Instant to, @Param("state") ResultState state);
 
     @Query("select e from MatchDay e where e.id = :id and e.round.group.tier.league.season.archivedAt is null")
     Optional<MatchDay> findVisibleById(String id);

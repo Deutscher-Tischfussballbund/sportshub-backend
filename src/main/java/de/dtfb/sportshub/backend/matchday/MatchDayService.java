@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.matchday;
 
+import de.dtfb.sportshub.backend.exception.FilterRequiredException;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleResolver;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleSet;
 import de.dtfb.sportshub.backend.leaguerules.SchedulingMode;
@@ -52,8 +53,11 @@ public class MatchDayService {
     }
 
     @Transactional(readOnly = true)
-    public List<MatchDayDto> getAll() {
-        List<MatchDay> matchDays = repository.findAllVisible();
+    public List<MatchDayDto> getAll(MatchDayFilter filter) {
+        FilterRequiredException.requireAny(MatchDayFilter.SCOPES, filter.groupId(), filter.roundId(),
+            filter.leagueId(), filter.seasonId(), filter.teamId());
+        List<MatchDay> matchDays = repository.findVisible(filter.groupId(), filter.roundId(), filter.leagueId(),
+            filter.seasonId(), filter.teamId(), filter.from(), filter.to(), filter.resultState());
         Map<String, FixtureScoreService.FixtureScore> scores = fixtureScores.scores(matchDays);
         Map<String, LineupStatus[]> lineupStatuses = lineups.statuses(matchDays);
         return matchDays.stream()
