@@ -140,8 +140,12 @@ the tournament management or a **referee** (a future role scoped to a fixture, d
 
 ## Open questions
 
-- **Numbers for M1** (Daniel): the block rule, at most four substitutions, at most ten players — as in
-  Regionalliga Damen 2026?
+- ~~**Numbers for M1** (Daniel)~~ **Answered 2026-10-12 (B-2026-10-12-2):** the block rule D1–D3 /
+  S1–D5 stands; at most ten players per team, and the four substitutions follow from that (six play,
+  four on the bench). That is the DTFB leagues; other leagues differ — which is why these stay rule-set
+  fields. The blueprint values (required, 2, 1, 10, on, 4) need no change. Daniel also wants line-ups
+  online rather than on paper ("I'd like no more paper sheets") — the formal reversal of
+  B-2026-09-21-11 is still up to the full team.
 - **Who enters the line-up:** the rules name the away team for the online entry. Does each team enter
   its own (proposed), or one team both?
 - **Line-up without a submitted opponent at kick-off:** show the own line-up to the opponent anyway once

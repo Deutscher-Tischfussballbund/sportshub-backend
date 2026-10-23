@@ -110,7 +110,9 @@ beyond that (lot / penalty) is set by an admin. Every active team placed in the 
 the start, all zeros until its first counted fixture (2026-10-08); the stored standing rows keep only
 teams with a counted fixture, since delete guards read them as "has recorded results". Withdrawn teams
 are listed last, without a place, marked `withdrawn`; what they already played still counts for their
-opponents (whether a withdrawal annuls results is a rules question, not decided). (SPO-21/22, SPO-74.)
+opponents for now. **Answered 2026-10-12 (Daniel):** in all DTFB leagues a withdrawal annuls all of
+the team's results, as if it had never played; it stays last with 0 played — to build as a rule-set
+setting under SPO-74 (see §Questions). (SPO-21/22, SPO-74.)
 
 **Confirmation deadline.** Rule field "minutes to confirm" (e.g. 15).
 
@@ -166,15 +168,33 @@ opponents (whether a withdrawal annuls results is a rules question, not decided)
 
 ## Questions for the competition management (Daniel)
 
+Asked and answered in the team meeting on 2026-10-12 (only partly recorded; dtfb-projektmanager
+`meetings/2026-10-12/protocol.md`, decisions B-2026-10-12-1 … -4).
+
 1. Are the upcoming Regionalliga rules (M1, 20./21.03.2027) the same as Regionalliga Damen 2026 —
    Race to 42, 7 segments D1, D2, D3, S1, D4, S2, D5, draw allowed in the Vorrunde?
+   **Answer:** yes, Race to 42 with draws in the Vorrunde. **New open point: the number of teams.** It
+   has always been eight, but 2027 will "almost certainly" be more or fewer. Eight teams → round robin;
+   around 13 → no round robin, possibly a **Swiss system** (SPO-127). B-2026-09-28-2 ("eight teams,
+   single round robin") therefore only holds if eight teams enter.
 2. 15 minutes to confirm, and "struck if nothing is entered after 15 minutes" — does that apply to the
    Regionalliga? (Either way it's a rule-set setting; this only sets the Regionalliga's value.)
+   **Answer (tentative):** "probably not that strict". Closing entry after the deadline is fine; the
+   tournament management must be able to reopen it. Whether a fixture with no result is struck
+   automatically (scored for the opponent) is **not decided** — Daniel wants to settle it.
 3. Tie-breaks: lot in the placement range, penalty in the promotion/relegation range — still so? Is
    "head-to-head" the direct fixture's result, or points/goals among all tied teams?
+   **Open:** Daniel clarifies with the tournament management (Nicole, Karsten).
 4. The playoffs (semi-finals, placement games, 3rd place) — same format on the M1 weekend?
+   **Open:** depends on the number of teams (question 1). A knock-out stage is planned for M1 anyway
+   (SPO-99).
 5. Late arrival: "per 10 minutes a segment counts as lost to 0" (Bundesliga §9.2) — also for the
    Regionalliga?
+   **Answer:** not for M1 — someone of the tournament management is on site and handles it; can be added
+   later (B-2026-10-12-3).
+
+Also answered: **withdrawal** — all results of a withdrawn team are annulled in all DTFB leagues
+(B-2026-10-12-1, SPO-74). **Still open:** what happens when a team fails to show up once.
 
 ## Watch for / triggers to revisit
 
