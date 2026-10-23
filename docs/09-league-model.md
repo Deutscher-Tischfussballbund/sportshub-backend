@@ -188,7 +188,8 @@ add/remove/submit/confirm/reopen once withdrawn) and excludes the participation 
 copy-forward (a team that dropped out doesn't automatically re-enter next season). Resolving the
 team's remaining scheduled fixtures (forfeit/walkover scoring) is a **separate, deferred concern**
 (§7) — withdrawal only flags the participation; already-scheduled `MatchDay`s are left for an admin
-to resolve manually.
+to resolve manually. Whether the fixtures it already played still count in the tables is the rule set's
+`withdrawalAnnulsResults` (SPO-74, docs/22 "Table").
 
 **`league_admin` (renamed 2026-07-25 from `competition_organizer`; scope renamed `LEAGUE` from
 `COMPETITION` -- see `Role.java`/`ScopeType.java` -- since leagues are the only thing this scopes

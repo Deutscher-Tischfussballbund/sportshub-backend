@@ -259,6 +259,7 @@ public class LeagueRuleSetService {
             || !Objects.equals(current.getPointsWin(), dto.getPointsWin())
             || !Objects.equals(current.getPointsDraw(), dto.getPointsDraw())
             || !Objects.equals(current.getPointsLoss(), dto.getPointsLoss())
+            || !Objects.equals(current.getWithdrawalAnnulsResults(), dto.getWithdrawalAnnulsResults())
             || !Objects.equals(current.getSetsPerGame(), dto.getSetsPerGame())
             || !Objects.equals(current.getPointsToWinSet(), dto.getPointsToWinSet())
             || !Objects.equals(current.getMatchdayDecision(), dto.getMatchdayDecision())

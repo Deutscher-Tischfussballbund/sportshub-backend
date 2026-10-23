@@ -89,6 +89,9 @@ public class LeagueRuleSet extends BaseEntity {
     private Integer pointsWin;
     private Integer pointsDraw;
     private Integer pointsLoss;
+    // A withdrawal annuls all of the team's results, as if it had never played (B-2026-10-12-1, the DTFB
+    // leagues' rule); null/false = its played fixtures keep counting for the opponents.
+    private Boolean withdrawalAnnulsResults;
 
     // Set/match scoring.
     private Integer setsPerGame;    // best-of-N sets in one Match (1 = single set)

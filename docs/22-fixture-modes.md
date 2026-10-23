@@ -109,10 +109,14 @@ goals for : against, goal difference, points. Order: points → goal difference 
 beyond that (lot / penalty) is set by an admin. Every active team placed in the group has a row from
 the start, all zeros until its first counted fixture (2026-10-08); the stored standing rows keep only
 teams with a counted fixture, since delete guards read them as "has recorded results". Withdrawn teams
-are listed last, without a place, marked `withdrawn`; what they already played still counts for their
-opponents for now. **Answered 2026-10-12 (Daniel):** in all DTFB leagues a withdrawal annuls all of
-the team's results, as if it had never played; it stays last with 0 played — to build as a rule-set
-setting under SPO-74 (see §Questions). (SPO-21/22, SPO-74.)
+are listed last, without a place, marked `withdrawn`. Whether what they already played still counts is
+the rule-set setting **`withdrawalAnnulsResults`** (B-2026-10-12-1, built 2026-10-23): on, every fixture
+of a withdrawn team is left out of both tables — for its opponents too, head-to-head included — as if it
+had never played; the team stays last with 0 played and the row is marked `resultsAnnulled`. Off (the
+default for regional rule sets), its results keep counting for the opponents. On for the DTFB blueprints
+and the DTFB leagues' snapshots (V25), since Daniel named it the rule of all DTFB leagues. Withdrawing
+rebuilds the group's stored rows. The team's remaining fixtures stay scheduled for an admin to resolve.
+(SPO-21/22, SPO-74.)
 
 **Confirmation deadline.** Rule field "minutes to confirm" (e.g. 15).
 
@@ -194,7 +198,8 @@ Asked and answered in the team meeting on 2026-10-12 (only partly recorded; dtfb
    later (B-2026-10-12-3).
 
 Also answered: **withdrawal** — all results of a withdrawn team are annulled in all DTFB leagues
-(B-2026-10-12-1, SPO-74). **Still open:** what happens when a team fails to show up once.
+(B-2026-10-12-1, SPO-74; built as `withdrawalAnnulsResults`, see "Table"). **Still open:** what happens
+when a team fails to show up once.
 
 ## Watch for / triggers to revisit
 

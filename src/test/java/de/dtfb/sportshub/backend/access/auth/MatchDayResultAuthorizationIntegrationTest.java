@@ -418,6 +418,51 @@ class MatchDayResultAuthorizationIntegrationTest {
             .extracting(st -> st.getTeam().getId()).containsExactlyInAnyOrder(teamHomeId, teamAwayId);
     }
 
+    @Test
+    void aWithdrawal_keepsItsResultsForTheOpponents_unlessTheRuleSetAnnulsThem() throws Exception {
+        placeInGroup(homeParticipationId);
+        placeInGroup(awayParticipationId);
+        enter(captain("cap-h", teamHomeId), 5, 2).andExpect(status().isOk());
+        confirm(captain("cap-a", teamAwayId)).andExpect(status().isOk());
+        confirm(captain("cap-h", teamHomeId)).andExpect(status().isOk());
+        mockMvc.perform(post("/v1/team-participations/" + awayParticipationId + "/withdraw").with(ADMIN))
+            .andExpect(status().isOk());
+
+        // Default: what the withdrawn team played still counts for its opponent.
+        String kept = standings(false);
+        assertThat((List<Integer>) JsonPath.read(kept, "$[?(@.teamId == '" + teamHomeId + "')].wins")).containsExactly(1);
+        assertThat((List<Boolean>) JsonPath.read(kept, "$[?(@.teamId == '" + teamAwayId + "')].resultsAnnulled")).containsExactly(false);
+
+        // B-2026-10-12-1: annulled -- as if the team had never played, for both sides, in both tables.
+        setWithdrawalAnnulsResults();
+        for (boolean live : new boolean[] {false, true}) {
+            String table = standings(live);
+            assertThat((List<String>) JsonPath.read(table, "$[*].teamId")).containsExactly(teamHomeId, teamAwayId);
+            assertThat((List<Integer>) JsonPath.read(table, "$[*].played")).containsExactly(0, 0);
+            assertThat((List<Integer>) JsonPath.read(table, "$[*].points")).containsExactly(0, 0);
+            assertThat((List<Boolean>) JsonPath.read(table, "$[*].resultsAnnulled")).containsExactly(false, true);
+        }
+    }
+
+    @Test
+    void withdrawingUnderAnAnnullingRuleSet_rebuildsTheStoredTableWithoutTheTeam() throws Exception {
+        setWithdrawalAnnulsResults();
+        placeInGroup(homeParticipationId);
+        placeInGroup(awayParticipationId);
+        enter(captain("cap-h", teamHomeId), 5, 2).andExpect(status().isOk());
+        confirm(captain("cap-a", teamAwayId)).andExpect(status().isOk());
+        confirm(captain("cap-h", teamHomeId)).andExpect(status().isOk());
+        assertThat(standingRepository.findByGroupOrderByPointsDescSetsWonDesc(groupRepository.findById(groupId).orElseThrow()))
+            .extracting(st -> st.getTeam().getId()).containsExactlyInAnyOrder(teamHomeId, teamAwayId);
+
+        mockMvc.perform(post("/v1/team-participations/" + awayParticipationId + "/withdraw").with(ADMIN))
+            .andExpect(status().isOk());
+
+        // The only fixture was against the withdrawn team, so no stored row is left.
+        assertThat(standingRepository.findByGroupOrderByPointsDescSetsWonDesc(groupRepository.findById(groupId).orElseThrow()))
+            .isEmpty();
+    }
+
     // --- request checks and the read side ---
 
     @Test
@@ -492,6 +537,16 @@ class MatchDayResultAuthorizationIntegrationTest {
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/v1/league-rule-sets/" + ruleSetId)
                 .with(ADMIN).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Liga-Regeln\",\"lineupRequired\":false,\"matchdayDecision\":\"" + decision + "\",\"matchdayTarget\":" + target + "}"))
+            .andExpect(status().isOk());
+    }
+
+    private void setWithdrawalAnnulsResults() throws Exception {
+        String leagueJson = mockMvc.perform(get("/v1/leagues/" + leagueId).with(ADMIN))
+            .andReturn().getResponse().getContentAsString();
+        String ruleSetId = JsonPath.read(leagueJson, "$.ruleSetId");
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/v1/league-rule-sets/" + ruleSetId)
+                .with(ADMIN).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Liga-Regeln\",\"lineupRequired\":false,\"withdrawalAnnulsResults\":true}"))
             .andExpect(status().isOk());
     }
 

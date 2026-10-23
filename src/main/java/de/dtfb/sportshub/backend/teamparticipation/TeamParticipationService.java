@@ -10,6 +10,7 @@ import de.dtfb.sportshub.backend.league.LeagueRepository;
 import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
 import de.dtfb.sportshub.backend.season.Season;
 import de.dtfb.sportshub.backend.standing.StandingRepository;
+import de.dtfb.sportshub.backend.standing.StandingService;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamService;
 import org.jspecify.annotations.NonNull;
@@ -30,11 +31,12 @@ public class TeamParticipationService {
     private final GroupRepository groupRepository;
     private final MatchDayRepository matchDayRepository;
     private final StandingRepository standingRepository;
+    private final StandingService standingService;
 
     public TeamParticipationService(TeamParticipationRepository repository, TeamParticipationMapper mapper,
                                     TeamService teamService, LeagueRepository leagueRepository,
                                     GroupRepository groupRepository, MatchDayRepository matchDayRepository,
-                                    StandingRepository standingRepository) {
+                                    StandingRepository standingRepository, StandingService standingService) {
         this.repository = repository;
         this.mapper = mapper;
         this.teamService = teamService;
@@ -42,6 +44,7 @@ public class TeamParticipationService {
         this.groupRepository = groupRepository;
         this.matchDayRepository = matchDayRepository;
         this.standingRepository = standingRepository;
+        this.standingService = standingService;
     }
 
     /** Placements, optionally narrowed to one league (preferred), one season, or one team. */
@@ -102,9 +105,9 @@ public class TeamParticipationService {
      * A team drops out of a league by withdrawing, not deleting the row -- this preserves the
      * participation (and any recorded matches/standings) instead of removing it. Withdrawing locks
      * the roster ({@link de.dtfb.sportshub.backend.roster.RosterService}) and excludes the
-     * participation from future copy-forward. Resolving the team's remaining scheduled fixtures
-     * (forfeit/walkover scoring) is a separate, deferred concern -- withdrawal only flags the
-     * participation.
+     * participation from future copy-forward. If the rule set annuls a withdrawal's results
+     * (B-2026-10-12-1), the group's stored table is rebuilt without the team's fixtures. Resolving the
+     * team's remaining scheduled fixtures (forfeit/walkover scoring) is a separate, deferred concern.
      */
     @Transactional
     public TeamParticipationDto withdraw(String id) {
@@ -114,7 +117,11 @@ public class TeamParticipationService {
         }
         participation.setStatus(ParticipationStatus.WITHDRAWN);
         participation.setWithdrawnAt(Instant.now());
-        return mapper.toDto(repository.save(participation));
+        TeamParticipation saved = repository.save(participation);
+        if (saved.getGroup() != null) {
+            standingService.recompute(saved.getGroup());
+        }
+        return mapper.toDto(saved);
     }
 
     /**
