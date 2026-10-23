@@ -167,6 +167,7 @@ public class LeagueRuleSetService {
                 "This is the rule set of a league or tier; it is deleted together with it");
         }
         if (leagueRepository.existsByRuleSetId(id) || tierRepository.existsByRuleSetId(id)
+            || groupRepository.existsByRuleSetId(id)
             || federationRepository.existsByDefaultRuleSetId(id)) {
             throw new RuleSetDeletionBlockedException(
                 "Rule set is still a federation's default; choose another default first");

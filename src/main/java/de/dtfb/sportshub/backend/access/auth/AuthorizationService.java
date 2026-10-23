@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.access.auth;
 
+import de.dtfb.sportshub.backend.group.GroupRepository;
 import de.dtfb.sportshub.backend.access.role.Role;
 import de.dtfb.sportshub.backend.access.role.ScopeType;
 import de.dtfb.sportshub.backend.access.roleassignment.AccessRoles;
@@ -81,6 +82,7 @@ public class AuthorizationService {
     private final TeamParticipationRepository teamParticipationRepository;
     private final TierRepository tierRepository;
     private final LeagueRuleSetRepository leagueRuleSetRepository;
+    private final GroupRepository groupRepository;
     private final CompetitionResolver competitionResolver;
     private final RosterEntryRepository rosterEntryRepository;
 
@@ -97,7 +99,8 @@ public class AuthorizationService {
                                 TierRepository tierRepository,
                                 LeagueRuleSetRepository leagueRuleSetRepository,
                                 CompetitionResolver competitionResolver,
-                                RosterEntryRepository rosterEntryRepository) {
+                                RosterEntryRepository rosterEntryRepository,
+                                GroupRepository groupRepository) {
         this.registry = registry;
         this.roleAssignmentRepository = roleAssignmentRepository;
         this.clubRepository = clubRepository;
@@ -110,6 +113,7 @@ public class AuthorizationService {
         this.teamParticipationRepository = teamParticipationRepository;
         this.tierRepository = tierRepository;
         this.leagueRuleSetRepository = leagueRuleSetRepository;
+        this.groupRepository = groupRepository;
         this.competitionResolver = competitionResolver;
         this.rosterEntryRepository = rosterEntryRepository;
     }
@@ -253,7 +257,7 @@ public class AuthorizationService {
 
     /**
      * May edit/delete the given rule set. A blueprint: the admin of its owning region (or global). A
-     * snapshot (docs/21): whoever manages the league or tier that owns it -- so a league admin may
+     * snapshot (docs/21): whoever manages the league, tier or group (via its tier) that owns it -- so a league admin may
      * tune their own league's rules.
      */
     public boolean canManageRuleSetById(String ruleSetId) {
@@ -268,7 +272,11 @@ public class AuthorizationService {
                 return canManageLeague(owner.getId());
             }
             Tier tierOwner = tierRepository.findFirstByRuleSetId(ruleSetId).orElse(null);
-            return tierOwner != null && canManageTier(tierOwner.getId());
+            if (tierOwner != null) {
+                return canManageTier(tierOwner.getId());
+            }
+            Tier groupTier = groupRepository.findFirstByRuleSetId(ruleSetId).map(group -> group.getTier()).orElse(null);
+            return groupTier != null && canManageTier(groupTier.getId());
         }
         Federation federation = ruleSet == null ? null : ruleSet.getFederation();
         return federation != null && isRegionAdmin(roles, federation.getId());

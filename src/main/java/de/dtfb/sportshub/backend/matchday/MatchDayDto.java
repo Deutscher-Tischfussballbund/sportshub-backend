@@ -41,4 +41,14 @@ public class MatchDayDto {
     private SchedulingState schedulingState;
     private String scheduleProposedByDtfbId;
     private Instant scheduleConfirmedAt;
+
+    /** Knock-out stage (docs/34): where each side's team comes from; null for a fixture of placed teams. */
+    private FixtureSourceDto homeSource;
+    private FixtureSourceDto awaySource;
+    /** The side's team was set by an admin and is no longer filled from its source. */
+    private boolean homeSetByHand;
+    private boolean awaySetByHand;
+    /** Final-ranking places the winner/loser of this knock-out fixture take. */
+    private Integer winnerPlace;
+    private Integer loserPlace;
 }

@@ -39,6 +39,17 @@ Enum GroupState {
   CANCELED
 }
 
+Enum GroupKind {
+  ROUND_ROBIN
+  KNOCKOUT
+}
+
+Enum FixtureSourceType {
+  GROUP_PLACE
+  WINNER
+  LOSER
+}
+
 Enum ResultState {
   OPEN      [note: 'No result entered yet']
   SUBMITTED [note: 'Entered by a team member; waiting for both captains to agree (home/away_confirmed_at)']
@@ -274,6 +285,8 @@ Table comp_group {
   tier_id varchar
   name varchar
   group_state GroupState [not null]
+  kind GroupKind [not null, note: 'ROUND_ROBIN (default) or KNOCKOUT: fixtures fed by group places and earlier results (docs/34)']
+  rule_set_id varchar [note: 'Optional override: a snapshot private to this group (docs/21, docs/34); null = the tier/league rules apply']
 }
 
 Table round {
@@ -306,6 +319,18 @@ Table match_day {
   scheduling_state SchedulingState [not null, default: 'DEFAULT']
   schedule_proposed_by_dtfb_id varchar
   schedule_confirmed_at datetime
+  home_source_type FixtureSourceType [note: 'Knock-out stage (docs/34): GROUP_PLACE, WINNER or LOSER; null = a fixture of placed teams']
+  home_source_group_id varchar [note: 'GROUP_PLACE: the source group']
+  home_source_place int [note: 'GROUP_PLACE: 1-based place in its table']
+  home_source_match_day_id varchar [note: 'WINNER/LOSER: the source fixture']
+  away_source_type FixtureSourceType
+  away_source_group_id varchar
+  away_source_place int
+  away_source_match_day_id varchar
+  home_set_by_hand boolean [not null, note: 'Team set by an admin (lot, penalty); never refilled from the source']
+  away_set_by_hand boolean [not null]
+  winner_place int [note: 'Final-ranking place of the winner (e.g. final = 1)']
+  loser_place int [note: 'Final-ranking place of the loser (e.g. final = 2)']
 }
 
 // ==================== Match detail ====================
@@ -518,6 +543,11 @@ Ref: league.rule_set_id >? league_rule_set.id
 Ref: tier.league_id >? league.id
 Ref: tier.rule_set_id >? league_rule_set.id
 Ref: comp_group.tier_id >? tier.id
+Ref: comp_group.rule_set_id >? league_rule_set.id
+Ref: match_day.home_source_group_id >? comp_group.id
+Ref: match_day.away_source_group_id >? comp_group.id
+Ref: match_day.home_source_match_day_id >? match_day.id
+Ref: match_day.away_source_match_day_id >? match_day.id
 Ref: round.group_id >? comp_group.id
 Ref: match_day.round_id >? round.id
 Ref: match_day.location_id >? location.id

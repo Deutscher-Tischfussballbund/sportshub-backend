@@ -1,6 +1,7 @@
 package de.dtfb.sportshub.backend.round;
 
 import de.dtfb.sportshub.backend.group.Group;
+import de.dtfb.sportshub.backend.group.GroupKind;
 import de.dtfb.sportshub.backend.group.GroupNotFoundException;
 import de.dtfb.sportshub.backend.group.GroupRepository;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleResolver;
@@ -89,6 +90,10 @@ public class FixtureGenerationService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                 "Fixtures already generated for this group");
         }
+        if (group.getKind() == GroupKind.KNOCKOUT) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "A knock-out stage gets its fixtures from the knock-out helper, not the round-robin generator");
+        }
 
         List<TeamParticipation> participations =
             participationRepository.findByGroup_IdAndStatus(groupId, ParticipationStatus.ACTIVE);
@@ -164,7 +169,11 @@ public class FixtureGenerationService {
         }
         for (MatchDay matchDay : matchDays) {
             matchPlan.deleteGames(matchDay);
+            // Knock-out fixtures point at each other as sources (docs/34); drop those links first.
+            matchDay.setHomeSource(null);
+            matchDay.setAwaySource(null);
         }
+        matchDayRepository.saveAllAndFlush(matchDays);
         matchDayRepository.deleteAll(matchDays);
         roundRepository.deleteAll(roundRepository.findByGroupIdOrderByIndex(groupId));
         groupRepository.findById(groupId).ifPresent(standings::recompute);

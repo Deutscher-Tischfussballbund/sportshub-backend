@@ -2,6 +2,7 @@ package de.dtfb.sportshub.backend.matchday;
 
 import de.dtfb.sportshub.backend.access.auth.AuthorizationService;
 import de.dtfb.sportshub.backend.leaguerules.FixtureMode;
+import de.dtfb.sportshub.backend.knockout.KnockoutService;
 import de.dtfb.sportshub.backend.lineup.LineupService;
 import de.dtfb.sportshub.backend.lineup.LineupsDto;
 import de.dtfb.sportshub.backend.leaguerules.LeagueRuleResolver;
@@ -56,16 +57,18 @@ public class MatchDayResultService {
     private final ApplicationEventPublisher eventPublisher;
     private final LeagueRuleResolver ruleResolver;
     private final LineupService lineups;
+    private final KnockoutService knockout;
 
     public MatchDayResultService(MatchDayRepository repository, MatchRepository matchRepository,
                                  AuthorizationService authz, ApplicationEventPublisher eventPublisher,
-                                 LeagueRuleResolver ruleResolver, LineupService lineups) {
+                                 LeagueRuleResolver ruleResolver, LineupService lineups, KnockoutService knockout) {
         this.repository = repository;
         this.matchRepository = matchRepository;
         this.authz = authz;
         this.eventPublisher = eventPublisher;
         this.ruleResolver = ruleResolver;
         this.lineups = lineups;
+        this.knockout = knockout;
     }
 
     @Transactional(readOnly = true)
@@ -102,8 +105,12 @@ public class MatchDayResultService {
             .orElseThrow(() -> new MatchDayNotFoundException(matchDayId));
         ResultActor actor = authz.resultActor(matchDay);
         requireNotBye(matchDay);
+        requireTeamsKnown(matchDay);
 
         if (actor.neutralAdmin()) {
+            if (matchDay.hasBeenFinal()) {
+                knockout.requireDownstreamUnplayed(matchDay); // a later knock-out fixture already played on it (docs/34)
+            }
             applyScores(matchDay, request);
             matchDay.setSubmittedByDtfbId(dtfbId);
             trackDecided(matchDay);
@@ -117,7 +124,9 @@ public class MatchDayResultService {
             matchDay.setHomeConfirmedAt(null);
             matchDay.setAwayConfirmedAt(null);
             matchDay.setResultState(ResultState.SUBMITTED);
-            return toDto(repository.save(matchDay), actor);
+            MatchDay saved = repository.save(matchDay);
+            knockout.refreshAfter(saved); // no longer final: what it fed is open again
+            return toDto(saved, actor);
         }
 
         ResultActor.Side side = actor.memberSide();
@@ -148,6 +157,7 @@ public class MatchDayResultService {
             .orElseThrow(() -> new MatchDayNotFoundException(matchDayId));
         ResultActor actor = authz.resultActor(matchDay);
         requireNotBye(matchDay);
+        requireTeamsKnown(matchDay);
         if (matchDay.getResultState() != ResultState.SUBMITTED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "There is no entered result to confirm");
         }
@@ -188,14 +198,25 @@ public class MatchDayResultService {
     }
 
     private void requireDecided(MatchDay matchDay) {
+        if (knockout.isLevelKnockout(matchDay) && isDecidedUnderRules(matchDay)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "A knock-out fixture can't end level; it needs a winner (docs/34)");
+        }
         if (!isDecided(matchDay)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                 "The fixture isn't decided yet under the rule set's matchday decision; enter the missing games first");
         }
     }
 
-    /** Whether the entered games decide the fixture under the rule set's matchday decision (see class doc). */
+    /**
+     * Whether the entered games decide the fixture: under the rule set's matchday decision (see class doc),
+     * and in a knock-out stage with a winner -- a level result there is never decided (docs/34).
+     */
     private boolean isDecided(MatchDay matchDay) {
+        return isDecidedUnderRules(matchDay) && !knockout.isLevelKnockout(matchDay);
+    }
+
+    private boolean isDecidedUnderRules(MatchDay matchDay) {
         List<Match> games = matchRepository.findByMatchDay(matchDay);
         if (games.isEmpty()) {
             return false;
@@ -236,6 +257,14 @@ public class MatchDayResultService {
             .sorted(Comparator.comparing(Match::getPosition, Comparator.nullsLast(Comparator.naturalOrder())))
             .map(game -> new RaceScoring.Segment(game.getHomeScore(), game.getAwayScore()))
             .toList();
+    }
+
+    /** A knock-out fixture whose teams aren't filled yet has nothing to enter (docs/34). */
+    private static void requireTeamsKnown(MatchDay matchDay) {
+        if (matchDay.getTeamHome() == null || matchDay.getTeamAway() == null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "The teams of this fixture aren't known yet; they're filled once the earlier results are final");
+        }
     }
 
     private static void requireNotBye(MatchDay matchDay) {

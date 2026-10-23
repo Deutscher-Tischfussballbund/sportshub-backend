@@ -75,6 +75,43 @@ public class MatchDay extends BaseEntity {
 
     private Instant scheduleConfirmedAt;
 
+    // Knock-out stage (docs/34): where each side's team comes from, until it's filled; null for a fixture
+    // of placed teams.
+    @Embedded
+    @AttributeOverrides({
+        @AttributeOverride(name = "type", column = @Column(name = "home_source_type")),
+        @AttributeOverride(name = "place", column = @Column(name = "home_source_place")),
+    })
+    @AssociationOverrides({
+        @AssociationOverride(name = "group", joinColumns = @JoinColumn(name = "home_source_group_id")),
+        @AssociationOverride(name = "matchDay", joinColumns = @JoinColumn(name = "home_source_match_day_id")),
+    })
+    private FixtureSource homeSource;
+
+    @Embedded
+    @AttributeOverrides({
+        @AttributeOverride(name = "type", column = @Column(name = "away_source_type")),
+        @AttributeOverride(name = "place", column = @Column(name = "away_source_place")),
+    })
+    @AssociationOverrides({
+        @AssociationOverride(name = "group", joinColumns = @JoinColumn(name = "away_source_group_id")),
+        @AssociationOverride(name = "matchDay", joinColumns = @JoinColumn(name = "away_source_match_day_id")),
+    })
+    private FixtureSource awaySource;
+
+    /** The side's team was set by an admin (lot, penalty, correction) and is never overwritten from its source. */
+    @Column(nullable = false)
+    @ColumnDefault("false")
+    private boolean homeSetByHand;
+
+    @Column(nullable = false)
+    @ColumnDefault("false")
+    private boolean awaySetByHand;
+
+    /** Final-ranking place the winner/loser of this knock-out fixture takes (e.g. final 1/2, game for 3rd 3/4). */
+    private Integer winnerPlace;
+    private Integer loserPlace;
+
     /** Final now, or final once before an admin's correction reopened it: only neutral admins act on it (docs/17). */
     public boolean hasBeenFinal() {
         return resultState == ResultState.CONFIRMED || firstFinalAt != null;

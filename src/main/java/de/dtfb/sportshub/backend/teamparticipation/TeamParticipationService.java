@@ -2,8 +2,10 @@ package de.dtfb.sportshub.backend.teamparticipation;
 
 import de.dtfb.sportshub.backend.federation.Federation;
 import de.dtfb.sportshub.backend.group.Group;
+import de.dtfb.sportshub.backend.group.GroupKind;
 import de.dtfb.sportshub.backend.group.GroupNotFoundException;
 import de.dtfb.sportshub.backend.group.GroupRepository;
+import de.dtfb.sportshub.backend.knockout.KnockoutService;
 import de.dtfb.sportshub.backend.league.League;
 import de.dtfb.sportshub.backend.league.LeagueNotFoundException;
 import de.dtfb.sportshub.backend.league.LeagueRepository;
@@ -32,11 +34,13 @@ public class TeamParticipationService {
     private final MatchDayRepository matchDayRepository;
     private final StandingRepository standingRepository;
     private final StandingService standingService;
+    private final KnockoutService knockout;
 
     public TeamParticipationService(TeamParticipationRepository repository, TeamParticipationMapper mapper,
                                     TeamService teamService, LeagueRepository leagueRepository,
                                     GroupRepository groupRepository, MatchDayRepository matchDayRepository,
-                                    StandingRepository standingRepository, StandingService standingService) {
+                                    StandingRepository standingRepository, StandingService standingService,
+                                    KnockoutService knockout) {
         this.repository = repository;
         this.mapper = mapper;
         this.teamService = teamService;
@@ -45,6 +49,7 @@ public class TeamParticipationService {
         this.matchDayRepository = matchDayRepository;
         this.standingRepository = standingRepository;
         this.standingService = standingService;
+        this.knockout = knockout;
     }
 
     /** Placements, optionally narrowed to one league (preferred), one season, or one team. */
@@ -120,6 +125,7 @@ public class TeamParticipationService {
         TeamParticipation saved = repository.save(participation);
         if (saved.getGroup() != null) {
             standingService.recompute(saved.getGroup());
+            knockout.refreshTier(saved.getGroup().getTier()); // its group places may change (docs/34)
         }
         return mapper.toDto(saved);
     }
@@ -201,6 +207,12 @@ public class TeamParticipationService {
     }
 
     private @NonNull Group getGroup(String groupId) {
-        return groupRepository.findById(groupId).orElseThrow(() -> new GroupNotFoundException(groupId));
+        Group group = groupRepository.findById(groupId).orElseThrow(() -> new GroupNotFoundException(groupId));
+        if (group.getKind() == GroupKind.KNOCKOUT) {
+            // Its fixtures take their teams from group places and earlier results (docs/34).
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "Teams can't be placed in a knock-out stage; it takes its teams from the other groups");
+        }
+        return group;
     }
 }

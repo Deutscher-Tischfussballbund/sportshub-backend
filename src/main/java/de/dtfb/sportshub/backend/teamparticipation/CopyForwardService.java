@@ -120,6 +120,9 @@ public class CopyForwardService {
                     newGroup.setTier(newTier);
                     newGroup.setName(sourceGroup.getName());
                     newGroup.setGroupState(GroupState.PLANNED); // a fresh season starts unplayed
+                    newGroup.setKind(sourceGroup.getKind()); // a knock-out stage stays one (docs/34), without fixtures
+                    newGroup.setRuleSet(sourceGroup.getRuleSet() == null
+                        ? null : snapshots.snapshotOf(sourceGroup.getRuleSet(), target.getFederation()));
                     newGroup = groupRepository.save(newGroup);
                     groupBySourceId.put(sourceGroup.getId(), newGroup);
                     groups++;

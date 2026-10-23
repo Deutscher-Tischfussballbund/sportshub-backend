@@ -14,6 +14,12 @@ public interface MatchDayRepository extends JpaRepository<MatchDay, String> {
 
     List<MatchDay> findByRoundGroupId(String groupId);
 
+    /** Knock-out fixtures fed by this fixture's winner or loser (docs/34). */
+    List<MatchDay> findByHomeSource_MatchDay_IdOrAwaySource_MatchDay_Id(String homeSourceId, String awaySourceId);
+
+    /** Knock-out fixtures fed by a place of this group (docs/34). */
+    List<MatchDay> findByHomeSource_Group_IdOrAwaySource_Group_Id(String homeGroupId, String awayGroupId);
+
     /**
      * Whether any fixture of the group (other than a bye fixture, final from the start) has left
      * {@code state} -- i.e. has a result entered (game plan lock).

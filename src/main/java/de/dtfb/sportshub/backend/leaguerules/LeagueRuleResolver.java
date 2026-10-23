@@ -39,6 +39,9 @@ public class LeagueRuleResolver {
         if (group == null) {
             return null;
         }
+        if (group.getRuleSet() != null) {
+            return group.getRuleSet(); // a group's own override, e.g. the K.O. rules of a knock-out stage (docs/34)
+        }
         Tier tier = group.getTier();
         if (tier == null) {
             return null;
