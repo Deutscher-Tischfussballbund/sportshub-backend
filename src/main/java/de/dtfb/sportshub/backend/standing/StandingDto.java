@@ -29,6 +29,11 @@ public class StandingDto {
     private boolean provisional;
     /** The team has withdrawn from the league (docs/22): listed last, without a place. */
     private boolean withdrawn;
+    /**
+     * Withdrawn rows only: the rule set annuls a withdrawal's results (B-2026-10-12-1) -- none of the team's
+     * fixtures count, for it or its opponents.
+     */
+    private boolean resultsAnnulled;
     /** Bonus or penalty points contained in {@link #points}; only frozen official tables carry them (docs/29). */
     private int pointsAdjustment;
     /**

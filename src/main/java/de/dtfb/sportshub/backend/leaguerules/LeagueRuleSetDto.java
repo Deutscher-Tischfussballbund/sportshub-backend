@@ -46,6 +46,7 @@ public class LeagueRuleSetDto {
     private Integer pointsWin;
     private Integer pointsDraw;
     private Integer pointsLoss;
+    private Boolean withdrawalAnnulsResults;
 
     private Integer setsPerGame;
     private Integer pointsToWinSet;
