@@ -169,6 +169,8 @@ collections are large (one state: 1,632 fixtures, 17,231 games; all ~13 installa
 - Now: small reference lists stay unfiltered (federations, categories, release notes, maintenance notices, API
   keys, role catalogue, import runs, tracker).
 - Not now: paging; `updatedSince` for syncing consumers (no change timestamp on the entities yet).
+- Proposed (doc 32, draft): on `/v1/matchdays` a bounded date window (`from` + `to`, at most 14 days) counts as a
+  scope, plus a `federationId` filter — for the public board of running and upcoming fixtures.
 
 ## Status
 
