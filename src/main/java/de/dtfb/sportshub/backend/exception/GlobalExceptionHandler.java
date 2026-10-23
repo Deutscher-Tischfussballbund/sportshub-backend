@@ -18,6 +18,7 @@ import de.dtfb.sportshub.backend.league.LeagueDeletionBlockedException;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetDeletionBlockedError;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetDeletionBlockedException;
 import de.dtfb.sportshub.backend.leaguerules.GamePlanLockedException;
+import de.dtfb.sportshub.backend.knockout.KnockoutDownstreamPlayedException;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetEditBlockedError;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetEditBlockedException;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetNameTakenError;
@@ -203,6 +204,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<RuleSetEditBlockedError> handleGamePlanLocked(GamePlanLockedException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new RuleSetEditBlockedError("GAME_PLAN_LOCKED", ex.getMessage()));
+    }
+
+    // Result correction refused: a later knock-out fixture it fed has a result (docs/34).
+    @ExceptionHandler(KnockoutDownstreamPlayedException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleKnockoutDownstreamPlayed(KnockoutDownstreamPlayedException ex) {
+        return new ApiError("KNOCKOUT_DOWNSTREAM_PLAYED", ex.getMessage());
     }
 
     // Import file not in the chosen source's format (docs/28) → 400 with the parser's message.

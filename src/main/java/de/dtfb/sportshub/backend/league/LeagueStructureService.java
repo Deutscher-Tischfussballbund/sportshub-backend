@@ -68,7 +68,9 @@ public class LeagueStructureService {
                         g.getId(),
                         g.getName(),
                         g.getGroupState(),
-                        countByGroup.getOrDefault(g.getId(), 0L).intValue()
+                        countByGroup.getOrDefault(g.getId(), 0L).intValue(),
+                        g.getKind(),
+                        g.getRuleSet() == null ? null : g.getRuleSet().getId()
                     ))
                     .toList()
             ))

@@ -44,6 +44,13 @@ public interface MatchDayMapper {
     @Mapping(target = "schedulingState", ignore = true)
     @Mapping(target = "scheduleProposedByDtfbId", ignore = true)
     @Mapping(target = "scheduleConfirmedAt", ignore = true)
+    // Knock-out sources, places and overrides are set through KnockoutService only (docs/34).
+    @Mapping(target = "homeSource", ignore = true)
+    @Mapping(target = "awaySource", ignore = true)
+    @Mapping(target = "homeSetByHand", ignore = true)
+    @Mapping(target = "awaySetByHand", ignore = true)
+    @Mapping(target = "winnerPlace", ignore = true)
+    @Mapping(target = "loserPlace", ignore = true)
     MatchDay toEntity(MatchDayDto matchDayDto);
 
     @Mapping(target = "id", ignore = true)
@@ -59,7 +66,20 @@ public interface MatchDayMapper {
     @Mapping(target = "schedulingState", ignore = true)
     @Mapping(target = "scheduleProposedByDtfbId", ignore = true)
     @Mapping(target = "scheduleConfirmedAt", ignore = true)
+    // Knock-out sources, places and overrides are set through KnockoutService only (docs/34).
+    @Mapping(target = "homeSource", ignore = true)
+    @Mapping(target = "awaySource", ignore = true)
+    @Mapping(target = "homeSetByHand", ignore = true)
+    @Mapping(target = "awaySetByHand", ignore = true)
+    @Mapping(target = "winnerPlace", ignore = true)
+    @Mapping(target = "loserPlace", ignore = true)
     void updateEntityFromDto(MatchDayDto dto, @MappingTarget MatchDay entity);
+
+    @Mapping(source = "group.id", target = "groupId")
+    @Mapping(source = "group.name", target = "groupName")
+    @Mapping(source = "matchDay.id", target = "matchDayId")
+    @Mapping(source = "matchDay.name", target = "matchDayName")
+    FixtureSourceDto toSourceDto(FixtureSource source);
 
     List<MatchDayDto> toDtoList(List<MatchDay> matchDays);
 }

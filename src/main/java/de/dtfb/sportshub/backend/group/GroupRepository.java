@@ -17,6 +17,10 @@ public interface GroupRepository extends JpaRepository<Group, String> {
     /** Whether the tier still has any group (tier delete guard). */
     boolean existsByTierId(String tierId);
 
+    boolean existsByRuleSetId(String ruleSetId);
+
+    Optional<Group> findFirstByRuleSetId(String ruleSetId);
+
     /** All groups under a league, across its tiers (league structure read). */
     List<Group> findByTier_League_Id(String leagueId);
 

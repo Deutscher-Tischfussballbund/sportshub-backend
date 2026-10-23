@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.leaguerules;
 
+import de.dtfb.sportshub.backend.group.GroupRepository;
 import de.dtfb.sportshub.backend.federation.Federation;
 import de.dtfb.sportshub.backend.league.League;
 import de.dtfb.sportshub.backend.league.LeagueRepository;
@@ -28,17 +29,20 @@ public class RuleSetSnapshotService {
     private final LeagueRuleSetMapper mapper;
     private final LeagueRepository leagueRepository;
     private final TierRepository tierRepository;
+    private final GroupRepository groupRepository;
 
     public RuleSetSnapshotService(LeagueRuleSetRepository repository,
                                   GamePlanEntryRepository gamePlanRepository,
                                   LeagueRuleSetMapper mapper,
                                   LeagueRepository leagueRepository,
-                                  TierRepository tierRepository) {
+                                  TierRepository tierRepository,
+                                  GroupRepository groupRepository) {
         this.repository = repository;
         this.gamePlanRepository = gamePlanRepository;
         this.mapper = mapper;
         this.leagueRepository = leagueRepository;
         this.tierRepository = tierRepository;
+        this.groupRepository = groupRepository;
     }
 
     /**
@@ -109,7 +113,7 @@ public class RuleSetSnapshotService {
         repository.delete(snapshot);
     }
 
-    /** The season whose league/tier owns this snapshot, or {@code null} for a blueprint / an orphan. */
+    /** The season whose league/tier/group owns this snapshot, or {@code null} for a blueprint / an orphan. */
     @Transactional(readOnly = true)
     public Season ownerSeason(LeagueRuleSet ruleSet) {
         if (ruleSet == null || !ruleSet.isSnapshot()) {
@@ -117,7 +121,10 @@ public class RuleSetSnapshotService {
         }
         League league = leagueRepository.findFirstByRuleSetId(ruleSet.getId())
             .orElseGet(() -> tierRepository.findFirstByRuleSetId(ruleSet.getId())
-                .map(Tier::getLeague).orElse(null));
+                .map(Tier::getLeague)
+                .orElseGet(() -> groupRepository.findFirstByRuleSetId(ruleSet.getId())
+                    .map(group -> group.getTier() == null ? null : group.getTier().getLeague())
+                    .orElse(null)));
         return league == null ? null : league.getSeason();
     }
 

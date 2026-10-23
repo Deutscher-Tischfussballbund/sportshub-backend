@@ -114,7 +114,9 @@ public class MatchPlanService {
             .map(league -> groupsOfLeague(league.getId()))
             .orElseGet(() -> tierRepository.findFirstByRuleSetId(ruleSet.getId())
                 .map(tier -> groupsOfTier(tier.getId()))
-                .orElse(List.of()));
+                .orElseGet(() -> groupRepository.findFirstByRuleSetId(ruleSet.getId())
+                    .map(List::of)
+                    .orElse(List.of())));
         return candidates.stream()
             .filter(group -> {
                 LeagueRuleSet effective = ruleResolver.effectiveFor(group);
