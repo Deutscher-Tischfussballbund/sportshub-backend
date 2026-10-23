@@ -1,6 +1,6 @@
 # Knock-out stage — fixtures fed by group places and earlier results, final ranking, promotion
 
-> **Discussion — draft, not yet proposed to the team (SPO-99).** A season gets a second kind of group:
+> **Discussion — draft, not yet proposed to the team (SPO-99); built on a branch 2026-10-23, see Implementation.** A season gets a second kind of group:
 > **`KNOCKOUT`**, beside today's round robin. Its fixtures don't start with teams but with **sources** — "Group A,
 > place 1", "winner of SF 1", "loser of SF 1" — and the teams **fill in automatically** once the source is decided
 > (the group finished, the source fixture final). An admin can override a filled team (e.g. after a lot). A
@@ -140,6 +140,30 @@
 **Effort (rough)**
 - Backend (kinds, group override, sources, filling, places, final ranking, copy-forward, tests): ~1.5 weeks.
 - Frontend (helper dialog, edit sources, bracket view, final ranking, marks on the placement board): ~1 week.
+
+## Implementation (2026-10-23, SPO-99)
+
+Built as described above, on `feature/knockout-stage-spo-99` (backend) and `feature/sportshub-backend-migration`
+(frontend). The doc stays a draft until the team has seen it; the open questions below are untouched.
+
+- Backend: `Group.kind` + group rules override (V26, owner lookups, copy-forward), `MatchDay.homeSource/awaySource`
+  + places + set-by-hand flags, `KnockoutService` (filling, 409 `KNOCKOUT_DOWNSTREAM_PLAYED`, level knock-out result
+  never decided), `POST /v1/tiers/{id}/knockout-stage`, `PUT /v1/matchdays/{id}/knockout`,
+  `GET /v1/tiers/{id}/final-ranking`, `Tier.promotionPlaces/relegationPlaces` and copy-forward placement.
+  `ScheduleDto` and the league structure carry the group kind and the sources. Integration tests in
+  `KnockoutStageIntegrationTest`.
+- Frontend: "Add knock-out stage" per tier (dialog), K.O. badge and rules wrench on the group row, knock-out groups
+  hidden from the placement board, the schedule page shows a bracket (`dtfb-bracket`, library) and the tier's final
+  ranking instead of a table, an edit dialog per knock-out fixture (sources, places, team set by hand), promotion /
+  relegation places in the tier dialog.
+
+**Deviations from the decision above**
+- The helper takes **one or two** source groups (the known formats); more groups → 400.
+- The helper dialog sets **one venue for all rounds**; the API takes a venue per slot.
+- The placement board does **not** show promotion/relegation marks yet; copy-forward applies them, the final ranking
+  shows them.
+- The group dialog has no kind selector: a knock-out group is made by the helper (or `PUT /v1/groups` with `kind`).
+- The bracket view lists placement games in the same round columns as the main bracket (no separate side bracket).
 
 ## Open questions
 

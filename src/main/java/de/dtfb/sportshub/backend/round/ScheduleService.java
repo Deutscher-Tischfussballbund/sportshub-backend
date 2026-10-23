@@ -7,6 +7,7 @@ import de.dtfb.sportshub.backend.group.Group;
 import de.dtfb.sportshub.backend.group.GroupNotFoundException;
 import de.dtfb.sportshub.backend.group.GroupRepository;
 import de.dtfb.sportshub.backend.matchday.MatchDay;
+import de.dtfb.sportshub.backend.matchday.MatchDayMapper;
 import de.dtfb.sportshub.backend.matchday.MatchDayRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,23 +24,26 @@ public class ScheduleService {
     private static final Comparator<MatchDay> KICK_OFF_ORDER = Comparator
         .comparing(MatchDay::getStartDate)
         .thenComparing(matchDay -> matchDay.getTeamHome() == null ? "" : matchDay.getTeamHome().getName(),
-            Comparator.nullsFirst(Comparator.naturalOrder()));
+            Comparator.nullsFirst(Comparator.naturalOrder()))
+        .thenComparing(MatchDay::getName, Comparator.nullsFirst(Comparator.naturalOrder())); // knock-out labels
 
     private final GroupRepository groupRepository;
     private final RoundRepository roundRepository;
     private final MatchDayRepository matchDayRepository;
     private final FixtureScoreService fixtureScores;
     private final LineupService lineups;
+    private final MatchDayMapper matchDayMapper;
 
     public ScheduleService(GroupRepository groupRepository, RoundRepository roundRepository,
                            MatchDayRepository matchDayRepository,
                            FixtureScoreService fixtureScores,
-                           LineupService lineups) {
+                           LineupService lineups, MatchDayMapper matchDayMapper) {
         this.groupRepository = groupRepository;
         this.roundRepository = roundRepository;
         this.matchDayRepository = matchDayRepository;
         this.fixtureScores = fixtureScores;
         this.lineups = lineups;
+        this.matchDayMapper = matchDayMapper;
     }
 
     @Transactional(readOnly = true)
@@ -55,7 +59,9 @@ public class ScheduleService {
         ScheduleDto schedule = new ScheduleDto();
         schedule.setGroupId(group.getId());
         schedule.setGroupName(group.getName());
+        schedule.setGroupKind(group.getKind());
         if (group.getTier() != null) {
+            schedule.setTierId(group.getTier().getId());
             schedule.setTierName(group.getTier().getName());
             if (group.getTier().getLeague() != null) {
                 schedule.setLeagueId(group.getTier().getLeague().getId());
@@ -86,6 +92,13 @@ public class ScheduleService {
                                          FixtureScoreService.FixtureScore score, LineupStatus[] lineupStatus) {
         ScheduleFixtureDto dto = new ScheduleFixtureDto();
         dto.setId(matchDay.getId());
+        dto.setName(matchDay.getName());
+        if (matchDay.getHomeSource() != null) dto.setHomeSource(matchDayMapper.toSourceDto(matchDay.getHomeSource()));
+        if (matchDay.getAwaySource() != null) dto.setAwaySource(matchDayMapper.toSourceDto(matchDay.getAwaySource()));
+        dto.setHomeSetByHand(matchDay.isHomeSetByHand());
+        dto.setAwaySetByHand(matchDay.isAwaySetByHand());
+        dto.setWinnerPlace(matchDay.getWinnerPlace());
+        dto.setLoserPlace(matchDay.getLoserPlace());
         if (matchDay.getTeamHome() != null) {
             dto.setTeamHomeId(matchDay.getTeamHome().getId());
             dto.setTeamHomeName(matchDay.getTeamHome().getName());

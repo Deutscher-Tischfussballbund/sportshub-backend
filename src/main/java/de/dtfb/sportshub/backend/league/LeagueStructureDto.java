@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.league;
 
+import de.dtfb.sportshub.backend.group.GroupKind;
 import de.dtfb.sportshub.backend.group.GroupState;
 
 import java.util.List;
@@ -22,7 +23,11 @@ public record LeagueStructureDto(
         String id,
         String name,
         GroupState groupState,
-        int participationCount
+        int participationCount,
+        /** {@code KNOCKOUT}: no placed teams, fixtures fed by sources (docs/34) -- not a placement lane. */
+        GroupKind kind,
+        /** The group's own rules override, if any (docs/34). */
+        String ruleSetId
     ) {
     }
 }

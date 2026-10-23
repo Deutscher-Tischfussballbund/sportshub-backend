@@ -1,5 +1,6 @@
 package de.dtfb.sportshub.backend.round;
 
+import de.dtfb.sportshub.backend.matchday.FixtureSourceDto;
 import de.dtfb.sportshub.backend.lineup.LineupStatus;
 import de.dtfb.sportshub.backend.matchday.ResultState;
 import de.dtfb.sportshub.backend.matchday.SchedulingState;
@@ -13,6 +14,15 @@ import java.time.Instant;
 @Setter
 public class ScheduleFixtureDto {
     private String id;
+    /** Label of a knock-out fixture ("HF 1", "Finale", "Spiel um Platz 3"); null for a league fixture. */
+    private String name;
+    /** Knock-out stage (docs/34): where each side's team comes from, shown while it isn't filled. */
+    private FixtureSourceDto homeSource;
+    private FixtureSourceDto awaySource;
+    private boolean homeSetByHand;
+    private boolean awaySetByHand;
+    private Integer winnerPlace;
+    private Integer loserPlace;
     private String teamHomeId;
     private String teamHomeName;
     private String teamAwayId;
