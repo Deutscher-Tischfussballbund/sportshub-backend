@@ -24,3 +24,8 @@ ALTER TABLE `match_day`
   ADD CONSTRAINT `FK_match_day_home_source_match_day` FOREIGN KEY (`home_source_match_day_id`) REFERENCES `match_day` (`id`),
   ADD CONSTRAINT `FK_match_day_away_source_group` FOREIGN KEY (`away_source_group_id`) REFERENCES `comp_group` (`id`),
   ADD CONSTRAINT `FK_match_day_away_source_match_day` FOREIGN KEY (`away_source_match_day_id`) REFERENCES `match_day` (`id`);
+
+-- Promotion and relegation places of a tier's final ranking; copy-forward moves those teams a level.
+ALTER TABLE `tier`
+  ADD COLUMN `promotion_places` int DEFAULT NULL,
+  ADD COLUMN `relegation_places` int DEFAULT NULL;

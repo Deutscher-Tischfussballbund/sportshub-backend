@@ -278,6 +278,8 @@ Table tier {
   rule_set_id varchar [note: 'Optional override: a snapshot private to this tier (docs/21); null = the league rules apply']
   name varchar
   level int [note: 'Ordinal ladder position, 1 = top tier; orders promote/relegate']
+  promotion_places int [note: 'Teams from the top of the final ranking that go up a level (docs/34); null = none']
+  relegation_places int [note: 'Teams from the bottom of the final ranking that go down a level; null = none']
 }
 
 Table comp_group {

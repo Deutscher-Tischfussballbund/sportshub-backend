@@ -41,4 +41,11 @@ public class Tier extends BaseEntity {
      * from {@link #name} — see docs/09-league-model.md §1.
      */
     private Integer level;
+
+    /**
+     * How many teams from the top / bottom of the tier's final ranking go up / down a level (docs/34);
+     * null = none. Copy-forward places them one tier up / down in the new season.
+     */
+    private Integer promotionPlaces;
+    private Integer relegationPlaces;
 }

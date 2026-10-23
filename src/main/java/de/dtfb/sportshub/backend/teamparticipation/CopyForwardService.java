@@ -3,6 +3,9 @@ package de.dtfb.sportshub.backend.teamparticipation;
 import de.dtfb.sportshub.backend.leaguerules.RuleSetSnapshotService;
 import de.dtfb.sportshub.backend.federation.Federation;
 import de.dtfb.sportshub.backend.group.Group;
+import de.dtfb.sportshub.backend.group.GroupKind;
+import de.dtfb.sportshub.backend.knockout.FinalRankingRowDto;
+import de.dtfb.sportshub.backend.knockout.FinalRankingService;
 import de.dtfb.sportshub.backend.group.GroupRepository;
 import de.dtfb.sportshub.backend.group.GroupState;
 import de.dtfb.sportshub.backend.league.League;
@@ -22,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -57,12 +61,13 @@ public class CopyForwardService {
     private final RosterEntryRepository rosterEntryRepository;
     private final TeamService teamService;
     private final RuleSetSnapshotService snapshots;
+    private final FinalRankingService finalRanking;
 
     public CopyForwardService(SeasonRepository seasonRepository, LeagueRepository leagueRepository,
                               TierRepository tierRepository, GroupRepository groupRepository,
                               TeamParticipationRepository participationRepository,
                               RosterEntryRepository rosterEntryRepository, TeamService teamService,
-                              RuleSetSnapshotService snapshots) {
+                              RuleSetSnapshotService snapshots, FinalRankingService finalRanking) {
         this.seasonRepository = seasonRepository;
         this.leagueRepository = leagueRepository;
         this.tierRepository = tierRepository;
@@ -71,6 +76,7 @@ public class CopyForwardService {
         this.rosterEntryRepository = rosterEntryRepository;
         this.teamService = teamService;
         this.snapshots = snapshots;
+        this.finalRanking = finalRanking;
     }
 
     @Transactional
@@ -89,6 +95,10 @@ public class CopyForwardService {
         Map<String, League> leagueBySourceId = new HashMap<>();
         // old team id -> this season's copy, deduped since a team may hold several participations
         Map<String, Team> teamBySourceId = new HashMap<>();
+        // new league id -> its new tiers by level, for promotion / relegation (docs/34)
+        Map<String, Map<Integer, Tier>> newTiersByLevel = new HashMap<>();
+        // old tier id -> the marks of its final ranking (team id -> PROMOTED / RELEGATED), computed once
+        Map<String, Map<String, FinalRankingRowDto.Mark>> marksBySourceTier = new HashMap<>();
         int leagues = 0, tiers = 0, groups = 0;
 
         for (League sourceLeague : leagueRepository.findBySeasonId(sourceSeasonId)) {
@@ -112,7 +122,12 @@ public class CopyForwardService {
                 newTier.setLevel(sourceTier.getLevel()); // preserve the promote/relegate ladder order
                 newTier.setRuleSet(sourceTier.getRuleSet() == null
                     ? null : snapshots.snapshotOf(sourceTier.getRuleSet(), target.getFederation()));
+                newTier.setPromotionPlaces(sourceTier.getPromotionPlaces());
+                newTier.setRelegationPlaces(sourceTier.getRelegationPlaces());
                 newTier = tierRepository.save(newTier);
+                if (newTier.getLevel() != null) {
+                    newTiersByLevel.computeIfAbsent(newLeague.getId(), id -> new HashMap<>()).put(newTier.getLevel(), newTier);
+                }
                 tiers++;
 
                 for (Group sourceGroup : groupRepository.findByTierId(sourceTier.getId())) {
@@ -148,7 +163,8 @@ public class CopyForwardService {
             TeamParticipation clone = new TeamParticipation();
             clone.setTeam(newTeam);
             clone.setLeague(newLeague);
-            clone.setGroup(source0.getGroup() == null ? null : groupBySourceId.get(source0.getGroup().getId()));
+            Group newGroup = source0.getGroup() == null ? null : groupBySourceId.get(source0.getGroup().getId());
+            clone.setGroup(promotedOrRelegated(source0, newGroup, newLeague, newTiersByLevel, marksBySourceTier));
             clone.setCopiedFromParticipationId(source0.getId());
             clone = participationRepository.save(clone);
             participations++;
@@ -159,6 +175,40 @@ public class CopyForwardService {
         }
 
         return new CopyForwardResultDto(leagues, tiers, groups, teamBySourceId.size(), participations, rosterEntries);
+    }
+
+    /**
+     * A team marked promoted / relegated in its tier's final ranking (docs/34) starts the new season
+     * one level up / down -- in the first round-robin group of that tier. Without such a tier (top tier's
+     * promoted, bottom tier's relegated teams) or while the ranking isn't final, it stays where it was.
+     */
+    private Group promotedOrRelegated(TeamParticipation source, Group newGroup, League newLeague,
+                                      Map<String, Map<Integer, Tier>> newTiersByLevel,
+                                      Map<String, Map<String, FinalRankingRowDto.Mark>> marksBySourceTier) {
+        Tier sourceTier = source.getGroup() == null ? null : source.getGroup().getTier();
+        if (sourceTier == null || sourceTier.getLevel() == null
+            || (sourceTier.getPromotionPlaces() == null && sourceTier.getRelegationPlaces() == null)) {
+            return newGroup;
+        }
+        FinalRankingRowDto.Mark mark = marksBySourceTier.computeIfAbsent(sourceTier.getId(), id -> {
+            Map<String, FinalRankingRowDto.Mark> marks = new HashMap<>();
+            for (FinalRankingRowDto row : finalRanking.rank(sourceTier)) {
+                if (row.getMark() != null && !row.isProvisional()) marks.put(row.getTeamId(), row.getMark());
+            }
+            return marks;
+        }).get(source.getTeam().getId());
+        if (mark == null) {
+            return newGroup;
+        }
+        int level = sourceTier.getLevel() + (mark == FinalRankingRowDto.Mark.PROMOTED ? -1 : 1);
+        Tier target = newTiersByLevel.getOrDefault(newLeague.getId(), Map.of()).get(level);
+        if (target == null) {
+            return newGroup;
+        }
+        return groupRepository.findByTierId(target.getId()).stream()
+            .filter(group -> group.getKind() == GroupKind.ROUND_ROBIN)
+            .min(Comparator.comparing(Group::getName, Comparator.nullsLast(Comparator.naturalOrder())))
+            .orElse(newGroup);
     }
 
     /** Clones the active (non-removed) roster from the source participation onto its clone. */

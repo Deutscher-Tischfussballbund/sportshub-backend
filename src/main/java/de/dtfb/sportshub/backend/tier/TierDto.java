@@ -11,6 +11,9 @@ public class TierDto {
     private String leagueId;
     /** Ordinal ladder position (1 = top tier); defines promote/relegate order. */
     private Integer level;
+    /** Teams from the top / bottom of the final ranking that go up / down a level (docs/34); null = none. */
+    private Integer promotionPlaces;
+    private Integer relegationPlaces;
     /**
      * The tier's own rules override: a snapshot private to this tier (docs/21), or null = the
      * league's rules apply. On update, sending null here together with a null {@link #blueprintId}

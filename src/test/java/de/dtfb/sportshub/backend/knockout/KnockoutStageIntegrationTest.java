@@ -12,6 +12,8 @@ import de.dtfb.sportshub.backend.support.AuthorizedControllerTest;
 import de.dtfb.sportshub.backend.support.LineupTestSupport;
 import de.dtfb.sportshub.backend.team.Team;
 import de.dtfb.sportshub.backend.team.TeamRepository;
+import de.dtfb.sportshub.backend.teamparticipation.TeamParticipation;
+import de.dtfb.sportshub.backend.teamparticipation.TeamParticipationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -52,6 +55,11 @@ class KnockoutStageIntegrationTest extends AuthorizedControllerTest {
     @Autowired
     MatchRepository matchRepository;
 
+    @Autowired
+    TeamParticipationRepository participationRepository;
+
+    private String federationId;
+    private String seasonId;
     private String leagueId;
     private String tierId;
     private String groupA;
@@ -61,8 +69,8 @@ class KnockoutStageIntegrationTest extends AuthorizedControllerTest {
 
     @BeforeEach
     void setup() throws Exception {
-        String federationId = createFederation();
-        String seasonId = id(mockMvc.perform(post("/v1/seasons").contentType(MediaType.APPLICATION_JSON)
+        federationId = createFederation();
+        seasonId = id(mockMvc.perform(post("/v1/seasons").contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("{\"name\":\"2027\",\"federationId\":\"%s\"}", federationId)))
             .andExpect(status().isCreated()).andReturn());
         leagueId = id(mockMvc.perform(post("/v1/leagues").contentType(MediaType.APPLICATION_JSON)
@@ -192,7 +200,99 @@ class KnockoutStageIntegrationTest extends AuthorizedControllerTest {
             .andExpect(status().isConflict());
     }
 
+    @Test
+    void theFinalRanking_takesThePlacesOfThePlacingGames_andMarksPromotion() throws Exception {
+        setTier("Regionalliga", 1, 3);
+        String stage = createStage("rs-race42-ko");
+        playGroup(groupA);
+        playGroup(groupB);
+        playKnockout(stage);
+
+        String ranking = finalRanking();
+        assertThat((List<String>) JsonPath.read(ranking, "$[*].teamName")).containsExactly("A1", "B1", "B2", "A2", "A3", "B3");
+        assertThat((List<Integer>) JsonPath.read(ranking, "$[*].placeFrom")).containsExactly(1, 2, 3, 4, 5, 6);
+        assertThat((List<String>) JsonPath.read(ranking, "$[*].basis")).containsOnly("KNOCKOUT_GAME");
+        assertThat((List<Boolean>) JsonPath.read(ranking, "$[*].provisional")).containsOnly(false);
+        assertThat((List<String>) JsonPath.read(ranking, "$[?(@.mark == 'PROMOTED')].teamName")).containsExactly("A1", "B1", "B2");
+    }
+
+    @Test
+    void withoutAGameFor3rd_theSemiFinalLosersShare3to4_andTheRestKeepTheirGroupPlaces() throws Exception {
+        String response = mockMvc.perform(post("/v1/tiers/" + tierId + "/knockout-stage").contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                    {"sourceGroupIds":["%s","%s"],"qualifiersPerGroup":2,"blueprintId":"rs-race42-ko",
+                     "startDate":"2027-03-21T09:00:00Z"}""", groupA, groupB)))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String stage = JsonPath.read(response, "$.group.id");
+        // Before anything is played: nobody has a place yet.
+        assertThat((List<Boolean>) JsonPath.read(finalRanking(), "$[*].provisional")).containsOnly(true);
+
+        playGroup(groupA);
+        playGroup(groupB);
+        for (String name : List.of("HF 1", "HF 2", "Finale")) {
+            enter(fixturesByName(stage).get(name).getId(), HOME_WINS).andExpect(status().isOk());
+        }
+
+        String ranking = finalRanking();
+        assertThat((List<String>) JsonPath.read(ranking, "$[?(@.basis == 'KNOCKOUT_ROUND')].teamName")).containsExactlyInAnyOrder("B2", "A2");
+        assertThat((List<Integer>) JsonPath.read(ranking, "$[?(@.basis == 'KNOCKOUT_ROUND')].placeFrom")).containsOnly(3);
+        assertThat((List<Integer>) JsonPath.read(ranking, "$[?(@.basis == 'KNOCKOUT_ROUND')].placeTo")).containsOnly(4);
+        assertThat((List<String>) JsonPath.read(ranking, "$[?(@.basis == 'KNOCKOUT_ROUND')].detail")).containsOnly("Halbfinale");
+        assertThat((List<String>) JsonPath.read(ranking, "$[?(@.basis == 'GROUP_PLACE')].teamName")).containsExactlyInAnyOrder("A3", "B3");
+        assertThat((List<Integer>) JsonPath.read(ranking, "$[?(@.basis == 'GROUP_PLACE')].placeFrom")).containsOnly(5);
+        assertThat((List<Integer>) JsonPath.read(ranking, "$[?(@.basis == 'GROUP_PLACE')].placeTo")).containsOnly(6);
+    }
+
+    @Test
+    void copyForward_startsThePromotedTeamsOneLevelUp() throws Exception {
+        setTier("Regionalliga", 2, 2);
+        String upperTier = id(mockMvc.perform(post("/v1/tiers").contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("{\"name\":\"Bundesliga-Quali\",\"leagueId\":\"%s\",\"level\":1}", leagueId)))
+            .andExpect(status().isCreated()).andReturn());
+        mockMvc.perform(post("/v1/groups").contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("{\"name\":\"Quali\",\"tierId\":\"%s\",\"groupState\":\"READY\"}", upperTier)))
+            .andExpect(status().isCreated());
+        String stage = createStage("rs-race42-ko");
+        playGroup(groupA);
+        playGroup(groupB);
+        playKnockout(stage);
+
+        String nextSeason = id(mockMvc.perform(post("/v1/seasons").contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("{\"name\":\"2028\",\"federationId\":\"%s\"}", federationId)))
+            .andExpect(status().isCreated()).andReturn());
+        mockMvc.perform(post("/v1/seasons/" + nextSeason + "/copy-forward").param("from", seasonId))
+            .andExpect(status().isOk());
+
+        Map<String, String> groupOfTeam = new java.util.HashMap<>();
+        for (TeamParticipation placement : participationRepository.findByLeague_Season_Id(nextSeason)) {
+            groupOfTeam.put(placement.getTeam().getName(), placement.getGroup().getName());
+        }
+        assertThat(groupOfTeam)
+            .containsEntry("A1", "Quali").containsEntry("B1", "Quali")
+            .containsEntry("B2", "Gruppe B").containsEntry("A2", "Gruppe A");
+    }
+
     // --- helpers ---
+
+    private void setTier(String name, int level, Integer promotionPlaces) throws Exception {
+        mockMvc.perform(put("/v1/tiers/" + tierId).contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("{\"name\":\"%s\",\"leagueId\":\"%s\",\"level\":%d,\"promotionPlaces\":%d}",
+                    name, leagueId, level, promotionPlaces)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.promotionPlaces").value(promotionPlaces));
+    }
+
+    /** Semi-finals and every placing game: the home side wins. */
+    private void playKnockout(String stage) throws Exception {
+        for (String name : List.of("HF 1", "HF 2", "Finale", "Spiel um Platz 3", "Spiel um Platz 5")) {
+            enter(fixturesByName(stage).get(name).getId(), HOME_WINS).andExpect(status().isOk());
+        }
+    }
+
+    private String finalRanking() throws Exception {
+        return mockMvc.perform(get("/v1/tiers/" + tierId + "/final-ranking"))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+    }
 
     private String createStage(String blueprintId) throws Exception {
         String response = mockMvc.perform(post("/v1/tiers/" + tierId + "/knockout-stage").contentType(MediaType.APPLICATION_JSON)
